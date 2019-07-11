@@ -30,29 +30,6 @@
 //#define ATTRIB_AMMO_SECONDARY_BONUS	78
 //#define ATTRIB_AMMO_SECONDARY_PENALTY	79
 
-
-//Misc attributes
-#define ATTRIB_MAXHEALTH_30SECONDS		139
-#define ATTRIB_MAXHEALTH				140
-#define ATTRIB_WEAPON_MODE				144
-#define ATTRIB_RECHARGE_RATE 			801
-
-#define ITEM_BONK_COOLDOWN				30.0
-#define ITEM_BONK_DURATION				8.0
-#define ITEM_CRITCOLA_COOLDOWN			30.0
-#define ITEM_CRITCOLA_DURATION			8.0
-
-#define ITEM_GASPASSER_METER_TIME		60.0
-#define ITEM_GASPASSER_METER_DAMAGE		750.0
-
-#define ITEM_SANDVICH_HEAL				75
-#define ITEM_SANDVICH_OVERHEAL			0
-#define ITEM_DALOKOHS_HEAL				25
-#define ITEM_DALOKOHS_OVERHEAL			0
-#define ITEM_DALOKOHS_MAXHEAL			50.0
-#define ITEM_DALOKOHS_DURATION			30.0
-#define ITEM_STEAK_DURATION				16.0
-
 enum
 {
 	WeaponSlot_Primary = 0,
@@ -137,6 +114,7 @@ public void OnPluginStart()
 public void OnClientPutInServer(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Hud_ClientDisplay);
+	SDKHook(iClient, SDKHook_PreThink, Weapons_ClientThink);
 	
 	GenerateRandonWeapon(iClient);
 }

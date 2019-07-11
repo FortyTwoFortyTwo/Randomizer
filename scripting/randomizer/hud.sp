@@ -125,26 +125,6 @@ public void Hud_ClientDisplay(int iClient)
 			if (StrEqual(sClassname, "tf_weapon_jar_gas"))
 			{
 				flMeter = GetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 1);
-				
-				//Non-Pyros cant refill gas meter, fix that
-				if (iClass != TFClass_Pyro)
-				{
-					float flTimeGap = GetGameTime() - g_flClientPreviousThink[iClient];
-					
-					flMeter += flTimeGap / ITEM_GASPASSER_METER_TIME * 100.0;
-					if (flMeter >= 100.0)
-					{
-						flMeter = 100.0;
-						TF2_SetAmmo(iWeapon, 1);
-					}
-					else
-					{
-						TF2_SetAmmo(iWeapon, 0);
-					}
-					
-					SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", flMeter, 1);
-				}
-				
 				Format(sDisplay, sizeof(sDisplay), "%s: %.0f%%%", sDisplay, flMeter);
 			}
 			

@@ -1,3 +1,59 @@
+#define ATTRIB_MAXHEALTH_30SECONDS		139
+#define ATTRIB_MAXHEALTH				140
+#define ATTRIB_WEAPON_MODE				144
+#define ATTRIB_RECHARGE_RATE 			801
+
+#define ITEM_BONK_COOLDOWN				30.0
+#define ITEM_BONK_DURATION				8.0
+#define ITEM_CRITCOLA_COOLDOWN			30.0
+#define ITEM_CRITCOLA_DURATION			8.0
+
+#define ITEM_GASPASSER_METER_TIME		60.0
+#define ITEM_GASPASSER_METER_DAMAGE		750.0
+
+#define ITEM_SANDVICH_HEAL				75
+#define ITEM_SANDVICH_OVERHEAL			0
+#define ITEM_DALOKOHS_HEAL				25
+#define ITEM_DALOKOHS_OVERHEAL			0
+#define ITEM_DALOKOHS_MAXHEAL			50.0
+#define ITEM_DALOKOHS_DURATION			30.0
+#define ITEM_STEAK_DURATION				16.0
+
+float g_flClientPreviousThink[TF_MAXPLAYERS];
+
+public void Weapons_ClientThink(int iClient)
+{
+	TFClassType nClass = TF2_GetPlayerClass(iClient);
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	char sClassname[256];
+	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	
+	//Gas Passer
+	if (StrEqual(sClassname, "tf_weapon_jar_gas"))
+	{
+		//Non-Pyros cant refill gas meter, fix that
+		if (nClass != TFClass_Pyro)
+		{
+			float flTimeGap = GetGameTime() - g_flClientPreviousThink[iClient];
+			
+			flMeter += flTimeGap / ITEM_GASPASSER_METER_TIME * 100.0;
+			if (flMeter >= 100.0)
+			{
+				flMeter = 100.0;
+				TF2_SetAmmo(iWeapon, 1);
+			}
+			else
+			{
+				TF2_SetAmmo(iWeapon, 0);
+			}
+			
+			SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", flMeter, 1);
+		}
+	}
+	
+	g_flClientPreviousThink[iClient] = GetGameTime();
+}
+
 /*
 public void TF2_OnConditionAdded(int iClient, TFCond condition)
 {
