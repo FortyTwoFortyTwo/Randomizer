@@ -35,6 +35,8 @@ public void Weapons_ClientThink(int iClient)
 		if (nClass != TFClass_Pyro)
 		{
 			float flTimeGap = GetGameTime() - g_flClientPreviousThink[iClient];
+			float flMeter = GetEntPropFloat(iWeapon, Prop_Send, "m_flEffectBarRegenTime");
+			flMeter -= GetGameTime();
 			
 			flMeter += flTimeGap / ITEM_GASPASSER_METER_TIME * 100.0;
 			if (flMeter >= 100.0)

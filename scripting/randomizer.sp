@@ -73,8 +73,10 @@ Handle g_hSDKEquipWearable;
 Handle g_hSDKGetWearable;
 Handle g_hSDKGetMaxAmmo;
 
+#include "randomizer/config.sp"
 #include "randomizer/hud.sp"
 #include "randomizer/stocks.sp"
+#include "randomizer/weapons.sp"
 
 public Plugin myinfo =
 {
@@ -96,6 +98,9 @@ public void OnPluginStart()
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	
 	SDK_Init();
+	
+	Config_InitTemplates();
+	Config_LoadTemplates();
 	
 	CreateWeaponList();
 	
@@ -135,8 +140,46 @@ public bool FilterTF2EconSlot(int iIndex, int iSlot)
 	//TODO blacklist reskin weapons
 	
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	{
 		if (TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass)) == iSlot)
+		{
+			//Make sure weapon is not in any of blacklists
+			
+			//Attributes
+			ArrayList aAttrib = TF2Econ_GetItemStaticAttributes(iIndex);
+			int iAttribLength = aAttrib.Length;
+			for (int i = 0; i < iAttribLength; i++)	//Loop through all attribs index have
+			{
+				int iAttrib = aAttrib.Get(i, 0);	//0 is Attrib index, 1 is value of attrib
+				int iBlacklistLength = g_aBlacklistAttrib.Length;
+				for (int j = 0; j < iBlacklistLength; j++)	//Loop through all blacklist attribs
+				{
+					if (iAttrib == g_aBlacklistAttrib.Get(j))
+					{
+						delete aAttrib;
+						return false;
+					}
+				}
+			}
+			
+			delete aAttrib;
+			
+			//Names
+			char sName[256];
+			TF2Econ_GetItemName(iIndex, sName, sizeof(sName));
+			int iBlacklistLength = g_aBlacklistName.Length;
+			for (int i = 0; i < iBlacklistLength; i++)
+			{
+				char sBuffer[CONFIG_MAXCHAR];
+				g_aBlacklistName.GetString(i, sBuffer, sizeof(sBuffer));
+				if (StrContains(sName, sBuffer, false) > -1)
+					return false;
+			}
+			
+			LogMessage("Adding Weapon | Index %d | Slot %d | Name %s", iIndex, iSlot, sName);
 			return true;
+		}
+	}
 	
 	return false;
 }

@@ -1,7 +1,7 @@
 public void Hud_ClientDisplay(int iClient)
 {
 	char sDisplay[512];
-	TFClassType iClass = TF2_GetPlayerClass(iClient);
+	//TFClassType iClass = TF2_GetPlayerClass(iClient);
 	
 	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
 	{
