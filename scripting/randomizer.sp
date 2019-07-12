@@ -55,6 +55,7 @@ int g_iClassMaxAmmo[][2] = {
 };
 
 ArrayList g_aIndexList[WeaponSlot_BuilderEngie+1];
+ArrayList g_aHud;
 
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
@@ -66,8 +67,8 @@ Handle g_hSDKEquipWearable;
 Handle g_hSDKGetWearable;
 Handle g_hSDKGetMaxAmmo;
 
-#include "randomizer/config.sp"
 #include "randomizer/hud.sp"
+#include "randomizer/config.sp"
 #include "randomizer/stocks.sp"
 #include "randomizer/weapons.sp"
 
@@ -83,6 +84,7 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
 	RegAdminCmd("weapon", Command_Weapon, ADMFLAG_CHANGEMAP);
+	RegAdminCmd("generate", Command_Generate, ADMFLAG_CHANGEMAP);
 	
 	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
 	HookEvent("player_spawn", Event_PlayerSpawn);
@@ -344,6 +346,12 @@ public Action Command_Weapon(int iClient, int iArgs)
 	g_iClientWeaponIndex[iClient][StringToInt(sArg1)] = StringToInt(sArg2);
 	
 	return Plugin_Handled;
+}
+
+public Action Command_Generate(int iClient, int iArgs)
+{
+	GenerateRandonWeapon(iClient);
+	TF2_RespawnPlayer(iClient);
 }
 
 public void SDK_Init()

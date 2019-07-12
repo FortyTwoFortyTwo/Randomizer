@@ -16,7 +16,12 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex)
 {
 	char sClassname[256];
 	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
-	TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), TF2_GetPlayerClass(iClient));	//Will this break with class equipping any weapons?
+	TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), TF2_GetPlayerClass(iClient));
+	
+	//In-case client playing as class normally not allowed to have said multi-class weapon
+	for (int iClass = CLASS_MIN; iClass < CLASS_MAX; iClass++)
+		if (TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), view_as<TFClassType>(iClass)))
+			break;
 	
 	int iWeapon = CreateEntityByName(sClassname);
 	
@@ -147,4 +152,11 @@ stock void TF2_SetAmmo(int iWeapon, int iAmmo)
 	
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity"); 
 	SetEntProp(iClient, Prop_Send, "m_iAmmo", iAmmo, _, iAmmoType);
+}
+
+stock void StringToLower(char[] sString)
+{
+	int iLength = strlen(sString);
+	for(int i = 0; i < iLength; i++)
+		sString[i] = CharToLower(sString[i]);
 }

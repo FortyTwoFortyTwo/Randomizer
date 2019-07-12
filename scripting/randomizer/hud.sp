@@ -1,3 +1,117 @@
+enum eHudWeapon
+{
+	eHudWeapon_Classname,
+	eHudWeapon_Attrib,
+	eHudWeapon_Index,
+}
+
+enum eHudEntity
+{
+	eHudEntity_Weapon,
+	eHudEntity_Client,
+}
+
+enum eHudType
+{
+	eHudType_Int,
+	eHudType_Float,
+	eHudType_Time,
+}
+
+methodmap CHud < StringMap
+{
+	public CHud()
+	{
+		return view_as<CHud>(new StringMap());
+	}
+	
+	//Return true if index uses netprop, false otherwise
+	public bool IsIndexAllowed(int iIndex)
+	{
+		char sWeapon[1024];
+		if (!this.GetString("weapon", sWeapon, sizeof(sWeapon)))
+			return true;	//weapon key not found, lets assume it for all weapons
+		
+		char sWep[32][32];
+		int iCount = ExplodeString(sWeapon, " ; ", sWep, 32, 32);
+		if (iCount <= 1)
+			return true;
+
+		for (int i = 0; i < iCount; i+= 2)
+		{
+			eHudWeapon hudWeapon = view_as<eHudWeapon>(StringToInt(sWep[i]));
+			switch (hudWeapon)
+			{
+				case eHudWeapon_Classname:
+				{
+					char sClassname[256];
+					TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+					if (StrEqual(sWep[i+1], sClassname))
+						return true;
+				}
+				case eHudWeapon_Attrib:
+				{
+					ArrayList aAttrib = TF2Econ_GetItemStaticAttributes(iIndex);
+					int iLength = aAttrib.Length;
+					for (int j = 0; j < iLength; j++)
+					{
+						char sAttrib[256];
+						TF2Econ_GetAttributeName(aAttrib.Get(j, 0), sAttrib, sizeof(sAttrib));
+						if (StrEqual(sWep[i+1], sAttrib))
+						{
+							delete aAttrib;
+							return true;
+						}
+					}
+					
+					delete aAttrib;
+				}
+				case eHudWeapon_Index:
+				{
+					if (StringToInt(sWep[i+1]) == iIndex)
+						return true;
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	//Return either int or float of entity netprop & element value, depending on type
+	public any GetNetpropValue(int iEntity)
+	{
+		eHudType hudType;
+		this.GetValue("type", hudType);
+		
+		char sNetprop[256];
+		this.GetString("netprop", sNetprop, sizeof(sNetprop));
+		
+		int iElement = 0;
+		char sElement[256];
+		if (this.GetString("element", sElement, sizeof(sElement)))
+			iElement = StringToInt(sElement);
+		
+		switch (hudType)
+		{
+			case eHudType_Int:
+			{
+				return GetEntProp(iEntity, Prop_Send, sNetprop, _, iElement);
+			}
+			case eHudType_Float:
+			{
+				return GetEntPropFloat(iEntity, Prop_Send, sNetprop, iElement);
+			}
+			case eHudType_Time:
+			{
+				return GetEntPropFloat(iEntity, Prop_Send, sNetprop, iElement) - GetGameTime();
+			}
+		}
+		
+		LogError("Unable to find valid Hud type at \"%s\" - \"%d\"", sNetprop, hudType);
+		return -1;
+	}
+};
+
 public void Hud_ClientDisplay(int iClient)
 {
 	char sDisplay[512];
@@ -7,7 +121,7 @@ public void Hud_ClientDisplay(int iClient)
 	{
 		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
 		
-		if (IsValidEntity(iWeapon))
+		if (IsValidEdict(iWeapon))
 		{
 			//Break line
 			if (!StrEqual(sDisplay, ""))
@@ -25,149 +139,68 @@ public void Hud_ClientDisplay(int iClient)
 			else
 				Format(sDisplay, sizeof(sDisplay), "%sUnknown Name", sDisplay);
 			
-			//Go through every netprops/classname to see whenever if meter needs to be displayed
-			//TODO config support
-			int iMeter;
-			float flMeter;
-			char sClassname[256];
-			GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+			//Go through every netprops to see whenever if meter needs to be displayed
 			
-			//Bonk, Milk, Cleaver, Sandman, Wrap Assassin, Sandvich and Jarate
-			if (HasEntProp(iWeapon, Prop_Send, "m_flEffectBarRegenTime"))
+			int iLength = g_aHud.Length;
+			for (int iNetprop = 0; iNetprop < iLength; iNetprop++)
 			{
-				flMeter = GetEntPropFloat(iWeapon, Prop_Send, "m_flEffectBarRegenTime");
-				flMeter -= GetGameTime();
+				CHud hud = g_aHud.Get(iNetprop);
 				
-				//Format(sDisplay, sizeof(sDisplay), "%s (%.8f)", sDisplay, flMeter);
+				if (!hud.IsIndexAllowed(iIndex))
+					continue;
 				
-				if (flMeter > 0.0)
-					Format(sDisplay, sizeof(sDisplay), "%s: %.0f sec", sDisplay, flMeter);
-			}
-			
-			//Cow Mangler, Bison and Pomson
-			if (HasEntProp(iWeapon, Prop_Send, "m_flEnergy"))
-			{
-				flMeter = GetEntPropFloat(iWeapon, Prop_Send, "m_flEnergy") * 5.0;
-				if (flMeter != 100.0)
+				int iEntity;
+				eHudEntity hudEntity;
+				hud.GetValue("entity", hudEntity);
+				switch (hudEntity)
 				{
-					Format(sDisplay, sizeof(sDisplay), "%s: %.0f%%%", sDisplay, flMeter);
+					case eHudEntity_Weapon: iEntity = iWeapon;
+					case eHudEntity_Client: iEntity = iClient;
 				}
-			}
-			
-			//Loose Cannon
-			if (HasEntProp(iWeapon, Prop_Send, "m_flDetonateTime"))
-			{
-				flMeter = GetEntPropFloat(iWeapon, Prop_Send, "m_flDetonateTime");
-				if (flMeter != 0.0)
+				
+				char sBuffer[256];
+				
+				hud.GetString("netprop", sBuffer, sizeof(sBuffer));
+				if (!HasEntProp(iEntity, Prop_Send, sBuffer))
+					continue;
+				
+				any value = hud.GetNetpropValue(iEntity);
+				
+				if (hud.GetString("multiply", sBuffer, sizeof(sBuffer)))
+					value *= StringToFloat(sBuffer);
+				
+				if (hud.GetString("min", sBuffer, sizeof(sBuffer)))
+					if (value <= StringToFloat(sBuffer))
+						continue;
+				
+				if (hud.GetString("max", sBuffer, sizeof(sBuffer)))
+					if (value >= StringToFloat(sBuffer))
+						continue;
+				
+				eHudType hudType;
+				hud.GetValue("type", hudType);
+				if (hudType == eHudType_Int)
+					Format(sDisplay, sizeof(sDisplay), "%s: %d", sDisplay, value);
+				else	//float and time
+					Format(sDisplay, sizeof(sDisplay), "%s: %.0f", sDisplay, value);
+				
+				if (hud.GetString("text", sBuffer, sizeof(sBuffer)))
 				{
-					flMeter -= GetGameTime();
-					Format(sDisplay, sizeof(sDisplay), "%s: %.2fs", sDisplay, flMeter);
+					Format(sDisplay, sizeof(sDisplay), "%s%s", sDisplay, sBuffer);
 				}
-			}
-			
-			//Stickybomb
-			if (HasEntProp(iWeapon, Prop_Send, "m_iPipebombCount"))
-			{
-				iMeter = GetEntProp(iWeapon, Prop_Send, "m_iPipebombCount");
-				Format(sDisplay, sizeof(sDisplay), "%s: %d Stickies", sDisplay, iMeter);
-			}
-			
-			//Stickybomb and Huntsman
-			if (HasEntProp(iWeapon, Prop_Send, "m_flChargeBeginTime"))
-			{
-				flMeter = GetEntPropFloat(iWeapon, Prop_Send, "m_flChargeBeginTime");
-				if (flMeter != 0.0)
+				else
 				{
-					flMeter = (GetGameTime() - flMeter) * 100.0;
-					if (flMeter > 100.0) flMeter = 100.0;
-					Format(sDisplay, sizeof(sDisplay), "%s: %.0f%%%", sDisplay, flMeter);
-				}
-			}
-			
-			//Medigun (TODO Vaccinator support)
-			if (HasEntProp(iWeapon, Prop_Send, "m_flChargeLevel"))
-			{
-				flMeter = GetEntPropFloat(iWeapon, Prop_Send, "m_flChargeLevel") * 100.0;
-				Format(sDisplay, sizeof(sDisplay), "%s: %.0f%%%", sDisplay, flMeter);
-			}
-			
-			//Banners, Phlogistinator and Hitman Heatmaker
-			if (StrEqual(sClassname, "tf_weapon_buff_item") || StrEqual(sClassname, "tf_weapon_flamethrower") || StrEqual(sClassname, "tf_weapon_sniperrifle"))
-			{
-				flMeter = GetEntPropFloat(iClient, Prop_Send, "m_flRageMeter");
-				if (flMeter > 0.0)
-				{
-					Format(sDisplay, sizeof(sDisplay), "%s: %.0f%%%", sDisplay, flMeter);
-				}
-			}
-			
-			//Airstrike, Eyelander and Bazzar Bargin
-			if (StrEqual(sClassname, "tf_weapon_rocketlauncher_airstrike") || StrEqual(sClassname, "tf_weapon_sword") || StrEqual(sClassname, "tf_weapon_sniperrifle_decap"))
-			{
-				iMeter = GetEntProp(iClient, Prop_Send, "m_iDecapitations");
-				if (iMeter > 0)
-				{
-					Format(sDisplay, sizeof(sDisplay), "%s: %d Head%s", sDisplay, iMeter, (iMeter > 1) ? "s" : "");
-				}
-			}
-			
-			//Manmelter and Frontier Justice (TODO diamondback)
-			if (StrEqual(sClassname, "tf_weapon_flaregun_revenge") || StrEqual(sClassname, "tf_weapon_sentry_revenge"))
-			{
-				iMeter = GetEntProp(iClient, Prop_Send, "m_iRevengeCrits");
-				if (iMeter > 0)
-				{
-					Format(sDisplay, sizeof(sDisplay), "%s: %d Crit%s", sDisplay, iMeter, (iMeter > 1) ? "s" : "");
-				}
-			}
-			
-			//Gas Passer
-			if (StrEqual(sClassname, "tf_weapon_jar_gas"))
-			{
-				flMeter = GetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 1);
-				Format(sDisplay, sizeof(sDisplay), "%s: %.0f%%%", sDisplay, flMeter);
-			}
-			
-			//Short Circuit, Wrench and Gunslinger (TODO widomaker)
-			if (StrEqual(sClassname, "tf_weapon_mechanical_arm") || StrEqual(sClassname, "tf_weapon_wrench") || StrEqual(sClassname, "tf_weapon_robot_arm"))
-			{
-				iMeter = GetEntProp(iClient, Prop_Send, "m_iAmmo", _, 3);
-				Format(sDisplay, sizeof(sDisplay), "%s: %d Metal", sDisplay, iMeter);
-			}
-			
-			switch (iSlot)
-			{
-				case WeaponSlot_Primary:
-				{
-					//Soda Popper and Baby Face Blaster
-					flMeter = GetEntPropFloat(iClient, Prop_Send, "m_flHypeMeter");
-					if (flMeter > 0.0)
+					//Display text depending what current value netprop is
+					StringMap mText;
+					if (hud.GetValue("text", mText) && mText != null && mText.Size > 0)
 					{
-						Format(sDisplay, sizeof(sDisplay), "%s: %.0f%%%", sDisplay, flMeter);
-					}
-				}
-				case WeaponSlot_Secondary:
-				{
-					//Chargin Targe
-					flMeter = GetEntPropFloat(iClient, Prop_Send, "m_flChargeMeter");
-					if (flMeter != 100.0)
-					{
-						Format(sDisplay, sizeof(sDisplay), "%s: %.0f%%%", sDisplay, flMeter);
-					}
-					
-					//Razorback
-					flMeter = GetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter");
-					if (0.0 < flMeter < 100.0)
-					{
-						Format(sDisplay, sizeof(sDisplay), "%s: %.0f%%%", sDisplay, flMeter);
+						char sValue[256];
+						IntToString(value, sValue, sizeof(sValue));
+						if (mText.GetString(sValue, sBuffer, sizeof(sBuffer)))
+							Format(sDisplay, sizeof(sDisplay), "%s%s", sDisplay, sBuffer);
 					}
 				}
 			}
-			
-			//TODO Spy-cicle
-			//TODO Disguise
-			//TODO Thermal Thruster (CTFRocketPack? m_flLastFireTime, m_flEffectBarRegenTime, m_flInitLaunchTime, m_flLaunchTime)
-			//TODO Gas Passer (CTFJarGas? m_flEffectBarRegenTime? already here....)
 		}
 	}
 	
