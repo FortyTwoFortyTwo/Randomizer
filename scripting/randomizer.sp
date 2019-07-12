@@ -15,13 +15,6 @@
 #define CLASS_MIN	1	//First valid TFClassType, Scout
 #define CLASS_MAX	9	//Last valid TFClassType, Engineer
 
-//Attributes that should be blacklisted
-#define ATTRIB_CANNOT_TRADE				153
-#define ATTRIB_ALWAYS_TRADE				195
-#define ATTRIB_LIMITED_ITEM				692
-#define ATTRIB_MARKETABLE				2028
-
-
 //Ammo attributes
 #define ATTRIB_AMMO_SECONDARY_HIDDEN	25
 #define ATTRIB_AMMO_PRIMARY_HIDDEN		37
@@ -137,8 +130,6 @@ public void CreateWeaponList()
 
 public bool FilterTF2EconSlot(int iIndex, int iSlot)
 {
-	//TODO blacklist reskin weapons
-	
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
 		if (TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass)) == iSlot)
@@ -164,10 +155,22 @@ public bool FilterTF2EconSlot(int iIndex, int iSlot)
 			
 			delete aAttrib;
 			
+			//Classname
+			char sClassname[256];
+			TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+			int iBlacklistLength = g_aBlacklistClassname.Length;
+			for (int i = 0; i < iBlacklistLength; i++)
+			{
+				char sBuffer[CONFIG_MAXCHAR];
+				g_aBlacklistClassname.GetString(i, sBuffer, sizeof(sBuffer));
+				if (StrEqual(sClassname, sBuffer, false))
+					return false;
+			}
+			
 			//Names
 			char sName[256];
 			TF2Econ_GetItemName(iIndex, sName, sizeof(sName));
-			int iBlacklistLength = g_aBlacklistName.Length;
+			iBlacklistLength = g_aBlacklistName.Length;
 			for (int i = 0; i < iBlacklistLength; i++)
 			{
 				char sBuffer[CONFIG_MAXCHAR];
@@ -176,6 +179,13 @@ public bool FilterTF2EconSlot(int iIndex, int iSlot)
 					return false;
 			}
 			
+			//Index
+			iBlacklistLength = g_aBlacklistIndex.Length;
+			for (int i = 0; i < iBlacklistLength; i++)
+				if (iIndex == g_aBlacklistIndex.Get(i))
+					return false;
+			
+			//Should be safe to add list after reaching here
 			LogMessage("Adding Weapon | Index %d | Slot %d | Name %s", iIndex, iSlot, sName);
 			return true;
 		}
