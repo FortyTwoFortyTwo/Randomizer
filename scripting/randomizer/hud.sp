@@ -117,7 +117,7 @@ public void Hud_ClientDisplay(int iClient)
 	char sDisplay[512];
 	//TFClassType iClass = TF2_GetPlayerClass(iClient);
 	
-	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
+	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_Melee; iSlot++)
 	{
 		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
 		
@@ -177,15 +177,15 @@ public void Hud_ClientDisplay(int iClient)
 					if (value >= StringToFloat(sBuffer))
 						continue;
 				
-				eHudType hudType;
-				hud.GetValue("type", hudType);
-				if (hudType == eHudType_Int)
-					Format(sDisplay, sizeof(sDisplay), "%s: %d", sDisplay, value);
-				else	//float and time
-					Format(sDisplay, sizeof(sDisplay), "%s: %.0f", sDisplay, value);
-				
 				if (hud.GetString("text", sBuffer, sizeof(sBuffer)))
 				{
+					eHudType hudType;
+					hud.GetValue("type", hudType);
+					if (hudType == eHudType_Int)
+						Format(sDisplay, sizeof(sDisplay), "%s: %d", sDisplay, value);
+					else	//float and time
+						Format(sDisplay, sizeof(sDisplay), "%s: %.0f", sDisplay, value);
+						
 					Format(sDisplay, sizeof(sDisplay), "%s%s", sDisplay, sBuffer);
 				}
 				else

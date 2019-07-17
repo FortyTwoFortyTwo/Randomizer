@@ -12,17 +12,23 @@ stock void Client_AddHealth(int iClient, int iAdditionalHeal, int iMaxOverHeal=0
 	}
 }
 
-stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex)
+stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot = -1)
 {
 	char sClassname[256];
 	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
-	TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), TF2_GetPlayerClass(iClient));
 	
-	//In-case client playing as class normally not allowed to have said multi-class weapon
-	for (int iClass = CLASS_MIN; iClass < CLASS_MAX; iClass++)
-		if (TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), view_as<TFClassType>(iClass)))
+	//We want to translate classname to correct classname AND slot wanted
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	{
+		int iClassSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+		if (iClassSlot > -1 && (iSlot == iClassSlot || iSlot == -1))
+		{
+			TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), view_as<TFClassType>(iClass));
 			break;
+		}
+	}
 	
+	PrintToChatAll("iIndex %d sClassname %s", iIndex, sClassname);
 	int iWeapon = CreateEntityByName(sClassname);
 	
 	if (IsValidEntity(iWeapon))
@@ -141,6 +147,23 @@ stock int TF2_GetSlotFromWeapon(int iClient, int iWeapon)
 	return -1;
 }
 
+stock int TF2_GetSlotFromIndex(int iIndex, TFClassType nClass = TFClass_Unknown)
+{
+	int iSlot = TF2Econ_GetItemSlot(iIndex, nClass);
+	if (iSlot >= 0)
+	{
+		//Spy slots is a bit messy
+		if (nClass == TFClass_Spy)
+		{
+			if (iSlot == 1) iSlot = WeaponSlot_Primary;		//Revolver
+			if (iSlot == 4) iSlot = WeaponSlot_Secondary;	//Sapper
+			if (iSlot == 6) iSlot = WeaponSlot_InvisWatch;	//Invis Watch
+		}
+	}
+	
+	return iSlot;
+}
+
 stock void TF2_RemoveItemInSlot(int iClient, int iSlot)
 {
 	TF2_RemoveWeaponSlot(iClient, iSlot);
@@ -173,6 +196,11 @@ stock void TF2_SetAmmo(int iWeapon, int iAmmo)
 	
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity"); 
 	SetEntProp(iClient, Prop_Send, "m_iAmmo", iAmmo, _, iAmmoType);
+}
+
+stock void TF2_SetMetal(int iClient, int iMetal)
+{
+	SetEntProp(iClient, Prop_Send, "m_iAmmo", iMetal, _, 3);
 }
 
 stock void StringToLower(char[] sString)

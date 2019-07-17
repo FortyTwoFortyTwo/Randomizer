@@ -15,6 +15,10 @@
 #define CLASS_MIN	1	//First valid TFClassType, Scout
 #define CLASS_MAX	9	//Last valid TFClassType, Engineer
 
+#define ITEM_PDA_BUILD		25
+#define ITEM_PDA_DESTROY	26
+#define ITEM_PDA_TOOLBOX	28
+
 //Ammo attributes
 #define ATTRIB_AMMO_SECONDARY_HIDDEN	25
 #define ATTRIB_AMMO_PRIMARY_HIDDEN		37
@@ -22,6 +26,7 @@
 //#define ATTRIB_AMMO_PRIMARY_PENALTY	77
 //#define ATTRIB_AMMO_SECONDARY_BONUS	78
 //#define ATTRIB_AMMO_SECONDARY_PENALTY	79
+#define ATTRIB_MAX_METAL				80
 
 enum
 {
@@ -110,6 +115,17 @@ public void OnPluginStart()
 	}
 }
 
+public void OnPluginEnd()
+{
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+	{
+		if (IsClientInGame(iClient))
+		{
+			TF2Attrib_RemoveByDefIndex(iClient, ATTRIB_MAX_METAL);
+		}
+	}
+}
+
 public void OnClientPutInServer(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Hud_ClientDisplay);
@@ -133,7 +149,7 @@ public bool FilterTF2EconSlot(int iIndex, int iSlot)
 {
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
-		if (TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass)) == iSlot)
+		if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) == iSlot)
 		{
 			//Make sure weapon is not in any of blacklists
 			
@@ -187,7 +203,7 @@ public bool FilterTF2EconSlot(int iIndex, int iSlot)
 					return false;
 			
 			//Should be safe to add list after reaching here
-			LogMessage("Adding Weapon | Index %d | Slot %d | Name %s", iIndex, iSlot, sName);
+			//LogMessage("Adding Weapon | Index %d | Slot %d | Name %s", iIndex, iSlot, sName);
 			return true;
 		}
 	}
@@ -202,6 +218,9 @@ public void GenerateRandonWeapon(int iClient)
 	//TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 	SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(g_iClientClass[iClient]));
 	
+	for (int iSlot = 0; iSlot < sizeof(g_iClientWeaponIndex[]); iSlot++)
+			g_iClientWeaponIndex[iClient][iSlot] = -1;
+		
 	//Random Weapon
 	for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
 	{
@@ -212,9 +231,21 @@ public void GenerateRandonWeapon(int iClient)
 		int iIndex = g_aIndexList[iSlot].Get(iRandom);
 		
 		g_iClientWeaponIndex[iClient][iSlot] = iIndex;
+		
+		//If Wrench or Gunslinger, give building tools aswell
+		//TODO config support?
+		char sClassname[256];
+		TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+		if (StrEqual(sClassname, "tf_weapon_wrench") || StrEqual(sClassname, "tf_weapon_robot_arm"))
+		{
+			g_iClientWeaponIndex[iClient][WeaponSlot_PDABuild] = ITEM_PDA_BUILD;
+			g_iClientWeaponIndex[iClient][WeaponSlot_PDADestroy] = ITEM_PDA_DESTROY;
+			g_iClientWeaponIndex[iClient][WeaponSlot_BuilderEngie] = ITEM_PDA_TOOLBOX;
+		}
 	}
 	
 	//Reset Gas Passer meter
+	//TODO config support?
 	SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
 	
 	if (IsPlayerAlive(iClient))
@@ -247,15 +278,25 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
 	if (GetClientTeam(iClient) <= 1) return;
 	
+	//Non-engineers have max metal at 100, while we want it to be 200
+	if (TF2_GetPlayerClass(iClient) != TFClass_Engineer)
+		TF2Attrib_SetByDefIndex(iClient, ATTRIB_MAX_METAL, 2.0);
+	else
+		TF2Attrib_RemoveByDefIndex(iClient, ATTRIB_MAX_METAL);
+	
+	TF2Attrib_ClearCache(iClient);
+	TF2_SetMetal(iClient, 200);
+	
 	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 	{
 		TF2_RemoveItemInSlot(iClient, iSlot);
 		
 		int iIndex = g_iClientWeaponIndex[iClient][iSlot];
+		PrintToChatAll("client %N slot %d index %d", iClient, iSlot, iIndex);
 		if (iIndex < 0) continue;
 		
 		//Create weapon
-		int iWeapon = TF2_CreateAndEquipWeapon(iClient, iIndex);
+		int iWeapon = TF2_CreateAndEquipWeapon(iClient, iIndex, iSlot);
 		
 		//We want to scale max ammo to correct value as it different between class
 		if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
@@ -272,7 +313,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 				TFClassType nWeaponClass = TFClass_Unknown;
 				for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 				{
-					if (TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass)) == iSlot)
+					if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) == iSlot)
 					{
 						nWeaponClass = view_as<TFClassType>(iClass);
 						break;
@@ -304,7 +345,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			}
 			
 			//Refresh max ammo
-			PrintToChatAll("client (%N) slot (%d) max ammo (%d) ammo type (%d)", iClient, iSlot, iMaxAmmo, iAmmoType);
+			//PrintToChatAll("client (%N) slot (%d) max ammo (%d) ammo type (%d)", iClient, iSlot, iMaxAmmo, iAmmoType);
 			SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
 		}
 	}
