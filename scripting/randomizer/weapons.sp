@@ -25,6 +25,8 @@ public void Weapons_ClientThink(int iClient)
 {
 	TFClassType nClass = TF2_GetPlayerClass(iClient);
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iWeapon <= MaxClients) return;
+	
 	char sClassname[256];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
 	

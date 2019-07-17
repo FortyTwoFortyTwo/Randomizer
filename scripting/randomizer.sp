@@ -64,7 +64,6 @@ Handle g_hClientEventTimer[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 Handle g_hSDKGetMaxHealth;
 Handle g_hSDKRemoveWearable;
 Handle g_hSDKEquipWearable;
-Handle g_hSDKGetWearable;
 Handle g_hSDKGetMaxAmmo;
 
 #include "randomizer/hud.sp"
@@ -259,48 +258,54 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		int iWeapon = TF2_CreateAndEquipWeapon(iClient, iIndex);
 		
 		//We want to scale max ammo to correct value as it different between class
-		if (WeaponSlot_Primary <= iSlot <= WeaponSlot_Secondary && HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
+		if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
 		{
 			int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-			if (iAmmoType < 1 || iAmmoType > 2) continue;	//We only need to change ammo type 1 and 2
+			if (iAmmoType < 0) continue;
 			
 			//Think Shortstop ammo still bugged?
 			
-			TFClassType nWeaponClass = TFClass_Unknown;
-			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			int iMaxAmmo = 1;	//Special ammos is usually 1, but SDK call returns 0...
+			
+			if (1 <= iAmmoType <= 2)	//Normal primary & secondary ammo
 			{
-				if (TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass)) == iSlot)
+				TFClassType nWeaponClass = TFClass_Unknown;
+				for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 				{
-					nWeaponClass = view_as<TFClassType>(iClass);
-					break;
+					if (TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass)) == iSlot)
+					{
+						nWeaponClass = view_as<TFClassType>(iClass);
+						break;
+					}
 				}
-			}
-			
-			if (nWeaponClass == TFClass_Unknown)
-				ThrowError("[randomizer] Unable to find class in slot %d that uses index %d!", iSlot, iIndex);
-			
-			float flAmmoScale = float(g_iClassMaxAmmo[nWeaponClass][iSlot]) / float(g_iClassMaxAmmo[TF2_GetPlayerClass(iClient)][iSlot]);
-			if (flAmmoScale == 1.0) continue;
-			
-			float flOldAmmoScale = 1.0;
-			switch (iSlot)
-			{
-				case WeaponSlot_Primary:
+				
+				if (nWeaponClass == TFClass_Unknown)
+					ThrowError("[randomizer] Unable to find class in slot %d that uses index %d!", iSlot, iIndex);
+				
+				float flAmmoScale = float(g_iClassMaxAmmo[nWeaponClass][iSlot]) / float(g_iClassMaxAmmo[TF2_GetPlayerClass(iClient)][iSlot]);
+				if (flAmmoScale == 1.0) continue;
+				
+				float flOldAmmoScale = 1.0;
+				switch (iSlot)
 				{
-					TF2_WeaponFindAttribute(iWeapon, ATTRIB_AMMO_PRIMARY_HIDDEN, flOldAmmoScale);
-					TF2Attrib_SetByDefIndex(iWeapon, ATTRIB_AMMO_PRIMARY_HIDDEN, flAmmoScale * flOldAmmoScale);
+					case WeaponSlot_Primary:
+					{
+						TF2_WeaponFindAttribute(iWeapon, ATTRIB_AMMO_PRIMARY_HIDDEN, flOldAmmoScale);
+						TF2Attrib_SetByDefIndex(iWeapon, ATTRIB_AMMO_PRIMARY_HIDDEN, flAmmoScale * flOldAmmoScale);
+					}
+					case WeaponSlot_Secondary:
+					{
+						TF2_WeaponFindAttribute(iWeapon, ATTRIB_AMMO_SECONDARY_HIDDEN, flOldAmmoScale);
+						TF2Attrib_SetByDefIndex(iWeapon, ATTRIB_AMMO_SECONDARY_HIDDEN, flAmmoScale * flOldAmmoScale);
+					}
 				}
-				case WeaponSlot_Secondary:
-				{
-					TF2_WeaponFindAttribute(iWeapon, ATTRIB_AMMO_SECONDARY_HIDDEN, flOldAmmoScale);
-					TF2Attrib_SetByDefIndex(iWeapon, ATTRIB_AMMO_SECONDARY_HIDDEN, flAmmoScale * flOldAmmoScale);
-				}
+				
+				iMaxAmmo = SDK_GetMaxAmmo(iClient, iAmmoType);
 			}
 			
 			//Refresh max ammo
-			int iAmmo = SDK_GetMaxAmmo(iClient, iAmmoType);
-			//PrintToChatAll("slot (%d) max ammo (%d) ammo type (%d)", iSlot, iAmmo, iAmmoType);
-			SetEntProp(iClient, Prop_Send, "m_iAmmo", iAmmo, _, iAmmoType);
+			PrintToChatAll("client (%N) slot (%d) max ammo (%d) ammo type (%d)", iClient, iSlot, iMaxAmmo, iAmmoType);
+			SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
 		}
 	}
 }
@@ -395,15 +400,6 @@ public void SDK_Init()
 	hGameData = LoadGameConfigFile("randomizer");
 	if (hGameData == null) SetFailState("Could not find randomizer gamedata!");
 	
-	//Get Wearable
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetEquippedWearableForLoadoutSlot");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKGetWearable = EndPrepSDKCall();
-	if(g_hSDKGetWearable == null)
-		LogMessage("Failed to create call: CTFPlayer::GetEquippedWearableForLoadoutSlot!");
-	
 	//Get Max Ammo
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
@@ -432,14 +428,6 @@ stock void SDK_EquipWearable(int iClient, int iWearable)
 {
 	if(g_hSDKEquipWearable != null)
 		SDKCall(g_hSDKEquipWearable, iClient, iWearable);
-}
-
-stock int SDK_GetEquippedWearable(int iClient, int iSlot)
-{
-	if(g_hSDKGetWearable != null)
-		return SDKCall(g_hSDKGetWearable, iClient, iSlot);
-	
-	return -1;
 }
 
 stock int SDK_GetMaxAmmo(int iClient, int iSlot, TFClassType iClass = TFClass_Unknown)

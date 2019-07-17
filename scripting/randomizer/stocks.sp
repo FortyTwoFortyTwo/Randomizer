@@ -100,15 +100,36 @@ stock bool TF2_WeaponFindAttribute(int iWeapon, int iAttrib, float &flVal)
 stock int TF2_GetItemInSlot(int iClient, int iSlot)
 {
 	int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
+	
+	//If weapon not found in slot, check if it a wearable
 	if (!IsValidEdict(iWeapon))
-	{
-		//If weapon not found in slot, check if it a wearable
-		int iWearable = SDK_GetEquippedWearable(iClient, iSlot);
-		if (IsValidEdict(iWearable))
-			iWeapon = iWearable;
-	}
+		return TF2_GetWearableInSlot(iClient, iSlot);
 	
 	return iWeapon;
+}
+
+stock int TF2_GetWearableInSlot(int iClient, int iSlot)
+{
+	//SDK call for get wearable doesnt work if different class use different wearable
+	//Still a problem with weapons useable with more than 1 slots... may be able to get away with it if checking GetPlayerWeaponSlot first
+	
+	int iWearable = MaxClients+1;
+	while ((iWearable = FindEntityByClassname(iWearable, "tf_wearable*")) > MaxClients)
+	{
+		if (GetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity") == iClient || GetEntPropEnt(iWearable, Prop_Send, "moveparent") == iClient)
+		{
+			int iIndex = GetEntProp(iWearable, Prop_Send, "m_iItemDefinitionIndex");
+			
+			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			{
+				int iWearableSlot = TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass));
+				if (iWearableSlot > -1 && iSlot == iWearableSlot)
+					return iWearable;
+			}
+		}
+	}
+	
+	return -1;
 }
 
 stock int TF2_GetSlotFromWeapon(int iClient, int iWeapon)
@@ -120,14 +141,14 @@ stock int TF2_GetSlotFromWeapon(int iClient, int iWeapon)
 	return -1;
 }
 
-stock void TF2_RemoveItemInSlot(int client, int slot)
+stock void TF2_RemoveItemInSlot(int iClient, int iSlot)
 {
-	TF2_RemoveWeaponSlot(client, slot);
+	TF2_RemoveWeaponSlot(iClient, iSlot);
 
-	int iWearable = SDK_GetEquippedWearable(client, slot);
+	int iWearable = TF2_GetWearableInSlot(iClient, iSlot);
 	if (iWearable > MaxClients)
 	{
-		SDK_RemoveWearable(client, iWearable);
+		SDK_RemoveWearable(iClient, iWearable);
 		AcceptEntityInput(iWearable, "Kill");
 	}
 }
