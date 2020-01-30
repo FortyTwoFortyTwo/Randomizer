@@ -19,6 +19,24 @@
 		}
 		"Functions"
 		{
+			"CTFPlayer::GetMaxAmmo"
+			{
+				"signature"	"CTFPlayer::GetMaxAmmo"
+				"callconv"	"thiscall"
+				"return"	"int"
+				"this"		"entity"
+				"arguments"
+				{
+					"iAmmoIndex"
+					{
+						"type"	"int"
+					}
+					"iClassNumber"
+					{
+						"type"	"int"
+					}
+				}
+			}
 			"CTFPlayer::Taunt"
 			{
 				"signature"	"CTFPlayer::Taunt"

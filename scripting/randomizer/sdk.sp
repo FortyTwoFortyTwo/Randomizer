@@ -3,6 +3,7 @@ static Handle g_hSDKRemoveWearable;
 static Handle g_hSDKEquipWearable;
 static Handle g_hSDKGetMaxAmmo;
 
+static Handle g_hDHookGetMaxAmmo;
 static Handle g_hDHookTaunt;
 
 public void SDK_Init()
@@ -59,6 +60,10 @@ public void SDK_Init()
 	if (g_hSDKGetMaxAmmo == null)
 		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo");
 	
+	g_hDHookGetMaxAmmo = DHookCreateFromConf(hGameData, "CTFPlayer::GetMaxAmmo");
+	if (!g_hDHookGetMaxAmmo)
+		LogMessage("Failed to create hook: CTFPlayer::GetMaxAmmo");
+	
 	g_hDHookTaunt = DHookCreateFromConf(hGameData, "CTFPlayer::Taunt");
 	if (!g_hDHookTaunt)
 		LogMessage("Failed to create hook: CTFPlayer::Taunt");
@@ -66,6 +71,11 @@ public void SDK_Init()
 
 void SDK_EnableDetour()
 {
+	if (g_hDHookGetMaxAmmo)
+	{
+		DHookEnableDetour(g_hDHookGetMaxAmmo, false, DHook_GetMaxAmmoPre);
+	}
+	
 	if (g_hDHookTaunt)
 	{
 		DHookEnableDetour(g_hDHookTaunt, false, DHook_TauntPre);
@@ -75,6 +85,11 @@ void SDK_EnableDetour()
 
 stock void SDK_DisableDetour()
 {
+	if (g_hDHookGetMaxAmmo)
+	{
+		DHookDisableDetour(g_hDHookGetMaxAmmo, false, DHook_GetMaxAmmoPre);
+	}
+	
 	if (g_hDHookTaunt)
 	{
 		DHookDisableDetour(g_hDHookTaunt, false, DHook_TauntPre);
@@ -101,12 +116,34 @@ stock void SDK_EquipWearable(int iClient, int iWearable)
 		SDKCall(g_hSDKEquipWearable, iClient, iWearable);
 }
 
-stock int SDK_GetMaxAmmo(int iClient, int iSlot, TFClassType iClass = TFClass_Unknown)
+stock int SDK_GetMaxAmmo(int iClient, int iSlot)
 {
 	if (!g_hSDKGetMaxAmmo)
 		return SDKCall(g_hSDKGetMaxAmmo, iClient, iSlot, -1);
 	
 	return -1;
+}
+
+public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
+{
+	int iAmmoType = DHookGetParam(hParams, 1);
+	TFClassType nClass = DHookGetParam(hParams, 2);
+	
+	if (nClass != view_as<TFClassType>(-1))
+		return MRES_Ignored;
+	
+	//By default iClassNumber returns -1, which would get client's class instead of given iClassNumber.
+	//However using client's class can cause max ammo calculate to be incorrect,
+	//We want to set iClassNumber to whatever class would normaly use weapon from iAmmoIndex.
+	//TODO somehow fix return value returning 1 ammo less than usual
+	//TODO check shortstop's max ammo
+	int iWeapon = TF2_GetItemFromAmmoType(iClient, iAmmoType);
+	if (iWeapon <= MaxClients)
+		return MRES_Ignored;
+	
+	TFClassType nDefaultClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
+	DHookSetParam(hParams, 2, nDefaultClass);
+	return MRES_ChangedHandled;
 }
 
 public MRESReturn DHook_TauntPre(int iClient, Handle hParams)
@@ -117,12 +154,7 @@ public MRESReturn DHook_TauntPre(int iClient, Handle hParams)
 	if (iWeapon <= MaxClients)
 		return;
 	
-	int iSlot = TF2_GetSlotFromItem(iClient, iWeapon);
-	if (iSlot < 0)
-		return;
-	
-	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-	TFClassType nClass = TF2_GetDefaultClassIndex(iIndex, iSlot);
+	TFClassType nClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
 	if (nClass != TFClass_Unknown)
 		TF2_SetPlayerClass(iClient, nClass);
 }

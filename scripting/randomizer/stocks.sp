@@ -180,8 +180,11 @@ stock int TF2_GetSlotFromIndex(int iIndex, TFClassType nClass = TFClass_Unknown)
 	return iSlot;
 }
 
-stock TFClassType TF2_GetDefaultClassIndex(int iIndex, int iSlot)
+stock TFClassType TF2_GetDefaultClassFromItem(int iClient, int iWeapon)
 {
+	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+	int iSlot = TF2_GetSlotFromItem(iClient, iWeapon);
+	
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
 		int iClassSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
@@ -229,6 +232,21 @@ stock void TF2_SetAmmo(int iWeapon, int iAmmo)
 stock void TF2_SetMetal(int iClient, int iMetal)
 {
 	SetEntProp(iClient, Prop_Send, "m_iAmmo", iMetal, _, 3);
+}
+
+stock int TF2_GetItemFromAmmoType(int iClient, int iAmmoType)
+{
+	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
+	{
+		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
+		if (iWeapon <= MaxClients)
+			continue;
+		
+		if (GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
+			return iWeapon;
+	}
+	
+	return -1;
 }
 
 stock void StringToLower(char[] sString)

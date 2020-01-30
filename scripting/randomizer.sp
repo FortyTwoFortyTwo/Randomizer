@@ -20,13 +20,6 @@
 #define ITEM_PDA_DESTROY	26
 #define ITEM_PDA_TOOLBOX	28
 
-//Ammo attributes
-#define ATTRIB_AMMO_SECONDARY_HIDDEN	25
-#define ATTRIB_AMMO_PRIMARY_HIDDEN		37
-//#define ATTRIB_AMMO_PRIMARY_BONUS		76
-//#define ATTRIB_AMMO_PRIMARY_PENALTY	77
-//#define ATTRIB_AMMO_SECONDARY_BONUS	78
-//#define ATTRIB_AMMO_SECONDARY_PENALTY	79
 #define ATTRIB_MAX_METAL				80
 
 enum
@@ -44,20 +37,6 @@ enum
 	WeaponSlot_Misc1,
 	WeaponSlot_Action,
 	WeaponSlot_Misc2
-};
-
-//Base Max Ammo for each 9 class, primary and secondary
-int g_iClassMaxAmmo[][2] = {
-	{-1, -1},	// Unknown
-	{32, 36},	// Scout
-	{25, 75},	// Sniper
-	{20, 32},	// Soldier
-	{16, 24},	// Demoman
-	{150, 150},	// Medic
-	{200, 32},	// Heavy
-	{200, 32},	// Pyro
-	{20, 24},	// Spy
-	{32, 200},	// Engineer
 };
 
 ArrayList g_aIndexList[WeaponSlot_BuilderEngie+1];
@@ -289,60 +268,20 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		TF2_RemoveItemInSlot(iClient, iSlot);
 		
 		int iIndex = g_iClientWeaponIndex[iClient][iSlot];
-		PrintToChatAll("client %N slot %d index %d", iClient, iSlot, iIndex);
-		if (iIndex < 0) continue;
+		if (iIndex < 0)
+			continue;
 		
 		//Create weapon
 		int iWeapon = TF2_CreateAndEquipWeapon(iClient, iIndex, iSlot);
 		
-		//We want to scale max ammo to correct value as it different between class
+		//Update current ammo to correct amount after giving weapons
 		if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
 		{
 			int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-			if (iAmmoType < 0) continue;
+			if (iAmmoType < 0)
+				continue;
 			
-			//Think Shortstop ammo still bugged?
-			
-			int iMaxAmmo = 1;	//Special ammos is usually 1, but SDK call returns 0...
-			
-			if (1 <= iAmmoType <= 2)	//Normal primary & secondary ammo
-			{
-				TFClassType nWeaponClass = TFClass_Unknown;
-				for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-				{
-					if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) == iSlot)
-					{
-						nWeaponClass = view_as<TFClassType>(iClass);
-						break;
-					}
-				}
-				
-				if (nWeaponClass == TFClass_Unknown)
-					ThrowError("[randomizer] Unable to find class in slot %d that uses index %d!", iSlot, iIndex);
-				
-				float flAmmoScale = float(g_iClassMaxAmmo[nWeaponClass][iSlot]) / float(g_iClassMaxAmmo[TF2_GetPlayerClass(iClient)][iSlot]);
-				if (flAmmoScale == 1.0) continue;
-				
-				float flOldAmmoScale = 1.0;
-				switch (iSlot)
-				{
-					case WeaponSlot_Primary:
-					{
-						TF2_WeaponFindAttribute(iWeapon, ATTRIB_AMMO_PRIMARY_HIDDEN, flOldAmmoScale);
-						TF2Attrib_SetByDefIndex(iWeapon, ATTRIB_AMMO_PRIMARY_HIDDEN, flAmmoScale * flOldAmmoScale);
-					}
-					case WeaponSlot_Secondary:
-					{
-						TF2_WeaponFindAttribute(iWeapon, ATTRIB_AMMO_SECONDARY_HIDDEN, flOldAmmoScale);
-						TF2Attrib_SetByDefIndex(iWeapon, ATTRIB_AMMO_SECONDARY_HIDDEN, flAmmoScale * flOldAmmoScale);
-					}
-				}
-				
-				iMaxAmmo = SDK_GetMaxAmmo(iClient, iAmmoType);
-			}
-			
-			//Refresh max ammo
-			//PrintToChatAll("client (%N) slot (%d) max ammo (%d) ammo type (%d)", iClient, iSlot, iMaxAmmo, iAmmoType);
+			int iMaxAmmo = SDK_GetMaxAmmo(iClient, iAmmoType);
 			SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
 		}
 	}
