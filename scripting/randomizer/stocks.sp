@@ -12,7 +12,7 @@ stock void Client_AddHealth(int iClient, int iAdditionalHeal, int iMaxOverHeal=0
 	}
 }
 
-stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot = -1)
+stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 {
 	char sClassname[256];
 	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
@@ -21,14 +21,13 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot = -1)
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
 		int iClassSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (iClassSlot > -1 && (iSlot == iClassSlot || iSlot == -1))
+		if (iClassSlot == iSlot)
 		{
 			TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), view_as<TFClassType>(iClass));
 			break;
 		}
 	}
 	
-	PrintToChatAll("iIndex %d sClassname %s", iIndex, sClassname);
 	int iWeapon = CreateEntityByName(sClassname);
 	
 	if (IsValidEntity(iWeapon))
@@ -36,12 +35,6 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot = -1)
 		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", iIndex);
 		SetEntProp(iWeapon, Prop_Send, "m_bInitialized", 1);
 		
-		// Allow quality / level override by updating through the offset.
-		char sNetClass[64];
-		GetEntityNetClass(iWeapon, sNetClass, sizeof(sNetClass));
-		SetEntData(iWeapon, FindSendPropInfo(sNetClass, "m_iEntityQuality"), 6);
-		SetEntData(iWeapon, FindSendPropInfo(sNetClass, "m_iEntityLevel"), 1);
-			
 		SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", 6);
 		SetEntProp(iWeapon, Prop_Send, "m_iEntityLevel", 1);
 		
@@ -52,7 +45,7 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot = -1)
 		{
 			EquipPlayerWeapon(iClient, iWeapon);
 			
-			//Not sure if this even works
+			//Update current ammo to correct amount
 			int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
 			if (iAmmoType > -1)
 			{
@@ -97,8 +90,10 @@ stock bool TF2_WeaponFindAttribute(int iWeapon, int iAttrib, float &flVal)
 				return true;
 			}
 		}
+		
 		return false;
 	}
+	
 	flVal = TF2Attrib_GetValue(addAttrib);
 	return true;
 }
@@ -129,7 +124,7 @@ stock int TF2_GetWearableInSlot(int iClient, int iSlot)
 			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 			{
 				int iWearableSlot = TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass));
-				if (iWearableSlot > -1 && iSlot == iWearableSlot)
+				if (iWearableSlot == iSlot)
 					return iWearable;
 			}
 		}
@@ -207,7 +202,7 @@ stock void TF2_RemoveItemInSlot(int iClient, int iSlot)
 	}
 }
 
-stock int TF2_GetCurrentAmmo(int iWeapon)
+stock int TF2_GetAmmo(int iWeapon)
 {
 	if (!HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType")) return -1;
 

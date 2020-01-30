@@ -239,6 +239,9 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadcast)
 {
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
+	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
+		return;
+	
 	TFClassType iClass = TF2_GetPlayerClass(iClient);
 	
 	//If client is playing incorrect class, set as that class
@@ -272,18 +275,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			continue;
 		
 		//Create weapon
-		int iWeapon = TF2_CreateAndEquipWeapon(iClient, iIndex, iSlot);
-		
-		//Update current ammo to correct amount after giving weapons
-		if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
-		{
-			int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-			if (iAmmoType < 0)
-				continue;
-			
-			int iMaxAmmo = SDK_GetMaxAmmo(iClient, iAmmoType);
-			SetEntProp(iClient, Prop_Send, "m_iAmmo", iMaxAmmo, _, iAmmoType);
-		}
+		TF2_CreateAndEquipWeapon(iClient, iIndex, iSlot);
 	}
 }
 
@@ -294,7 +286,7 @@ public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadc
 	int iDamageAmount = event.GetInt("damageamount");
 	
 	if (iClient <= 0 || iClient > MaxClients || iAttacker <= 0 || iAttacker > MaxClients) return;
-	if (GetClientTeam(iClient) <= 1 || GetClientTeam(iAttacker) <= 1) return;
+	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator || TF2_GetClientTeam(iAttacker) <= TFTeam_Spectator) return;
 	if (iClient == iAttacker) return;
 	
 	//Fill Gas Meter

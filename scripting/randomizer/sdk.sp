@@ -67,6 +67,8 @@ public void SDK_Init()
 	g_hDHookTaunt = DHookCreateFromConf(hGameData, "CTFPlayer::Taunt");
 	if (!g_hDHookTaunt)
 		LogMessage("Failed to create hook: CTFPlayer::Taunt");
+	
+	delete hGameData;
 }
 
 void SDK_EnableDetour()
@@ -116,10 +118,10 @@ stock void SDK_EquipWearable(int iClient, int iWearable)
 		SDKCall(g_hSDKEquipWearable, iClient, iWearable);
 }
 
-stock int SDK_GetMaxAmmo(int iClient, int iSlot)
+stock int SDK_GetMaxAmmo(int iClient, int iAmmoType)
 {
 	if (!g_hSDKGetMaxAmmo)
-		return SDKCall(g_hSDKGetMaxAmmo, iClient, iSlot, -1);
+		return SDKCall(g_hSDKGetMaxAmmo, iClient, iAmmoType, -1);
 	
 	return -1;
 }
