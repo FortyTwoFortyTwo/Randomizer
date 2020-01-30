@@ -5,6 +5,7 @@ static Handle g_hSDKGetMaxAmmo;
 
 static Handle g_hDHookGetMaxAmmo;
 static Handle g_hDHookTaunt;
+static Handle g_hDHookCanAirDash;
 
 public void SDK_Init()
 {
@@ -68,6 +69,10 @@ public void SDK_Init()
 	if (!g_hDHookTaunt)
 		LogMessage("Failed to create hook: CTFPlayer::Taunt");
 	
+	g_hDHookCanAirDash = DHookCreateFromConf(hGameData, "CTFPlayer::CanAirDash");
+	if (!g_hDHookCanAirDash)
+		LogMessage("Failed to create hook: CTFPlayer::CanAirDash");
+	
 	delete hGameData;
 }
 
@@ -83,6 +88,11 @@ void SDK_EnableDetour()
 		DHookEnableDetour(g_hDHookTaunt, false, DHook_TauntPre);
 		DHookEnableDetour(g_hDHookTaunt, true, DHook_TauntPost);
 	}
+	
+	if (g_hDHookCanAirDash)
+	{
+		DHookEnableDetour(g_hDHookCanAirDash, true, DHook_CanAirDashPost);
+	}
 }
 
 stock void SDK_DisableDetour()
@@ -96,6 +106,11 @@ stock void SDK_DisableDetour()
 	{
 		DHookDisableDetour(g_hDHookTaunt, false, DHook_TauntPre);
 		DHookDisableDetour(g_hDHookTaunt, true, DHook_TauntPost);
+	}
+	
+	if (g_hDHookCanAirDash)
+	{
+		DHookDisableDetour(g_hDHookCanAirDash, true, DHook_CanAirDashPost);
 	}
 }
 
@@ -165,4 +180,27 @@ public MRESReturn DHook_TauntPost(int iClient, Handle hParams)
 {
 	//Set class back to what it was
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+}
+
+public MRESReturn DHook_CanAirDashPost(int iClient, Handle hReturn)
+{
+	//Atomizer's extra jumps does not work for non-scouts, fix that
+	if (!DHookGetReturn(hReturn))
+	{
+		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+		
+		float flVal;
+		if (!TF2_WeaponFindAttribute(iWeapon, ATTRIB_AIR_DASH_COUNT, flVal))
+			return MRES_Ignored;
+		
+		int iAirDash = GetEntProp(iClient, Prop_Send, "m_iAirDash");
+		if (iAirDash < RoundToNearest(flVal))
+		{
+			SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
+			DHookSetReturn(hReturn, true);
+			return MRES_Supercede;
+		}
+	}
+	
+	return MRES_Ignored;
 }

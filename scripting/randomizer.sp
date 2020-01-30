@@ -21,6 +21,7 @@
 #define ITEM_PDA_TOOLBOX	28
 
 #define ATTRIB_MAX_METAL				80
+#define ATTRIB_AIR_DASH_COUNT			250
 
 enum
 {

@@ -16,6 +16,12 @@
 				"linux"		"@_ZN9CTFPlayer5TauntE8taunts_ti"
 				"windows"	"\x55\x8B\xEC\x81\xEC\xD4\x00\x00\x00\x53\x56\x57\x8B\xF9\xE8"
 			}
+			"CTFPlayer::CanAirDash"
+			{
+				"library"	"server"
+				"linux"		"@_ZNK9CTFPlayer10CanAirDashEv"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x57\x8B\xF9\xF7\x87\x74\x1A\x00\x00\x00\x00\x04\x00"
+			}
 		}
 		"Functions"
 		{
@@ -54,6 +60,13 @@
 						"type"	"int"
 					}
 				}
+			}
+			"CTFPlayer::CanAirDash"
+			{
+				"signature"	"CTFPlayer::CanAirDash"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"entity"
 			}
 		}
 	}
