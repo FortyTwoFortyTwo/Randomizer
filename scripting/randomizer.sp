@@ -7,6 +7,7 @@
 #include <tf2_stocks>
 #include <tf_econ_data>
 #include <tf2attributes>
+#include <dhooks>
 
 #pragma newdecls required
 
@@ -64,15 +65,10 @@ ArrayList g_aHud;
 
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
-Handle g_hClientEventTimer[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
-
-Handle g_hSDKGetMaxHealth;
-Handle g_hSDKRemoveWearable;
-Handle g_hSDKEquipWearable;
-Handle g_hSDKGetMaxAmmo;
 
 #include "randomizer/hud.sp"
 #include "randomizer/config.sp"
+#include "randomizer/sdk.sp"
 #include "randomizer/stocks.sp"
 #include "randomizer/weapons.sp"
 
@@ -97,6 +93,7 @@ public void OnPluginStart()
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	
 	SDK_Init();
+	SDK_EnableDetour();
 	
 	Config_InitTemplates();
 	Config_LoadTemplates();
@@ -398,82 +395,4 @@ public Action Command_Generate(int iClient, int iArgs)
 {
 	GenerateRandonWeapon(iClient);
 	TF2_RespawnPlayer(iClient);
-}
-
-public void SDK_Init()
-{
-	Handle hGameData = LoadGameConfigFile("sdkhooks.games");
-	if (hGameData == null) SetFailState("Could not find sdkhooks.games gamedata!");
-	
-	//Max health
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "GetMaxHealth");
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-	g_hSDKGetMaxHealth = EndPrepSDKCall();
-	if(g_hSDKGetMaxHealth == null)
-		LogMessage("Failed to create call: CTFPlayer::GetMaxHealth!");
-	
-	delete hGameData;
-	
-	hGameData = LoadGameConfigFile("sm-tf2.games");
-	if (hGameData == null) SetFailState("Could not find sm-tf2.games gamedata!");
-	
-	int iRemoveWearableOffset = GameConfGetOffset(hGameData, "RemoveWearable");
-	
-	//Remove Wearable
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetVirtual(iRemoveWearableOffset);
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKRemoveWearable = EndPrepSDKCall();
-	if(g_hSDKRemoveWearable == null)
-		LogMessage("Failed to create call: CBasePlayer::RemoveWearable!");
-	
-	//Equip Wearable
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetVirtual(iRemoveWearableOffset-1);//Equip Wearable is right behind Remove Wearable, should be good if valve dont add one between
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKEquipWearable = EndPrepSDKCall();
-	if(g_hSDKEquipWearable == null)
-		LogMessage("Failed to create call: CBasePlayer::EquipWearable!");
-	
-	delete hGameData;
-	
-	hGameData = LoadGameConfigFile("randomizer");
-	if (hGameData == null) SetFailState("Could not find randomizer gamedata!");
-	
-	//Get Max Ammo
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-	g_hSDKGetMaxAmmo = EndPrepSDKCall();
-	if(g_hSDKGetMaxAmmo == null)
-		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo!");
-}
-
-stock int SDK_GetMaxHealth(int iClient)
-{
-	if (g_hSDKGetMaxHealth != null)
-		return SDKCall(g_hSDKGetMaxHealth, iClient);
-	return 0;
-}
-
-stock void SDK_RemoveWearable(int iClient, int iWearable)
-{
-	if(g_hSDKRemoveWearable != null)
-		SDKCall(g_hSDKRemoveWearable, iClient, iWearable);
-}
-
-stock void SDK_EquipWearable(int iClient, int iWearable)
-{
-	if(g_hSDKEquipWearable != null)
-		SDKCall(g_hSDKEquipWearable, iClient, iWearable);
-}
-
-stock int SDK_GetMaxAmmo(int iClient, int iSlot, TFClassType iClass = TFClass_Unknown)
-{
-	if(g_hSDKGetMaxAmmo != null)
-		return SDKCall(g_hSDKGetMaxAmmo, iClient, iSlot, -1);
-	return -1;
 }

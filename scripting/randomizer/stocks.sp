@@ -138,7 +138,7 @@ stock int TF2_GetWearableInSlot(int iClient, int iSlot)
 	return -1;
 }
 
-stock int TF2_GetSlotFromWeapon(int iClient, int iWeapon)
+stock int TF2_GetSlotFromItem(int iClient, int iWeapon)
 {
 	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 		if (iWeapon == TF2_GetItemInSlot(iClient, iSlot))
@@ -152,16 +152,44 @@ stock int TF2_GetSlotFromIndex(int iIndex, TFClassType nClass = TFClass_Unknown)
 	int iSlot = TF2Econ_GetItemSlot(iIndex, nClass);
 	if (iSlot >= 0)
 	{
-		//Spy slots is a bit messy
-		if (nClass == TFClass_Spy)
+		// Econ reports wrong slots for Engineer and Spy
+		switch (nClass)
 		{
-			if (iSlot == 1) iSlot = WeaponSlot_Primary;		//Revolver
-			if (iSlot == 4) iSlot = WeaponSlot_Secondary;	//Sapper
-			if (iSlot == 6) iSlot = WeaponSlot_InvisWatch;	//Invis Watch
+			case TFClass_Engineer:
+			{
+				switch (iSlot)
+				{
+					case 4: iSlot = WeaponSlot_BuilderEngie; // Toolbox
+					case 5: iSlot = WeaponSlot_PDABuild; // Construction PDA
+					case 6: iSlot = WeaponSlot_PDADestroy; // Destruction PDA
+				}
+			}
+			case TFClass_Spy:
+			{
+				switch (iSlot)
+				{
+					case 1: iSlot = WeaponSlot_Primary; // Revolver
+					case 4: iSlot = WeaponSlot_Secondary; // Sapper
+					case 5: iSlot = WeaponSlot_PDADisguise; // Disguise Kit
+					case 6: iSlot = WeaponSlot_InvisWatch; // Invis Watch
+				}
+			}
 		}
 	}
 	
 	return iSlot;
+}
+
+stock TFClassType TF2_GetDefaultClassIndex(int iIndex, int iSlot)
+{
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	{
+		int iClassSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+		if (iClassSlot == iSlot)
+			return view_as<TFClassType>(iClass);
+	}
+	
+	return TFClass_Unknown;
 }
 
 stock void TF2_RemoveItemInSlot(int iClient, int iSlot)

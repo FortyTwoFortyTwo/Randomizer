@@ -10,6 +10,33 @@
 				"linux"		"@_ZN9CTFPlayer10GetMaxAmmoEii"
 				"windows"	"\x55\x8B\xEC\x8B\x45\x0C\x56\x57\x8B\xF9\x83\xF8\xFF\x75\x2A\xFF\xB7\x2A\x2A\x2A\x2A\xEB\x01\x50\xE8"
 			}
+			"CTFPlayer::Taunt"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer5TauntE8taunts_ti"
+				"windows"	"\x55\x8B\xEC\x81\xEC\xD4\x00\x00\x00\x53\x56\x57\x8B\xF9\xE8"
+			}
+		}
+		"Functions"
+		{
+			"CTFPlayer::Taunt"
+			{
+				"signature"	"CTFPlayer::Taunt"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"taunts_t"
+					{
+						"type"	"int"
+					}
+					"int"
+					{
+						"type"	"int"
+					}
+				}
+			}
 		}
 	}
 }
