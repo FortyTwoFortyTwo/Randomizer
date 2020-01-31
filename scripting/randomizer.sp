@@ -20,7 +20,6 @@
 #define ITEM_PDA_DESTROY	26
 #define ITEM_PDA_TOOLBOX	28
 
-#define ATTRIB_MAX_METAL				80
 #define ATTRIB_AIR_DASH_COUNT			250
 
 enum
@@ -38,6 +37,17 @@ enum
 	WeaponSlot_Misc1,
 	WeaponSlot_Action,
 	WeaponSlot_Misc2
+};
+
+enum
+{
+	TF_AMMO_DUMMY = 0,	// Dummy index to make the CAmmoDef indices correct for the other ammo types.
+	TF_AMMO_PRIMARY,
+	TF_AMMO_SECONDARY,
+	TF_AMMO_METAL,
+	TF_AMMO_GRENADES1,
+	TF_AMMO_GRENADES2,
+	TF_AMMO_COUNT
 };
 
 ArrayList g_aIndexList[WeaponSlot_BuilderEngie+1];
@@ -91,18 +101,18 @@ public void OnPluginStart()
 			OnClientPutInServer(iClient);
 	}
 }
-
+/*
 public void OnPluginEnd()
 {
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
 		if (IsClientInGame(iClient))
 		{
-			TF2Attrib_RemoveByDefIndex(iClient, ATTRIB_MAX_METAL);
+			
 		}
 	}
 }
-
+*/
 public void OnClientPutInServer(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Hud_ClientDisplay);
@@ -256,16 +266,8 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
 {
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
-	if (GetClientTeam(iClient) <= 1) return;
-	
-	//Non-engineers have max metal at 100, while we want it to be 200
-	if (TF2_GetPlayerClass(iClient) != TFClass_Engineer)
-		TF2Attrib_SetByDefIndex(iClient, ATTRIB_MAX_METAL, 2.0);
-	else
-		TF2Attrib_RemoveByDefIndex(iClient, ATTRIB_MAX_METAL);
-	
-	TF2Attrib_ClearCache(iClient);
-	TF2_SetMetal(iClient, 200);
+	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
+		return;
 	
 	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 	{

@@ -226,7 +226,7 @@ stock void TF2_SetAmmo(int iWeapon, int iAmmo)
 
 stock void TF2_SetMetal(int iClient, int iMetal)
 {
-	SetEntProp(iClient, Prop_Send, "m_iAmmo", iMetal, _, 3);
+	SetEntProp(iClient, Prop_Send, "m_iAmmo", iMetal, _, TF_AMMO_METAL);
 }
 
 stock int TF2_GetItemFromAmmoType(int iClient, int iAmmoType)

@@ -149,6 +149,13 @@ public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParam
 	if (nClass != view_as<TFClassType>(-1))
 		return MRES_Ignored;
 	
+	if (iAmmoType == TF_AMMO_METAL)
+	{
+		//Metal works differently, engineer have max metal 200 while others have 100
+		DHookSetParam(hParams, 2, TFClass_Engineer);
+		return MRES_ChangedHandled;
+	}
+	
 	//By default iClassNumber returns -1, which would get client's class instead of given iClassNumber.
 	//However using client's class can cause max ammo calculate to be incorrect,
 	//We want to set iClassNumber to whatever class would normaly use weapon from iAmmoIndex.
