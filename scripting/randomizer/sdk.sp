@@ -105,26 +105,27 @@ static void SDK_CreateDetour(GameData hGameData, const char[] sName, DHookCallba
 
 stock int SDK_GetMaxHealth(int iClient)
 {
-	if (!g_hSDKGetMaxHealth)
+	if (g_hSDKGetMaxHealth)
 		return SDKCall(g_hSDKGetMaxHealth, iClient);
+	
 	return 0;
 }
 
 stock void SDK_RemoveWearable(int iClient, int iWearable)
 {
-	if (!g_hSDKRemoveWearable)
+	if (g_hSDKRemoveWearable)
 		SDKCall(g_hSDKRemoveWearable, iClient, iWearable);
 }
 
 stock void SDK_EquipWearable(int iClient, int iWearable)
 {
-	if (!g_hSDKEquipWearable)
+	if (g_hSDKEquipWearable)
 		SDKCall(g_hSDKEquipWearable, iClient, iWearable);
 }
 
 stock int SDK_GetMaxAmmo(int iClient, int iAmmoType)
 {
-	if (!g_hSDKGetMaxAmmo)
+	if (g_hSDKGetMaxAmmo)
 		return SDKCall(g_hSDKGetMaxAmmo, iClient, iAmmoType, -1);
 	
 	return -1;

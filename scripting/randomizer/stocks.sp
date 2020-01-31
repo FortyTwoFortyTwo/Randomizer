@@ -234,7 +234,7 @@ stock int TF2_GetItemFromAmmoType(int iClient, int iAmmoType)
 	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 	{
 		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-		if (iWeapon <= MaxClients)
+		if (iWeapon <= MaxClients || !HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
 			continue;
 		
 		if (GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
