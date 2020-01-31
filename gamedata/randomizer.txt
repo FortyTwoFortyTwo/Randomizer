@@ -26,6 +26,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer10ItemsMatchEP19TFPlayerClassData_tP13CEconItemViewS3_P13CTFWeaponBase"
+				//TODO get windows sig
 			}
 		}
 		"Functions"

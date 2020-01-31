@@ -228,6 +228,8 @@ public MRESReturn DHook_CanAirDashPost(int iClient, Handle hReturn)
 	}
 	
 	return MRES_Ignored;
+}
+
 public MRESReturn DHook_ItemsMatchPre(int iClient, Handle hReturn, Handle hParams)
 {
 	if (g_iOffsetItemDefinitionIndex == -1)
@@ -274,6 +276,4 @@ public MRESReturn DHook_ItemsMatchPre(int iClient, Handle hReturn, Handle hParam
 	//Set return whenever if index to give is same as what we wanted in randomizer
 	DHookSetReturn(hReturn, iIndex1 == iIndex2);
 	return MRES_Supercede;
-}
-
 }
