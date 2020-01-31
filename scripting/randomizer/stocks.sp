@@ -49,6 +49,9 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 			int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
 			if (iAmmoType > -1)
 				SetEntProp(iClient, Prop_Send, "m_iAmmo", 0, _, iAmmoType);
+			
+			//Reset charge meter
+			SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 0.0, iSlot);
 		}
 		else if (StrContains(sClassname, "tf_wearable") == 0)
 		{

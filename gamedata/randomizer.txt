@@ -28,6 +28,34 @@
 				"linux"		"@_ZN9CTFPlayer10ItemsMatchEP19TFPlayerClassData_tP13CEconItemViewS3_P13CTFWeaponBase"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x57\x8B\x7D\x10"
 			}
+			"CTFPlayer::OnDealtDamage"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer13OnDealtDamageEP20CBaseCombatCharacterRK15CTakeDamageInfo"
+			}
+			"CTFPlayerShared::UpdateItemChargeMeters"
+			{
+				"library"	"server"
+				"linux"		"@_ZN15CTFPlayerShared22UpdateItemChargeMetersEv"
+			}
+		}
+		"Offsets"
+		{
+			"CBaseEntity::GetBaseEntity"
+			{
+				"windows"	"5"
+				"linux"		"6"
+			}
+			"CTFPlayerShared::m_pOuter"
+			{
+				"linux"		"400"
+				"windows"	"400"
+			}
+			"CEconItemView::m_iItemDefinitionIndex"
+			{
+				"linux"		"4"
+				"windows"	"4"
+			}
 		}
 		"Functions"
 		{
@@ -100,13 +128,30 @@
 					}
 				}
 			}
-		}
-		"Offsets"
-		{
-			"CEconItemView::m_iItemDefinitionIndex"
+			"CTFPlayer::OnDealtDamage"
 			{
-				"linux"		"4"
-				"windows"	"4"
+				"signature"	"CTFPlayer::OnDealtDamage"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"CBaseCombatCharacter"
+					{
+						"type"	"objectptr"
+					}
+					"CTakeDamageInfo"
+					{
+						"type"	"objectptr"
+					}
+				}
+			}
+			"CTFPlayerShared::UpdateItemChargeMeters"
+			{
+				"signature"	"CTFPlayerShared::UpdateItemChargeMeters"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"address"
 			}
 		}
 	}

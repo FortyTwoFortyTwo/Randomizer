@@ -60,7 +60,6 @@ int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 #include "randomizer/config.sp"
 #include "randomizer/sdk.sp"
 #include "randomizer/stocks.sp"
-#include "randomizer/weapons.sp"
 
 public Plugin myinfo =
 {
@@ -80,11 +79,9 @@ public void OnPluginStart()
 	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
 	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
-	HookEvent("player_hurt", Event_PlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	
 	SDK_Init();
-	SDK_EnableDetour();
 	
 	Config_InitTemplates();
 	Config_LoadTemplates();
@@ -102,22 +99,10 @@ public void OnPluginStart()
 			OnClientPutInServer(iClient);
 	}
 }
-/*
-public void OnPluginEnd()
-{
-	for (int iClient = 1; iClient <= MaxClients; iClient++)
-	{
-		if (IsClientInGame(iClient))
-		{
-			
-		}
-	}
-}
-*/
+
 public void OnClientPutInServer(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Hud_ClientDisplay);
-	SDKHook(iClient, SDKHook_PreThink, Weapons_ClientThink);
 	
 	GenerateRandonWeapon(iClient);
 }
@@ -126,9 +111,7 @@ public void CreateWeaponList()
 {
 	for (int iSlot = 0; iSlot < sizeof(g_aIndexList); iSlot++)
 	{
-		if (g_aIndexList[iSlot] != null)
-			delete g_aIndexList[iSlot];
-		
+		delete g_aIndexList[iSlot];
 		g_aIndexList[iSlot] = TF2Econ_GetItemList(FilterTF2EconSlot, iSlot);
 	}
 }
@@ -278,26 +261,6 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		//Create weapon
 		if (g_iClientWeaponIndex[iClient][iSlot] >= 0)
 			TF2_CreateAndEquipWeapon(iClient, g_iClientWeaponIndex[iClient][iSlot], iSlot);
-	}
-}
-
-public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcast)
-{
-	int iClient = GetClientOfUserId(event.GetInt("userid"));
-	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
-	int iDamageAmount = event.GetInt("damageamount");
-	
-	if (iClient <= 0 || iClient > MaxClients || iAttacker <= 0 || iAttacker > MaxClients) return;
-	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator || TF2_GetClientTeam(iAttacker) <= TFTeam_Spectator) return;
-	if (iClient == iAttacker) return;
-	
-	//Fill Gas Meter
-	float flMeter = GetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 1);
-	if (0.0 < flMeter < 100.0)
-	{
-		flMeter += iDamageAmount / ITEM_GASPASSER_METER_DAMAGE * 100.0;
-		if (flMeter > 100.0) flMeter = 100.0;
-		SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", flMeter, 1);
 	}
 }
 

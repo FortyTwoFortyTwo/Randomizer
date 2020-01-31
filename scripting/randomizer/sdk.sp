@@ -3,12 +3,10 @@ static Handle g_hSDKRemoveWearable;
 static Handle g_hSDKEquipWearable;
 static Handle g_hSDKGetMaxAmmo;
 
-static Handle g_hDHookGetMaxAmmo;
-static Handle g_hDHookTaunt;
-static Handle g_hDHookCanAirDash;
-static Handle g_hDHookItemsMatch;
+static Handle g_SDKGetBaseEntity;
 
 static int g_iOffsetItemDefinitionIndex = -1;
+static Address g_pPlayerSharedOuter;
 
 public void SDK_Init()
 {
@@ -22,7 +20,7 @@ public void SDK_Init()
 	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
 	g_hSDKGetMaxHealth = EndPrepSDKCall();
 	if(g_hSDKGetMaxHealth == null)
-		LogMessage("Failed to create call: CTFPlayer::GetMaxHealth");
+		LogError("Failed to create call: CTFPlayer::GetMaxHealth");
 	
 	delete hGameData;
 	
@@ -38,7 +36,7 @@ public void SDK_Init()
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	g_hSDKRemoveWearable = EndPrepSDKCall();
 	if (g_hSDKRemoveWearable == null)
-		LogMessage("Failed to create call: CBasePlayer::RemoveWearable");
+		LogError("Failed to create call: CBasePlayer::RemoveWearable");
 	
 	//Equip Wearable
 	StartPrepSDKCall(SDKCall_Player);
@@ -46,7 +44,7 @@ public void SDK_Init()
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	g_hSDKEquipWearable = EndPrepSDKCall();
 	if (g_hSDKEquipWearable == null)
-		LogMessage("Failed to create call: CBasePlayer::EquipWearable");
+		LogError("Failed to create call: CBasePlayer::EquipWearable");
 	
 	delete hGameData;
 	
@@ -62,74 +60,46 @@ public void SDK_Init()
 	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
 	g_hSDKGetMaxAmmo = EndPrepSDKCall();
 	if (g_hSDKGetMaxAmmo == null)
-		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo");
+		LogError("Failed to create call: CTFPlayer::GetMaxAmmo");
 	
-	g_hDHookGetMaxAmmo = DHookCreateFromConf(hGameData, "CTFPlayer::GetMaxAmmo");
-	if (!g_hDHookGetMaxAmmo)
-		LogMessage("Failed to create hook: CTFPlayer::GetMaxAmmo");
+	SDK_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
+	SDK_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
+	SDK_CreateDetour(hGameData, "CTFPlayer::CanAirDash", _, DHook_CanAirDashPost);
+	SDK_CreateDetour(hGameData, "CTFPlayer::ItemsMatch", DHook_ItemsMatchPre, _);
+	SDK_CreateDetour(hGameData, "CTFPlayer::OnDealtDamage", DHook_OnDealtDamagePre, DHook_OnDealtDamagePost);
+	SDK_CreateDetour(hGameData, "CTFPlayerShared::UpdateItemChargeMeters", DHook_UpdateItemChargeMetersPre, DHook_UpdateItemChargeMetersPost);
 	
-	g_hDHookTaunt = DHookCreateFromConf(hGameData, "CTFPlayer::Taunt");
-	if (!g_hDHookTaunt)
-		LogMessage("Failed to create hook: CTFPlayer::Taunt");
+	StartPrepSDKCall(SDKCall_Raw);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetBaseEntity");
+	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
+	g_SDKGetBaseEntity = EndPrepSDKCall();
+	if (!g_SDKGetBaseEntity)
+		LogError("Failed to create call: CBaseEntity::GetBaseEntity");
 	
-	g_hDHookCanAirDash = DHookCreateFromConf(hGameData, "CTFPlayer::CanAirDash");
-	if (!g_hDHookCanAirDash)
-		LogMessage("Failed to create hook: CTFPlayer::CanAirDash");
-	
-	g_hDHookItemsMatch = DHookCreateFromConf(hGameData, "CTFPlayer::ItemsMatch");
-	if (!g_hDHookItemsMatch)
-		LogMessage("Failed to create hook: CTFPlayer::ItemsMatch");
-	
+	g_pPlayerSharedOuter = view_as<Address>(hGameData.GetOffset("CTFPlayerShared::m_pOuter"));
 	g_iOffsetItemDefinitionIndex = hGameData.GetOffset("CEconItemView::m_iItemDefinitionIndex");
 	
 	delete hGameData;
 }
 
-void SDK_EnableDetour()
+static void SDK_CreateDetour(GameData hGameData, const char[] sName, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION)
 {
-	if (g_hDHookGetMaxAmmo)
+	Handle hDetour = DHookCreateFromConf(hGameData, sName);
+	if (!hDetour)
 	{
-		DHookEnableDetour(g_hDHookGetMaxAmmo, false, DHook_GetMaxAmmoPre);
+		LogError("Failed to create detour: %s", sName);
 	}
-	
-	if (g_hDHookTaunt)
+	else
 	{
-		DHookEnableDetour(g_hDHookTaunt, false, DHook_TauntPre);
-		DHookEnableDetour(g_hDHookTaunt, true, DHook_TauntPost);
-	}
-	
-	if (g_hDHookCanAirDash)
-	{
-		DHookEnableDetour(g_hDHookCanAirDash, true, DHook_CanAirDashPost);
-	}
-	
-	if (g_hDHookItemsMatch)
-	{
-		DHookEnableDetour(g_hDHookItemsMatch, false, DHook_ItemsMatchPre);
-	}
-}
-
-stock void SDK_DisableDetour()
-{
-	if (g_hDHookGetMaxAmmo)
-	{
-		DHookDisableDetour(g_hDHookGetMaxAmmo, false, DHook_GetMaxAmmoPre);
-	}
-	
-	if (g_hDHookTaunt)
-	{
-		DHookDisableDetour(g_hDHookTaunt, false, DHook_TauntPre);
-		DHookDisableDetour(g_hDHookTaunt, true, DHook_TauntPost);
-	}
-	
-	if (g_hDHookCanAirDash)
-	{
-		DHookDisableDetour(g_hDHookCanAirDash, true, DHook_CanAirDashPost);
-	}
-	
-	if (g_hDHookItemsMatch)
-	{
-		DHookDisableDetour(g_hDHookItemsMatch, false, DHook_ItemsMatchPre);
+		if (preCallback != INVALID_FUNCTION)
+			if (!DHookEnableDetour(hDetour, false, preCallback))
+				LogError("Failed to enable pre detour: %s", sName);
+		
+		if (postCallback != INVALID_FUNCTION)
+			if (!DHookEnableDetour(hDetour, true, postCallback))
+				LogError("Failed to enable post detour: %s", sName);
+		
+		delete hDetour;
 	}
 }
 
@@ -276,4 +246,34 @@ public MRESReturn DHook_ItemsMatchPre(int iClient, Handle hReturn, Handle hParam
 	//Set return whenever if index to give is same as what we wanted in randomizer
 	DHookSetReturn(hReturn, iIndex1 == iIndex2);
 	return MRES_Supercede;
+}
+
+public MRESReturn DHook_OnDealtDamagePre(int iClient, Handle hParams)
+{
+	//Gas Passer meter have hardcode pyro check in this call
+	TF2_SetPlayerClass(iClient, TFClass_Pyro);
+}
+
+public MRESReturn DHook_OnDealtDamagePost(int iClient, Handle hParams)
+{
+	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+}
+
+public MRESReturn DHook_UpdateItemChargeMetersPre(Address pPlayerShared)
+{
+	//Gas Passer meter have hardcode pyro check in this call
+	int iClient = GetClientFromPlayerShared(pPlayerShared);
+	TF2_SetPlayerClass(iClient, TFClass_Pyro);
+}
+
+public MRESReturn DHook_UpdateItemChargeMetersPost(Address pPlayerShared)
+{
+	int iClient = GetClientFromPlayerShared(pPlayerShared);
+	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+}
+
+static int GetClientFromPlayerShared(Address pPlayerShared)
+{
+	Address pEntity = view_as<Address>(LoadFromAddress(pPlayerShared + g_pPlayerSharedOuter, NumberType_Int32));
+	return SDKCall(g_SDKGetBaseEntity, pEntity);
 }
