@@ -261,7 +261,7 @@ public MRESReturn DHook_OnDealtDamagePost(int iClient, Handle hParams)
 
 public MRESReturn DHook_UpdateItemChargeMetersPre(Address pPlayerShared)
 {
-	//Gas Passer meter have hardcode pyro check in this call
+	//Dragon Fury and Gas Passer meter have hardcode pyro check in this call
 	int iClient = GetClientFromPlayerShared(pPlayerShared);
 	TF2_SetPlayerClass(iClient, TFClass_Pyro);
 }
