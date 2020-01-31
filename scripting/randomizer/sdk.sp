@@ -159,7 +159,6 @@ public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParam
 	//By default iClassNumber returns -1, which would get client's class instead of given iClassNumber.
 	//However using client's class can cause max ammo calculate to be incorrect,
 	//We want to set iClassNumber to whatever class would normaly use weapon from iAmmoIndex.
-	//TODO somehow fix return value returning 1 ammo less than usual
 	//TODO check shortstop's max ammo
 	int iWeapon = TF2_GetItemFromAmmoType(iClient, iAmmoType);
 	if (iWeapon <= MaxClients)

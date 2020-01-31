@@ -45,13 +45,10 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 		{
 			EquipPlayerWeapon(iClient, iWeapon);
 			
-			//Update current ammo to correct amount
+			//Set ammo to 0, CTFPlayer::GetMaxAmmo detour will correct this, adding ammo by current
 			int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
 			if (iAmmoType > -1)
-			{
-				int iAmmo = SDK_GetMaxAmmo(iClient, iAmmoType);
-				SetEntProp(iClient, Prop_Send, "m_iAmmo", iAmmo, _, iAmmoType);
-			}
+				SetEntProp(iClient, Prop_Send, "m_iAmmo", 0, _, iAmmoType);
 		}
 		else if (StrContains(sClassname, "tf_wearable") == 0)
 		{
