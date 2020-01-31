@@ -6,6 +6,9 @@ static Handle g_hSDKGetMaxAmmo;
 static Handle g_hDHookGetMaxAmmo;
 static Handle g_hDHookTaunt;
 static Handle g_hDHookCanAirDash;
+static Handle g_hDHookItemsMatch;
+
+static int g_iOffsetItemDefinitionIndex = -1;
 
 public void SDK_Init()
 {
@@ -73,6 +76,12 @@ public void SDK_Init()
 	if (!g_hDHookCanAirDash)
 		LogMessage("Failed to create hook: CTFPlayer::CanAirDash");
 	
+	g_hDHookItemsMatch = DHookCreateFromConf(hGameData, "CTFPlayer::ItemsMatch");
+	if (!g_hDHookItemsMatch)
+		LogMessage("Failed to create hook: CTFPlayer::ItemsMatch");
+	
+	g_iOffsetItemDefinitionIndex = hGameData.GetOffset("CEconItemView::m_iItemDefinitionIndex");
+	
 	delete hGameData;
 }
 
@@ -93,6 +102,11 @@ void SDK_EnableDetour()
 	{
 		DHookEnableDetour(g_hDHookCanAirDash, true, DHook_CanAirDashPost);
 	}
+	
+	if (g_hDHookItemsMatch)
+	{
+		DHookEnableDetour(g_hDHookItemsMatch, false, DHook_ItemsMatchPre);
+	}
 }
 
 stock void SDK_DisableDetour()
@@ -111,6 +125,11 @@ stock void SDK_DisableDetour()
 	if (g_hDHookCanAirDash)
 	{
 		DHookDisableDetour(g_hDHookCanAirDash, true, DHook_CanAirDashPost);
+	}
+	
+	if (g_hDHookItemsMatch)
+	{
+		DHookDisableDetour(g_hDHookItemsMatch, false, DHook_ItemsMatchPre);
 	}
 }
 
@@ -209,4 +228,52 @@ public MRESReturn DHook_CanAirDashPost(int iClient, Handle hReturn)
 	}
 	
 	return MRES_Ignored;
+public MRESReturn DHook_ItemsMatchPre(int iClient, Handle hReturn, Handle hParams)
+{
+	if (g_iOffsetItemDefinitionIndex == -1)
+		return MRES_Ignored;
+	
+	if (DHookIsNullParam(hParams, 2))
+		return MRES_Ignored;
+	
+	//We want to prevent TF2 deleting weapons generated from randomizer and use player's TF2 loadout
+	int iIndex1 = DHookGetParamObjectPtrVar(hParams, 2, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
+	
+	//Try find slot, may be a problem for multi-class weapon
+	int iSlot = -1;
+	if (!DHookIsNullParam(hParams, 4))
+	{
+		int iWeapon = DHookGetParam(hParams, 4);
+		iSlot = TF2_GetSlotFromItem(iClient, iWeapon);
+	}
+	
+	if (iSlot < 0)
+	{
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+		{
+			int iClassSlot = TF2_GetSlotFromIndex(iIndex1, view_as<TFClassType>(iClass));
+			if (iClassSlot >= 0)
+			{
+				iSlot = iClassSlot;
+				break;
+			}
+		}
+	}
+	
+	if (iSlot < 0 || iSlot > WeaponSlot_BuilderEngie)
+		return MRES_Ignored;
+	
+	//Get index we want to use from randomizer
+	int iIndex2 = g_iClientWeaponIndex[iClient][iSlot];
+	if (iIndex2 < 0)
+	{
+		DHookSetReturn(hReturn, false);
+		return MRES_Supercede;
+	}
+	
+	//Set return whenever if index to give is same as what we wanted in randomizer
+	DHookSetReturn(hReturn, iIndex1 == iIndex2);
+	return MRES_Supercede;
+}
+
 }

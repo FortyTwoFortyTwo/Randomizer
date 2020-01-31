@@ -232,10 +232,6 @@ public void GenerateRandonWeapon(int iClient)
 		}
 	}
 	
-	//Reset Gas Passer meter
-	//TODO config support?
-	SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 0.0, 1);
-	
 	if (IsPlayerAlive(iClient))
 		TF2_RespawnPlayer(iClient);
 }
@@ -272,14 +268,16 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	
 	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 	{
-		TF2_RemoveItemInSlot(iClient, iSlot);
-		
-		int iIndex = g_iClientWeaponIndex[iClient][iSlot];
-		if (iIndex < 0)
+		//Allow player keep weapon if same index
+		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
+		if (iWeapon > MaxClients && GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex") == g_iClientWeaponIndex[iClient][iSlot])
 			continue;
 		
+		TF2_RemoveItemInSlot(iClient, iSlot);
+		
 		//Create weapon
-		TF2_CreateAndEquipWeapon(iClient, iIndex, iSlot);
+		if (g_iClientWeaponIndex[iClient][iSlot] >= 0)
+			TF2_CreateAndEquipWeapon(iClient, g_iClientWeaponIndex[iClient][iSlot], iSlot);
 	}
 }
 

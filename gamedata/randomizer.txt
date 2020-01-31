@@ -22,6 +22,11 @@
 				"linux"		"@_ZNK9CTFPlayer10CanAirDashEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x57\x8B\xF9\xF7\x87\x74\x1A\x00\x00\x00\x00\x04\x00"
 			}
+			"CTFPlayer::ItemsMatch"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer10ItemsMatchEP19TFPlayerClassData_tP13CEconItemViewS3_P13CTFWeaponBase"
+			}
 		}
 		"Functions"
 		{
@@ -67,6 +72,40 @@
 				"callconv"	"thiscall"
 				"return"	"bool"
 				"this"		"entity"
+			}
+			"CTFPlayer::ItemsMatch"
+			{
+				"signature"	"CTFPlayer::ItemsMatch"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"pData"		//TFPlayerClassData_t *
+					{
+						"type"	"objectptr"
+					}
+					"pItem1"	//CEconItemView *
+					{
+						"type"	"objectptr"
+					}
+					"pItem2"	//CEconItemView *
+					{
+						"type"	"objectptr"
+					}
+					"pWeapon"	//CTFWeaponBase *
+					{
+						"type"	"cbaseentity"
+					}
+				}
+			}
+		}
+		"Offsets"
+		{
+			"CEconItemView::m_iItemDefinitionIndex"
+			{
+				"linux"		"4"
+				"windows"	"4"
 			}
 		}
 	}
