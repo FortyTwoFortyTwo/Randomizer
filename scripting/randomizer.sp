@@ -18,6 +18,7 @@
 
 #define ITEM_PDA_BUILD		25
 #define ITEM_PDA_DESTROY	26
+#define ITEM_PDA_DISGUISE	27
 #define ITEM_PDA_TOOLBOX	28
 
 #define ATTRIB_AIR_DASH_COUNT			250
@@ -186,7 +187,6 @@ public void GenerateRandonWeapon(int iClient)
 {
 	//Random Class
 	g_iClientClass[iClient] = view_as<TFClassType>(GetRandomInt(CLASS_MIN, CLASS_MAX));
-	//TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 	SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(g_iClientClass[iClient]));
 	
 	for (int iSlot = 0; iSlot < sizeof(g_iClientWeaponIndex[]); iSlot++)
@@ -194,29 +194,35 @@ public void GenerateRandonWeapon(int iClient)
 		
 	//Random Weapon
 	for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
+		g_iClientWeaponIndex[iClient][iSlot] = GetRandomIndexFromSlot(iSlot);
+	
+	//Allow PDA and toolbox be kept, but randomize invis watch
+	switch (g_iClientClass[iClient])
 	{
-		if (g_aIndexList[iSlot].Length <= 0)
-			ThrowError("[randomizer] Index list slot %d is empty!", iSlot);
-		
-		int iRandom = GetRandomInt(0, g_aIndexList[iSlot].Length-1);
-		int iIndex = g_aIndexList[iSlot].Get(iRandom);
-		
-		g_iClientWeaponIndex[iClient][iSlot] = iIndex;
-		
-		//If Wrench or Gunslinger, give building tools aswell
-		//TODO config support?
-		char sClassname[256];
-		TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
-		if (StrEqual(sClassname, "tf_weapon_wrench") || StrEqual(sClassname, "tf_weapon_robot_arm"))
+		case TFClass_Engineer:
 		{
 			g_iClientWeaponIndex[iClient][WeaponSlot_PDABuild] = ITEM_PDA_BUILD;
 			g_iClientWeaponIndex[iClient][WeaponSlot_PDADestroy] = ITEM_PDA_DESTROY;
 			g_iClientWeaponIndex[iClient][WeaponSlot_BuilderEngie] = ITEM_PDA_TOOLBOX;
 		}
+		case TFClass_Spy:
+		{
+			g_iClientWeaponIndex[iClient][WeaponSlot_PDADisguise] = ITEM_PDA_DISGUISE;
+			g_iClientWeaponIndex[iClient][WeaponSlot_InvisWatch] = GetRandomIndexFromSlot(WeaponSlot_InvisWatch);
+		}
 	}
 	
 	if (IsPlayerAlive(iClient))
 		TF2_RespawnPlayer(iClient);
+}
+
+public int GetRandomIndexFromSlot(int iSlot)
+{
+	if (g_aIndexList[iSlot].Length <= 0)
+		ThrowError("[Randomizer] Index list slot %d is empty!", iSlot);
+	
+	int iRandom = GetRandomInt(0, g_aIndexList[iSlot].Length-1);
+	return g_aIndexList[iSlot].Get(iRandom);
 }
 
 public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
