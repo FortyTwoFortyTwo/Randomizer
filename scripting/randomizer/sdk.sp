@@ -132,6 +132,7 @@ void SDK_HookWeapon(int iWeapon)
 	DHookEntity(g_hDHookSecondaryAttack, false, iWeapon, _, DHook_SecondaryWeaponPre);
 	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
 	
+	SDKHook(iWeapon, SDKHook_Reload, Hook_ReloadPre);
 	SDKHook(iWeapon, SDKHook_ReloadPost, Hook_ReloadPost);
 }
 
@@ -407,6 +408,16 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 		SDK_DoClassSpecialSkill(iClient);
 	
 	g_bDoClassSpecialSkill[iClient] = false;
+}
+
+public Action Hook_ReloadPre(int iWeapon)
+{
+	//Weapon unable to be reloaded from cloak, but coded in revolver only, and only for Spy class
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	if (TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
+		return Plugin_Handled;
+	
+	return Plugin_Continue;
 }
 
 public void Hook_ReloadPost(int iWeapon, bool bResult)
