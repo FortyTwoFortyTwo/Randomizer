@@ -219,7 +219,23 @@ public void GenerateRandonWeapon(int iClient)
 	}
 	
 	if (IsPlayerAlive(iClient))
+	{
 		TF2_RespawnPlayer(iClient);
+		
+		//If invalid active weapon, use primary weapon, otherwise secondary etc
+		if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
+		{
+			for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
+			{
+				int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
+				if (iWeapon > MaxClients)
+				{
+					SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
+					break;
+				}
+			}
+		}
+	}
 }
 
 public int GetRandomIndexFromSlot(int iSlot)
