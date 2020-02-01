@@ -80,6 +80,7 @@ public void SDK_Init()
 	SDK_CreateDetour(hGameData, "CTFPlayer::OnDealtDamage", DHook_OnDealtDamagePre, DHook_OnDealtDamagePost);
 	SDK_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	SDK_CreateDetour(hGameData, "CTFPlayerShared::UpdateItemChargeMeters", DHook_UpdateItemChargeMetersPre, DHook_UpdateItemChargeMetersPost);
+	SDK_CreateDetour(hGameData, "CTFPlayerShared::UpdateChargeMeter", DHook_UpdateChargeMeterPre, DHook_UpdateChargeMeterPost);
 	
 	g_hDHookSecondaryAttack = DHookCreateFromConf(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	if (!g_hDHookSecondaryAttack)
@@ -359,6 +360,19 @@ public MRESReturn DHook_UpdateItemChargeMetersPre(Address pPlayerShared)
 }
 
 public MRESReturn DHook_UpdateItemChargeMetersPost(Address pPlayerShared)
+{
+	int iClient = GetClientFromPlayerShared(pPlayerShared);
+	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+}
+
+public MRESReturn DHook_UpdateChargeMeterPre(Address pPlayerShared)
+{
+	//This function is only used to manage demoshield meter, but have hardcode demoman class
+	int iClient = GetClientFromPlayerShared(pPlayerShared);
+	TF2_SetPlayerClass(iClient, TFClass_DemoMan);
+}
+
+public MRESReturn DHook_UpdateChargeMeterPost(Address pPlayerShared)
 {
 	int iClient = GetClientFromPlayerShared(pPlayerShared);
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);

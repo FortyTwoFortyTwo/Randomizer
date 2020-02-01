@@ -46,6 +46,12 @@
 				"linux"		"@_ZN15CTFPlayerShared22UpdateItemChargeMetersEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x8B\xC1\x56\x57\x89\x45\xFC\x33\xF6"
 			}
+			"CTFPlayerShared::UpdateChargeMeter"
+			{
+				"library"	"server"
+				"linux"		"@_ZN15CTFPlayerShared17UpdateChargeMeterEv"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x56\x8B\xF1\x6A\x04"
+			}
 		}
 		"Offsets"
 		{
@@ -169,6 +175,13 @@
 			"CTFPlayerShared::UpdateItemChargeMeters"
 			{
 				"signature"	"CTFPlayerShared::UpdateItemChargeMeters"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"address"
+			}
+			"CTFPlayerShared::UpdateChargeMeter"
+			{
+				"signature"	"CTFPlayerShared::UpdateChargeMeter"
 				"callconv"	"thiscall"
 				"return"	"void"
 				"this"		"address"
