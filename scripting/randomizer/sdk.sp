@@ -73,18 +73,16 @@ public void SDK_Init()
 	if (!g_hSDKDoClassSpecialSkill)
 		LogError("Failed to create call: CTFPlayer::DoClassSpecialSkill");
 	
-	SDK_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
-	SDK_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
-	SDK_CreateDetour(hGameData, "CTFPlayer::CanAirDash", _, DHook_CanAirDashPost);
-	SDK_CreateDetour(hGameData, "CTFPlayer::ItemsMatch", DHook_ItemsMatchPre, _);
-	SDK_CreateDetour(hGameData, "CTFPlayer::OnDealtDamage", DHook_OnDealtDamagePre, DHook_OnDealtDamagePost);
-	SDK_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
-	SDK_CreateDetour(hGameData, "CTFPlayerShared::UpdateItemChargeMeters", DHook_UpdateItemChargeMetersPre, DHook_UpdateItemChargeMetersPost);
-	SDK_CreateDetour(hGameData, "CTFPlayerShared::UpdateChargeMeter", DHook_UpdateChargeMeterPre, DHook_UpdateChargeMeterPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", _, DHook_CanAirDashPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::ItemsMatch", DHook_ItemsMatchPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::OnDealtDamage", DHook_OnDealtDamagePre, DHook_OnDealtDamagePost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
+	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateItemChargeMeters", DHook_UpdateItemChargeMetersPre, DHook_UpdateItemChargeMetersPost);
+	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateChargeMeter", DHook_UpdateChargeMeterPre, DHook_UpdateChargeMeterPost);
 	
-	g_hDHookSecondaryAttack = DHookCreateFromConf(hGameData, "CBaseCombatWeapon::SecondaryAttack");
-	if (!g_hDHookSecondaryAttack)
-		LogError("Failed to create hook: CBaseCombatWeapon::SecondaryAttack");
+	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	
 	StartPrepSDKCall(SDKCall_Raw);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetBaseEntity");
@@ -99,7 +97,7 @@ public void SDK_Init()
 	delete hGameData;
 }
 
-static void SDK_CreateDetour(GameData hGameData, const char[] sName, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION)
+static void DHook_CreateDetour(GameData hGameData, const char[] sName, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION)
 {
 	Handle hDetour = DHookCreateFromConf(hGameData, sName);
 	if (!hDetour)
@@ -118,6 +116,15 @@ static void SDK_CreateDetour(GameData hGameData, const char[] sName, DHookCallba
 		
 		delete hDetour;
 	}
+}
+
+static Handle DHook_CreateVirtual(GameData hGameData, const char[] sName)
+{
+	Handle hHook = DHookCreateFromConf(hGameData, sName);
+	if (!hHook)
+		LogError("Failed to create hook: %s", sName);
+	
+	return hHook;
 }
 
 void SDK_HookWeapon(int iWeapon)
