@@ -2,11 +2,15 @@ static Handle g_hSDKGetMaxHealth;
 static Handle g_hSDKRemoveWearable;
 static Handle g_hSDKEquipWearable;
 static Handle g_hSDKGetMaxAmmo;
+static Handle g_hSDKDoClassSpecialSkill;
+static Handle g_hSDKGetBaseEntity;
 
-static Handle g_SDKGetBaseEntity;
+static Handle g_hDHookSecondaryAttack;
 
 static int g_iOffsetItemDefinitionIndex = -1;
 static Address g_pPlayerSharedOuter;
+
+static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
 
 public void SDK_Init()
 {
@@ -19,13 +23,13 @@ public void SDK_Init()
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "GetMaxHealth");
 	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
 	g_hSDKGetMaxHealth = EndPrepSDKCall();
-	if(g_hSDKGetMaxHealth == null)
+	if(!g_hSDKGetMaxHealth)
 		LogError("Failed to create call: CTFPlayer::GetMaxHealth");
 	
 	delete hGameData;
 	
 	hGameData = new GameData("sm-tf2.games");
-	if (hGameData == null)
+	if (!hGameData)
 		SetFailState("Could not find sm-tf2.games gamedata");
 	
 	int iRemoveWearableOffset = hGameData.GetOffset("RemoveWearable");
@@ -35,7 +39,7 @@ public void SDK_Init()
 	PrepSDKCall_SetVirtual(iRemoveWearableOffset);
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	g_hSDKRemoveWearable = EndPrepSDKCall();
-	if (g_hSDKRemoveWearable == null)
+	if (!g_hSDKRemoveWearable)
 		LogError("Failed to create call: CBasePlayer::RemoveWearable");
 	
 	//Equip Wearable
@@ -43,13 +47,13 @@ public void SDK_Init()
 	PrepSDKCall_SetVirtual(iRemoveWearableOffset-1);//Equip Wearable is right behind Remove Wearable, should be good if valve dont add one between
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	g_hSDKEquipWearable = EndPrepSDKCall();
-	if (g_hSDKEquipWearable == null)
+	if (!g_hSDKEquipWearable)
 		LogError("Failed to create call: CBasePlayer::EquipWearable");
 	
 	delete hGameData;
 	
 	hGameData = new GameData("randomizer");
-	if (hGameData == null)
+	if (!hGameData)
 		SetFailState("Could not find randomizer gamedata");
 	
 	//Get Max Ammo
@@ -59,21 +63,33 @@ public void SDK_Init()
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
 	g_hSDKGetMaxAmmo = EndPrepSDKCall();
-	if (g_hSDKGetMaxAmmo == null)
+	if (!g_hSDKGetMaxAmmo)
 		LogError("Failed to create call: CTFPlayer::GetMaxAmmo");
+	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::DoClassSpecialSkill");
+	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+	g_hSDKDoClassSpecialSkill = EndPrepSDKCall();
+	if (!g_hSDKDoClassSpecialSkill)
+		LogError("Failed to create call: CTFPlayer::DoClassSpecialSkill");
 	
 	SDK_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	SDK_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	SDK_CreateDetour(hGameData, "CTFPlayer::CanAirDash", _, DHook_CanAirDashPost);
 	SDK_CreateDetour(hGameData, "CTFPlayer::ItemsMatch", DHook_ItemsMatchPre, _);
 	SDK_CreateDetour(hGameData, "CTFPlayer::OnDealtDamage", DHook_OnDealtDamagePre, DHook_OnDealtDamagePost);
+	SDK_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	SDK_CreateDetour(hGameData, "CTFPlayerShared::UpdateItemChargeMeters", DHook_UpdateItemChargeMetersPre, DHook_UpdateItemChargeMetersPost);
+	
+	g_hDHookSecondaryAttack = DHookCreateFromConf(hGameData, "CBaseCombatWeapon::SecondaryAttack");
+	if (!g_hDHookSecondaryAttack)
+		LogError("Failed to create hook: CBaseCombatWeapon::SecondaryAttack");
 	
 	StartPrepSDKCall(SDKCall_Raw);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetBaseEntity");
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_SDKGetBaseEntity = EndPrepSDKCall();
-	if (!g_SDKGetBaseEntity)
+	g_hSDKGetBaseEntity = EndPrepSDKCall();
+	if (!g_hSDKGetBaseEntity)
 		LogError("Failed to create call: CBaseEntity::GetBaseEntity");
 	
 	g_pPlayerSharedOuter = view_as<Address>(hGameData.GetOffset("CTFPlayerShared::m_pOuter"));
@@ -103,6 +119,14 @@ static void SDK_CreateDetour(GameData hGameData, const char[] sName, DHookCallba
 	}
 }
 
+void SDK_HookWeapon(int iWeapon)
+{
+	DHookEntity(g_hDHookSecondaryAttack, false, iWeapon, _, DHook_SecondaryWeaponPre);
+	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
+	
+	SDKHook(iWeapon, SDKHook_ReloadPost, Hook_ReloadPost);
+}
+
 stock int SDK_GetMaxHealth(int iClient)
 {
 	if (g_hSDKGetMaxHealth)
@@ -129,6 +153,14 @@ stock int SDK_GetMaxAmmo(int iClient, int iAmmoType)
 		return SDKCall(g_hSDKGetMaxAmmo, iClient, iAmmoType, -1);
 	
 	return -1;
+}
+
+stock bool SDK_DoClassSpecialSkill(int iClient)
+{
+	if (g_hSDKDoClassSpecialSkill)
+		return SDKCall(g_hSDKDoClassSpecialSkill, iClient);
+	
+	return false;
 }
 
 public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
@@ -260,6 +292,65 @@ public MRESReturn DHook_OnDealtDamagePost(int iClient, Handle hParams)
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
+public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
+{
+	//There 3 things going on in this function depending on player class attempting to:
+	//If Demoman, detonate stickies or charge
+	//If Engineer, pickup buildings
+	//If Spy, cloak or uncloak
+	//
+	//We want to prevent Engineer and Spy stuffs from reload,
+	//and allow demoman stuffs only if holding reload, not from attack2
+	
+	g_bDoClassSpecialSkill[iClient] = true;
+	int iButtons = GetClientButtons(iClient);
+	if (iButtons & IN_ATTACK2)
+	{
+		//Check if active weapon does something with attack2, if so prevent call
+		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+		if (iWeapon > MaxClients && Config_IsUsingAttack2(iWeapon))
+		{
+			DHookSetReturn(hReturn, false);
+			return MRES_Supercede;
+		}
+	}
+	
+	int iSecondary = TF2_GetItemInSlot(iClient, WeaponSlot_Secondary);
+	if (iSecondary > MaxClients)
+	{
+		TFClassType nDefaultClass = TF2_GetDefaultClassFromItem(iClient, iSecondary);
+		if (nDefaultClass == TFClass_DemoMan)
+		{
+			if (iButtons & IN_RELOAD)
+			{
+				//Change class to allow detonate/charge from reload
+				TF2_SetPlayerClass(iClient, TFClass_DemoMan);
+				return MRES_Ignored;
+			}
+			else if (TF2_GetPlayerClass(iClient) == TFClass_DemoMan)
+			{
+				//If not holding reload and player is already demoman, prevent detonate/charge
+				DHookSetReturn(hReturn, false);
+				return MRES_Supercede;
+			}
+		}
+	}
+	
+	if (iButtons & IN_RELOAD && !(iButtons & IN_ATTACK2))
+	{
+		//Nothing fancy need to do from SDK_DoClassSpecialSkill reload, prevent call
+		DHookSetReturn(hReturn, false);
+		return MRES_Supercede;
+	}
+	
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, Handle hReturn)
+{
+	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+}
+
 public MRESReturn DHook_UpdateItemChargeMetersPre(Address pPlayerShared)
 {
 	//Dragon Fury and Gas Passer meter have hardcode pyro check in this call
@@ -273,8 +364,39 @@ public MRESReturn DHook_UpdateItemChargeMetersPost(Address pPlayerShared)
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
+public MRESReturn DHook_SecondaryWeaponPre(int iWeapon)
+{
+	//Prevent this called if stickybomb, moved to reload
+	char sClassname[64];
+	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	if (StrEqual(sClassname, "tf_weapon_pipebomblauncher"))
+		return MRES_Supercede;
+	
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	g_bDoClassSpecialSkill[iClient] = false;
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
+{
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	
+	//If DoClassSpecialSkill not called during secondary attack, do it anyway lol
+	if (!g_bDoClassSpecialSkill[iClient])
+		SDK_DoClassSpecialSkill(iClient);
+	
+	g_bDoClassSpecialSkill[iClient] = false;
+}
+
+public void Hook_ReloadPost(int iWeapon, bool bResult)
+{
+	//Call DoClassSpecialSkill for detour to manage with stickybomb and charging
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	SDK_DoClassSpecialSkill(iClient);
+}
+
 static int GetClientFromPlayerShared(Address pPlayerShared)
 {
 	Address pEntity = view_as<Address>(LoadFromAddress(pPlayerShared + g_pPlayerSharedOuter, NumberType_Int32));
-	return SDKCall(g_SDKGetBaseEntity, pEntity);
+	return SDKCall(g_hSDKGetBaseEntity, pEntity);
 }

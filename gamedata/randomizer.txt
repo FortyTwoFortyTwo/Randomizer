@@ -34,6 +34,12 @@
 				"linux"		"@_ZN9CTFPlayer13OnDealtDamageEP20CBaseCombatCharacterRK15CTakeDamageInfo"
 				"windows"	"\x55\x8B\xEC\x51\x83\x7D\x08\x00\x8B\x45\x0C"
 			}
+			"CTFPlayer::DoClassSpecialSkill"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer19DoClassSpecialSkillEv"
+				"windows"	"\x56\x8B\xF1\x8B\x06\x8B\x80\x04\x01\x00\x00\xFF\xD0\x84\xC0\x75\x2A\x32\xC0\x5E\xC3\xF7\x86\x74\x1A\x00\x00\x00\x00\x04\x00"
+			}
 			"CTFPlayerShared::UpdateItemChargeMeters"
 			{
 				"library"	"server"
@@ -45,8 +51,13 @@
 		{
 			"CBaseEntity::GetBaseEntity"
 			{
-				"windows"	"5"
 				"linux"		"6"
+				"windows"	"5"
+			}
+			"CBaseCombatWeapon::SecondaryAttack"
+			{
+				"linux"		"286"
+				"windows"	"280"
 			}
 			"CTFPlayerShared::m_pOuter"
 			{
@@ -148,12 +159,26 @@
 					}
 				}
 			}
+			"CTFPlayer::DoClassSpecialSkill"
+			{
+				"signature"	"CTFPlayer::DoClassSpecialSkill"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"entity"
+			}
 			"CTFPlayerShared::UpdateItemChargeMeters"
 			{
 				"signature"	"CTFPlayerShared::UpdateItemChargeMeters"
 				"callconv"	"thiscall"
 				"return"	"void"
 				"this"		"address"
+			}
+			"CBaseCombatWeapon::SecondaryAttack"
+			{
+				"offset"	"CBaseCombatWeapon::SecondaryAttack"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
 			}
 		}
 	}

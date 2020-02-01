@@ -120,7 +120,6 @@ stock int TF2_GetWearableInSlot(int iClient, int iSlot)
 		if (GetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity") == iClient || GetEntPropEnt(iWearable, Prop_Send, "moveparent") == iClient)
 		{
 			int iIndex = GetEntProp(iWearable, Prop_Send, "m_iItemDefinitionIndex");
-			
 			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 			{
 				int iWearableSlot = TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass));

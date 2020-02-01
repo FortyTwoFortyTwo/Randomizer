@@ -84,8 +84,8 @@ public void OnPluginStart()
 	
 	SDK_Init();
 	
-	Config_InitTemplates();
-	Config_LoadTemplates();
+	Config_Init();
+	Config_Refresh();
 	
 	CreateWeaponList();
 	
@@ -106,6 +106,12 @@ public void OnClientPutInServer(int iClient)
 	SDKHook(iClient, SDKHook_PreThink, Hud_ClientDisplay);
 	
 	GenerateRandonWeapon(iClient);
+}
+
+public void OnEntityCreated(int iEntity, const char[] sClassname)
+{
+	if (StrContains(sClassname, "tf_weapon_") == 0)
+		SDK_HookWeapon(iEntity);
 }
 
 public void CreateWeaponList()

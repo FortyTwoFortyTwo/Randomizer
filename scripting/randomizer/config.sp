@@ -5,17 +5,19 @@ ArrayList g_aBlacklistAttrib;
 ArrayList g_aBlacklistClassname;
 ArrayList g_aBlacklistName;
 ArrayList g_aBlacklistIndex;
+ArrayList g_aWeaponAttack2;
 
 StringMap g_mHudWeapon;
 StringMap g_mHudEntity;
 StringMap g_mHudType;
 
-public void Config_InitTemplates()
+public void Config_Init()
 {
 	g_aBlacklistAttrib = new ArrayList();
 	g_aBlacklistName = new ArrayList(CONFIG_MAXCHAR);
 	g_aBlacklistClassname = new ArrayList(CONFIG_MAXCHAR);
 	g_aBlacklistIndex = new ArrayList();
+	g_aWeaponAttack2 = new ArrayList(CONFIG_MAXCHAR);
 	
 	g_aHud = new ArrayList();
 	
@@ -34,7 +36,7 @@ public void Config_InitTemplates()
 	g_mHudType.SetValue("time", eHudType_Time);
 }
 
-public void Config_LoadTemplates()
+public void Config_Refresh()
 {
 	char sConfigPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sConfigPath, sizeof(sConfigPath), CONFIG_FILEPATH);
@@ -70,6 +72,8 @@ public void Config_LoadTemplates()
 		
 		kv.GoBack();
 	}
+	
+	Config_LoadList(kv, "attack2", g_aWeaponAttack2, true);
 	
 	if (kv.JumpToKey("hud", false))
 	{
@@ -206,4 +210,21 @@ void Config_LoadList(KeyValues kv, char[] sSection, ArrayList aArray, bool bStri
 		kv.GoBack();
 	}
 	kv.GoBack();
+}
+
+bool Config_IsUsingAttack2(int iWeapon)
+{
+	char sClassname[CONFIG_MAXCHAR];
+	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	
+	int iLength = g_aWeaponAttack2.Length;
+	for (int i = 0; i < iLength; i++)
+	{
+		char sBuffer[CONFIG_MAXCHAR];
+		g_aWeaponAttack2.GetString(i, sBuffer, sizeof(sBuffer));
+		if (StrEqual(sClassname, sBuffer))
+			return true;
+	}
+	
+	return false;
 }
