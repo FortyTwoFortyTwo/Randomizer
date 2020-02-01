@@ -6,7 +6,6 @@
 #include <tf2>
 #include <tf2_stocks>
 #include <tf_econ_data>
-#include <tf2attributes>
 #include <dhooks>
 
 #pragma newdecls required

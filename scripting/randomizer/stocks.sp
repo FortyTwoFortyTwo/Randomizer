@@ -74,28 +74,19 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 
 stock bool TF2_WeaponFindAttribute(int iWeapon, int iAttrib, float &flVal)
 {
-	Address addAttrib = TF2Attrib_GetByDefIndex(iWeapon, iAttrib);
-	if (addAttrib == Address_Null)
+	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+	ArrayList aAttribs = TF2Econ_GetItemStaticAttributes(iIndex);
+	
+	int iPos = aAttribs.FindValue(iAttrib, 0);
+	if (iPos >= 0)
 	{
-		int iItemDefIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-		int iAttributes[16];
-		float flAttribValues[16];
-
-		int iMaxAttrib = TF2Attrib_GetStaticAttribs(iItemDefIndex, iAttributes, flAttribValues);
-		for (int i = 0; i < iMaxAttrib; i++)
-		{
-			if (iAttributes[i] == iAttrib)
-			{
-				flVal = flAttribValues[i];
-				return true;
-			}
-		}
-		
-		return false;
+		flVal = aAttribs.Get(iPos, 1);
+		delete aAttribs;
+		return true;
 	}
 	
-	flVal = TF2Attrib_GetValue(addAttrib);
-	return true;
+	delete aAttribs;
+	return false;
 }
 
 stock int TF2_GetItemInSlot(int iClient, int iSlot)
