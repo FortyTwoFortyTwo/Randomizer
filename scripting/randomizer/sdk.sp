@@ -6,6 +6,7 @@ static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKGetBaseEntity;
 
 static Handle g_hDHookSecondaryAttack;
+static Handle g_hDHookGiveNamedItem;
 
 static int g_iOffsetItemDefinitionIndex = -1;
 static Address g_pPlayerSharedOuter;
@@ -76,13 +77,14 @@ public void SDK_Init()
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", _, DHook_CanAirDashPost);
-	DHook_CreateDetour(hGameData, "CTFPlayer::ItemsMatch", DHook_ItemsMatchPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::OnDealtDamage", DHook_OnDealtDamagePre, DHook_OnDealtDamagePost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateItemChargeMeters", DHook_UpdateItemChargeMetersPre, DHook_UpdateItemChargeMetersPost);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateChargeMeter", DHook_UpdateChargeMeterPre, DHook_UpdateChargeMeterPost);
 	
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
+	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	
 	StartPrepSDKCall(SDKCall_Raw);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetBaseEntity");
@@ -125,6 +127,11 @@ static Handle DHook_CreateVirtual(GameData hGameData, const char[] sName)
 		LogError("Failed to create hook: %s", sName);
 	
 	return hHook;
+}
+
+void SDK_HookClient(int iClient)
+{
+	DHookEntity(g_hDHookGiveNamedItem, false, iClient, _, DHook_GiveNamedItemPre);
 }
 
 void SDK_HookWeapon(int iWeapon)
@@ -242,51 +249,9 @@ public MRESReturn DHook_CanAirDashPost(int iClient, Handle hReturn)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_ItemsMatchPre(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
 {
-	if (g_iOffsetItemDefinitionIndex == -1)
-		return MRES_Ignored;
-	
-	if (DHookIsNullParam(hParams, 2))
-		return MRES_Ignored;
-	
-	//We want to prevent TF2 deleting weapons generated from randomizer and use player's TF2 loadout
-	int iIndex1 = DHookGetParamObjectPtrVar(hParams, 2, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
-	
-	//Try find slot, may be a problem for multi-class weapon
-	int iSlot = -1;
-	if (!DHookIsNullParam(hParams, 4))
-	{
-		int iWeapon = DHookGetParam(hParams, 4);
-		iSlot = TF2_GetSlotFromItem(iClient, iWeapon);
-	}
-	
-	if (iSlot < 0)
-	{
-		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-		{
-			int iClassSlot = TF2_GetSlotFromIndex(iIndex1, view_as<TFClassType>(iClass));
-			if (iClassSlot >= 0)
-			{
-				iSlot = iClassSlot;
-				break;
-			}
-		}
-	}
-	
-	if (iSlot < 0 || iSlot > WeaponSlot_BuilderEngie)
-		return MRES_Ignored;
-	
-	//Get index we want to use from randomizer
-	int iIndex2 = g_iClientWeaponIndex[iClient][iSlot];
-	if (iIndex2 < 0)
-	{
-		DHookSetReturn(hReturn, false);
-		return MRES_Supercede;
-	}
-	
-	//Set return whenever if index to give is same as what we wanted in randomizer
-	DHookSetReturn(hReturn, iIndex1 == iIndex2);
+	//Dont validate any weapons, TF2 attempting to remove randomizer weapon for player's TF2 loadout
 	return MRES_Supercede;
 }
 
@@ -408,6 +373,23 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 		SDK_DoClassSpecialSkill(iClient);
 	
 	g_bDoClassSpecialSkill[iClient] = false;
+}
+
+public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hParams)
+{
+	//Only allow cosmetics, otherwise dont generate player's TF2 loadout
+	int iIndex = DHookGetParamObjectPtrVar(hParams, 3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	{
+		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+		if (0 <= iSlot <= WeaponSlot_BuilderEngie)
+		{
+			DHookSetReturn(hReturn, 0);
+			return MRES_Override;
+		}
+	}
+	
+	return MRES_Ignored;
 }
 
 public Action Hook_ReloadPre(int iWeapon)

@@ -103,6 +103,7 @@ public void OnPluginStart()
 public void OnClientPutInServer(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Hud_ClientDisplay);
+	SDK_HookClient(iClient);
 	
 	GenerateRandonWeapon(iClient);
 }

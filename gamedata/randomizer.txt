@@ -22,11 +22,11 @@
 				"linux"		"@_ZNK9CTFPlayer10CanAirDashEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x57\x8B\xF9\xF7\x87\x74\x1A\x00\x00\x00\x00\x04\x00"
 			}
-			"CTFPlayer::ItemsMatch"
+			"CTFPlayer::ValidateWeapons"
 			{
 				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer10ItemsMatchEP19TFPlayerClassData_tP13CEconItemViewS3_P13CTFWeaponBase"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x57\x8B\x7D\x10"
+				"linux"		"@_ZN9CTFPlayer15ValidateWeaponsEP19TFPlayerClassData_tb"
+			//	"windows"	""
 			}
 			"CTFPlayer::OnDealtDamage"
 			{
@@ -64,6 +64,11 @@
 			{
 				"linux"		"286"
 				"windows"	"280"
+			}
+			"CTFPlayer::GiveNamedItem"
+			{
+				"linux"		"482"
+				"windows"	"475"
 			}
 			"CTFPlayerShared::m_pOuter"
 			{
@@ -121,29 +126,21 @@
 				"return"	"bool"
 				"this"		"entity"
 			}
-			"CTFPlayer::ItemsMatch"
+			"CTFPlayer::ValidateWeapons"
 			{
-				"signature"	"CTFPlayer::ItemsMatch"
+				"signature"	"CTFPlayer::ValidateWeapons"
 				"callconv"	"thiscall"
-				"return"	"bool"
+				"return"	"void"
 				"this"		"entity"
 				"arguments"
 				{
-					"pData"		//TFPlayerClassData_t *
+					"pData"
 					{
 						"type"	"objectptr"
 					}
-					"pItem1"	//CEconItemView *
+					"bRegenerate"
 					{
-						"type"	"objectptr"
-					}
-					"pItem2"	//CEconItemView *
-					{
-						"type"	"objectptr"
-					}
-					"pWeapon"	//CTFWeaponBase *
-					{
-						"type"	"cbaseentity"
+						"type"	"bool"
 					}
 				}
 			}
@@ -192,6 +189,32 @@
 				"hooktype"	"entity"
 				"return"	"void"
 				"this"		"entity"
+			}
+			"CTFPlayer::GiveNamedItem"
+			{
+				"offset"	"CTFPlayer::GiveNamedItem"
+				"hooktype"	"entity"
+				"return"	"cbaseentity"
+				"this"		"entity"
+				"arguments"
+				{
+					"pszName"
+					{
+						"type"	"charptr"
+					}
+					"iSubType"
+					{
+						"type"	"int"
+					}
+					"pItem"
+					{
+						"type"	"objectptr"
+					}
+					"b"
+					{
+						"type"	"bool"
+					}
+				}
 			}
 		}
 	}
