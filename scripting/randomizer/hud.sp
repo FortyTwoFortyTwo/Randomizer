@@ -134,7 +134,7 @@ public void Hud_ClientDisplay(int iClient)
 			
 			//TODO translation support
 			char sName[256];
-			if (TF2Econ_GetItemName(iIndex, sName, sizeof(sName)))
+			if (Weapons_GetName(iIndex, sName, sizeof(sName)))
 				Format(sDisplay, sizeof(sDisplay), "%s%s", sDisplay, sName);
 			else
 				Format(sDisplay, sizeof(sDisplay), "%sUnknown Name", sDisplay);

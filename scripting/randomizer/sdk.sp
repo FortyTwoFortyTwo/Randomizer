@@ -377,12 +377,18 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 
 public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hParams)
 {
-	//Only allow cosmetics, otherwise dont generate player's TF2 loadout
+	if (DHookIsNullParam(hParams, 1) || DHookIsNullParam(hParams, 3))
+	{
+		DHookSetReturn(hReturn, 0);
+		return MRES_Override;
+	}
+	
+	//Only allow cosmetics and tf_weapon_builder, otherwise dont generate player's TF2 loadout
 	int iIndex = DHookGetParamObjectPtrVar(hParams, 3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
 		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (0 <= iSlot <= WeaponSlot_BuilderEngie)
+		if (0 <= iSlot < WeaponSlot_BuilderEngie)
 		{
 			DHookSetReturn(hReturn, 0);
 			return MRES_Override;

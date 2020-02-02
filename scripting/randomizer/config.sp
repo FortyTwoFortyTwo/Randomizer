@@ -1,10 +1,6 @@
 #define CONFIG_FILEPATH "configs/randomizer.cfg"
 #define CONFIG_MAXCHAR	256
 
-ArrayList g_aBlacklistAttrib;
-ArrayList g_aBlacklistClassname;
-ArrayList g_aBlacklistName;
-ArrayList g_aBlacklistIndex;
 ArrayList g_aWeaponAttack2;
 
 StringMap g_mHudWeapon;
@@ -13,10 +9,6 @@ StringMap g_mHudType;
 
 public void Config_Init()
 {
-	g_aBlacklistAttrib = new ArrayList();
-	g_aBlacklistName = new ArrayList(CONFIG_MAXCHAR);
-	g_aBlacklistClassname = new ArrayList(CONFIG_MAXCHAR);
-	g_aBlacklistIndex = new ArrayList();
 	g_aWeaponAttack2 = new ArrayList(CONFIG_MAXCHAR);
 	
 	g_aHud = new ArrayList();
@@ -56,22 +48,7 @@ public void Config_Refresh()
 		return;
 	}
 	
-	g_aBlacklistAttrib.Clear();
-	g_aBlacklistClassname.Clear();
-	g_aBlacklistName.Clear();
-	g_aBlacklistIndex.Clear();
-	
 	g_aHud.Clear();
-	
-	if (kv.JumpToKey("blacklist", false))
-	{
-		Config_LoadList(kv, "attrib", g_aBlacklistAttrib);
-		Config_LoadList(kv, "classname", g_aBlacklistClassname, true);
-		Config_LoadList(kv, "name", g_aBlacklistName, true);
-		Config_LoadList(kv, "index", g_aBlacklistIndex);
-		
-		kv.GoBack();
-	}
 	
 	Config_LoadList(kv, "attack2", g_aWeaponAttack2, true);
 	

@@ -60,6 +60,7 @@ int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 #include "randomizer/config.sp"
 #include "randomizer/sdk.sp"
 #include "randomizer/stocks.sp"
+#include "randomizer/weapons.sp"
 
 public Plugin myinfo =
 {
@@ -84,9 +85,10 @@ public void OnPluginStart()
 	SDK_Init();
 	
 	Config_Init();
-	Config_Refresh();
+	Weapons_Init();
 	
-	CreateWeaponList();
+	Config_Refresh();
+	Weapons_Refresh();
 	
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
@@ -114,109 +116,15 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 		SDK_HookWeapon(iEntity);
 }
 
-public void CreateWeaponList()
-{
-	for (int iSlot = 0; iSlot < sizeof(g_aIndexList); iSlot++)
-	{
-		delete g_aIndexList[iSlot];
-		g_aIndexList[iSlot] = TF2Econ_GetItemList(FilterTF2EconSlot, iSlot);
-	}
-}
-
-public bool FilterTF2EconSlot(int iIndex, int iSlot)
-{
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-	{
-		if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) == iSlot)
-		{
-			//Make sure weapon is not in any of blacklists
-			
-			//Attributes
-			ArrayList aAttrib = TF2Econ_GetItemStaticAttributes(iIndex);
-			int iAttribLength = aAttrib.Length;
-			for (int i = 0; i < iAttribLength; i++)	//Loop through all attribs index have
-			{
-				int iAttrib = aAttrib.Get(i, 0);	//0 is Attrib index, 1 is value of attrib
-				int iBlacklistLength = g_aBlacklistAttrib.Length;
-				for (int j = 0; j < iBlacklistLength; j++)	//Loop through all blacklist attribs
-				{
-					if (iAttrib == g_aBlacklistAttrib.Get(j))
-					{
-						delete aAttrib;
-						return false;
-					}
-				}
-			}
-			
-			delete aAttrib;
-			
-			//Classname
-			char sClassname[256];
-			TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
-			int iBlacklistLength = g_aBlacklistClassname.Length;
-			for (int i = 0; i < iBlacklistLength; i++)
-			{
-				char sBuffer[CONFIG_MAXCHAR];
-				g_aBlacklistClassname.GetString(i, sBuffer, sizeof(sBuffer));
-				if (StrEqual(sClassname, sBuffer, false))
-					return false;
-			}
-			
-			//Names
-			char sName[256];
-			TF2Econ_GetItemName(iIndex, sName, sizeof(sName));
-			iBlacklistLength = g_aBlacklistName.Length;
-			for (int i = 0; i < iBlacklistLength; i++)
-			{
-				char sBuffer[CONFIG_MAXCHAR];
-				g_aBlacklistName.GetString(i, sBuffer, sizeof(sBuffer));
-				if (StrContains(sName, sBuffer, false) > -1)
-					return false;
-			}
-			
-			//Index
-			iBlacklistLength = g_aBlacklistIndex.Length;
-			for (int i = 0; i < iBlacklistLength; i++)
-				if (iIndex == g_aBlacklistIndex.Get(i))
-					return false;
-			
-			//Should be safe to add list after reaching here
-			//LogMessage("Adding Weapon | Index %d | Slot %d | Name %s", iIndex, iSlot, sName);
-			return true;
-		}
-	}
-	
-	return false;
-}
-
 public void GenerateRandonWeapon(int iClient)
 {
 	//Random Class
 	g_iClientClass[iClient] = view_as<TFClassType>(GetRandomInt(CLASS_MIN, CLASS_MAX));
 	SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(g_iClientClass[iClient]));
 	
-	for (int iSlot = 0; iSlot < sizeof(g_iClientWeaponIndex[]); iSlot++)
-			g_iClientWeaponIndex[iClient][iSlot] = -1;
-		
 	//Random Weapon
-	for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
-		g_iClientWeaponIndex[iClient][iSlot] = GetRandomIndexFromSlot(iSlot);
-	
-	//Allow PDA and toolbox be kept, but randomize invis watch
-	switch (g_iClientClass[iClient])
-	{
-		case TFClass_Engineer:
-		{
-			g_iClientWeaponIndex[iClient][WeaponSlot_PDABuild] = ITEM_PDA_BUILD;
-			g_iClientWeaponIndex[iClient][WeaponSlot_PDADestroy] = ITEM_PDA_DESTROY;
-			g_iClientWeaponIndex[iClient][WeaponSlot_BuilderEngie] = ITEM_PDA_TOOLBOX;
-		}
-		case TFClass_Spy:
-		{
-			g_iClientWeaponIndex[iClient][WeaponSlot_PDADisguise] = ITEM_PDA_DISGUISE;
-			g_iClientWeaponIndex[iClient][WeaponSlot_InvisWatch] = GetRandomIndexFromSlot(WeaponSlot_InvisWatch);
-		}
-	}
+	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
+		g_iClientWeaponIndex[iClient][iSlot] = Weapons_GetRandomIndex(iSlot, g_iClientClass[iClient]);
 	
 	if (IsPlayerAlive(iClient))
 	{
@@ -277,7 +185,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
 	
-	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
+	for (int iSlot = 0; iSlot < WeaponSlot_BuilderEngie; iSlot++)	//Generating tf_weapon_builder is weird, allow engi keeps it
 	{
 		//Allow player keep weapon if same index
 		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
