@@ -59,6 +59,7 @@ bool g_bTF2Items;
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 
+#include "randomizer/commands.sp"
 #include "randomizer/config.sp"
 #include "randomizer/huds.sp"
 #include "randomizer/sdk.sp"
@@ -79,10 +80,6 @@ public void OnPluginStart()
 	//OnLibraryAdded dont always call TF2Items on plugin start
 	g_bTF2Items = LibraryExists("TF2Items");
 	
-	RegAdminCmd("class", Command_Class, ADMFLAG_CHANGEMAP);
-	RegAdminCmd("weapon", Command_Weapon, ADMFLAG_CHANGEMAP);
-	RegAdminCmd("generate", Command_Generate, ADMFLAG_CHANGEMAP);
-	
 	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
 	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
@@ -90,6 +87,7 @@ public void OnPluginStart()
 	
 	SDK_Init();
 	
+	Commands_Init();
 	Config_Init();
 	Huds_Init();
 	Weapons_Init();
@@ -237,46 +235,6 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	//Only generate new weapons if killed from attacker
 	if (0 < iAttacker <= MaxClients && IsClientInGame(iAttacker) && iClient != iAttacker)
 		RequestFrame(GenerateRandonWeapon, iClient);	//Can be buggy if done same frame as death
-}
-
-public Action Command_Class(int iClient, int iArgs)
-{
-	if (iArgs <= 0)
-		return Plugin_Handled;
-	
-	char sClass[32];
-	GetCmdArg(1, sClass, sizeof(sClass));
-	TFClassType nClass = TF2_GetClass(sClass);
-	if (nClass == TFClass_Unknown)
-		return Plugin_Handled;
-	
-	g_iClientClass[iClient] = nClass;
-	TF2_SetPlayerClass(iClient, nClass);
-	
-	if (IsPlayerAlive(iClient))
-		TF2_RespawnPlayer(iClient);
-	
-	return Plugin_Handled;
-}
-
-public Action Command_Weapon(int iClient, int iArgs)
-{
-	if (iArgs <= 1)
-		return Plugin_Handled;
-	
-	char sArg1[256], sArg2[256];
-	GetCmdArg(1, sArg1, sizeof(sArg1));
-	GetCmdArg(2, sArg2, sizeof(sArg2));
-	
-	g_iClientWeaponIndex[iClient][StringToInt(sArg1)] = StringToInt(sArg2);
-	
-	return Plugin_Handled;
-}
-
-public Action Command_Generate(int iClient, int iArgs)
-{
-	GenerateRandonWeapon(iClient);
-	TF2_RespawnPlayer(iClient);
 }
 
 KeyValues LoadConfig(const char[] sFilepath, const char[] sName)
