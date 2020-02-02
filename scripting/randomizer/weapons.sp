@@ -26,23 +26,9 @@ public void Weapons_Init()
 
 public void Weapons_Refresh()
 {
-	char sConfigPath[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, sConfigPath, sizeof(sConfigPath), FILEPATH_CONFIG_WEAPONS);
-	if(!FileExists(sConfigPath))
-	{
-		LogError("Failed to load Randomizer Weapons config file (file missing): %s", FILEPATH_CONFIG_WEAPONS);
+	KeyValues kv = LoadConfig(FILEPATH_CONFIG_WEAPONS, "Weapons");
+	if (!kv)
 		return;
-	}
-	
-	KeyValues kv = new KeyValues("Weapons");
-	kv.SetEscapeSequences(true);
-
-	if(!kv.ImportFromFile(sConfigPath))
-	{
-		LogError("Failed to parse Randomizer Weapons config file: %s", FILEPATH_CONFIG_WEAPONS);
-		delete kv;
-		return;
-	}
 	
 	for (int i = 0; i < ConfigWeapon_MAX; i++)
 		g_aWeapons[i].Clear();

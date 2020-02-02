@@ -50,14 +50,11 @@ enum
 	TF_AMMO_COUNT
 };
 
-ArrayList g_aIndexList[WeaponSlot_BuilderEngie+1];
-ArrayList g_aHud;
-
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 
-#include "randomizer/hud.sp"
 #include "randomizer/config.sp"
+#include "randomizer/huds.sp"
 #include "randomizer/sdk.sp"
 #include "randomizer/stocks.sp"
 #include "randomizer/weapons.sp"
@@ -85,9 +82,11 @@ public void OnPluginStart()
 	SDK_Init();
 	
 	Config_Init();
+	Huds_Init();
 	Weapons_Init();
 	
 	Config_Refresh();
+	Huds_Refresh();
 	Weapons_Refresh();
 	
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
@@ -104,7 +103,7 @@ public void OnPluginStart()
 
 public void OnClientPutInServer(int iClient)
 {
-	SDKHook(iClient, SDKHook_PreThink, Hud_ClientDisplay);
+	SDKHook(iClient, SDKHook_PreThink, Huds_ClientDisplay);
 	SDK_HookClient(iClient);
 	
 	GenerateRandonWeapon(iClient);
@@ -144,15 +143,6 @@ public void GenerateRandonWeapon(int iClient)
 			}
 		}
 	}
-}
-
-public int GetRandomIndexFromSlot(int iSlot)
-{
-	if (g_aIndexList[iSlot].Length <= 0)
-		ThrowError("[Randomizer] Index list slot %d is empty!", iSlot);
-	
-	int iRandom = GetRandomInt(0, g_aIndexList[iSlot].Length-1);
-	return g_aIndexList[iSlot].Get(iRandom);
 }
 
 public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
@@ -248,4 +238,27 @@ public Action Command_Generate(int iClient, int iArgs)
 {
 	GenerateRandonWeapon(iClient);
 	TF2_RespawnPlayer(iClient);
+}
+
+KeyValues LoadConfig(const char[] sFilepath, const char[] sName)
+{
+	char sConfigPath[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, sConfigPath, sizeof(sConfigPath), sFilepath);
+	if(!FileExists(sConfigPath))
+	{
+		LogError("Failed to load Randomizer %s config file (file missing): %s", sName, sConfigPath);
+		return null;
+	}
+	
+	KeyValues kv = new KeyValues(sName);
+	kv.SetEscapeSequences(true);
+
+	if(!kv.ImportFromFile(sConfigPath))
+	{
+		LogError("Failed to parse Randomizer %s config file: %s", sName, sConfigPath);
+		delete kv;
+		return null;
+	}
+	
+	return kv;
 }
