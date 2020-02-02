@@ -11,6 +11,7 @@ static Handle g_hDHookGiveNamedItem;
 static int g_iOffsetItemDefinitionIndex = -1;
 static Address g_pPlayerSharedOuter;
 
+static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
 
 public void SDK_Init()
@@ -129,9 +130,28 @@ static Handle DHook_CreateVirtual(GameData hGameData, const char[] sName)
 	return hHook;
 }
 
-void SDK_HookClient(int iClient)
+void SDK_HookGiveNamedItem(int iClient)
 {
-	DHookEntity(g_hDHookGiveNamedItem, false, iClient, _, DHook_GiveNamedItemPre);
+	if (g_hDHookGiveNamedItem && !g_bTF2Items)
+		g_iHookIdGiveNamedItem[iClient] = DHookEntity(g_hDHookGiveNamedItem, false, iClient, DHook_GiveNamedItemRemoved, DHook_GiveNamedItemPre);
+}
+
+void SDK_UnhookGiveNamedItem(int iClient)
+{
+	if (g_iHookIdGiveNamedItem[iClient])
+	{
+		DHookRemoveHookID(g_iHookIdGiveNamedItem[iClient]);
+		g_iHookIdGiveNamedItem[iClient] = 0;	
+	}
+}
+
+bool SDK_IsGiveNamedItemActive()
+{
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+		if (g_iHookIdGiveNamedItem[iClient])
+			return true;
+	
+	return false;
 }
 
 void SDK_HookWeapon(int iWeapon)
@@ -383,19 +403,30 @@ public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hPa
 		return MRES_Override;
 	}
 	
-	//Only allow cosmetics and tf_weapon_builder, otherwise dont generate player's TF2 loadout
+	char sClassname[256];
+	DHookGetParamString(hParams, 1, sClassname, sizeof(sClassname));
 	int iIndex = DHookGetParamObjectPtrVar(hParams, 3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	
+	Action action = GiveNamedItem(iClient, sClassname, iIndex);
+	if (action >= Plugin_Handled)
 	{
-		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (0 <= iSlot < WeaponSlot_BuilderEngie)
-		{
-			DHookSetReturn(hReturn, 0);
-			return MRES_Override;
-		}
+		DHookSetReturn(hReturn, 0);
+		return MRES_Override;
 	}
 	
 	return MRES_Ignored;
+}
+
+public void DHook_GiveNamedItemRemoved(int iHookId)
+{
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+	{
+		if (g_iHookIdGiveNamedItem[iClient] == iHookId)
+		{
+			g_iHookIdGiveNamedItem[iClient] = 0;
+			return;
+		}
+	}
 }
 
 public Action Hook_ReloadPre(int iWeapon)

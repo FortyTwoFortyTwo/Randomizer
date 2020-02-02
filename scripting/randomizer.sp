@@ -8,6 +8,10 @@
 #include <tf_econ_data>
 #include <dhooks>
 
+#undef REQUIRE_EXTENSIONS
+#tryinclude <tf2items>
+#define REQUIRE_EXTENSIONS
+
 #pragma newdecls required
 
 #define TF_MAXPLAYERS 32
@@ -50,6 +54,8 @@ enum
 	TF_AMMO_COUNT
 };
 
+bool g_bTF2Items;
+
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 
@@ -70,6 +76,9 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+	//OnLibraryAdded dont always call TF2Items on plugin start
+	g_bTF2Items = LibraryExists("TF2Items");
+	
 	RegAdminCmd("class", Command_Class, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("weapon", Command_Weapon, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("generate", Command_Generate, ADMFLAG_CHANGEMAP);
@@ -101,12 +110,42 @@ public void OnPluginStart()
 	}
 }
 
+public void OnLibraryAdded(const char[] sName)
+{
+	if (StrEqual(sName, "TF2Items"))
+	{
+		g_bTF2Items = true;
+		
+		//We cant allow TF2Items load while GiveNamedItem already hooked due to crash
+		if (SDK_IsGiveNamedItemActive())
+			SetFailState("Do not load TF2Items midgame while Randomizer is already loaded!");
+	}
+}
+
+public void OnLibraryRemoved(const char[] sName)
+{
+	if (StrEqual(sName, "TF2Items"))
+	{
+		g_bTF2Items = false;
+		
+		//TF2Items unloaded with GiveNamedItem unhooked, we can now safely hook GiveNamedItem ourself
+		for (int iClient = 1; iClient <= MaxClients; iClient++)
+			if (IsClientInGame(iClient))
+				SDK_HookGiveNamedItem(iClient);
+	}
+}
+
 public void OnClientPutInServer(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Huds_ClientDisplay);
-	SDK_HookClient(iClient);
+	SDK_HookGiveNamedItem(iClient);
 	
 	GenerateRandonWeapon(iClient);
+}
+
+public void OnClientDisconnect(int iClient)
+{
+	SDK_UnhookGiveNamedItem(iClient);
 }
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)
@@ -261,4 +300,22 @@ KeyValues LoadConfig(const char[] sFilepath, const char[] sName)
 	}
 	
 	return kv;
+}
+
+public Action TF2Items_OnGiveNamedItem(int iClient, char[] sClassname, int iIndex, Handle &hItem)
+{
+	return GiveNamedItem(iClient, sClassname, iIndex);
+}
+
+public Action GiveNamedItem(int iClient, const char[] sClassname, int iIndex)
+{
+	//Only allow cosmetics and tf_weapon_builder, otherwise dont generate player's TF2 loadout
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	{
+		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+		if (0 <= iSlot < WeaponSlot_BuilderEngie)
+			return Plugin_Handled;
+	}
+	
+	return Plugin_Continue;
 }
