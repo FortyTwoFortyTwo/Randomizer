@@ -410,9 +410,10 @@ public Action Hook_ReloadPre(int iWeapon)
 
 public void Hook_ReloadPost(int iWeapon, bool bResult)
 {
-	//Call DoClassSpecialSkill for detour to manage with stickybomb and charging
+	//Call DoClassSpecialSkill for detour to manage with stickybomb and charging, only if holding reload and not automated
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
-	SDK_DoClassSpecialSkill(iClient);
+	if (GetClientButtons(iClient) & IN_RELOAD)
+		SDK_DoClassSpecialSkill(iClient);
 }
 
 static int GetClientFromPlayerShared(Address pPlayerShared)
