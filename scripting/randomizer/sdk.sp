@@ -5,6 +5,7 @@ static Handle g_hSDKGetMaxAmmo;
 static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKGetBaseEntity;
 
+static Handle g_hDHookSetWeaponModel;
 static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookGiveNamedItem;
 
@@ -84,6 +85,7 @@ public void SDK_Init()
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateItemChargeMeters", DHook_UpdateItemChargeMetersPre, DHook_UpdateItemChargeMetersPost);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateChargeMeter", DHook_UpdateChargeMeterPre, DHook_UpdateChargeMeterPost);
 	
+	g_hDHookSetWeaponModel = DHook_CreateVirtual(hGameData, "CBaseViewModel::SetWeaponModel");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	
@@ -152,6 +154,11 @@ bool SDK_IsGiveNamedItemActive()
 			return true;
 	
 	return false;
+}
+
+void SDK_HookViewModel(int iViewModel)
+{
+	DHookEntity(g_hDHookSetWeaponModel, false, iViewModel, _, DHook_SetWeaponModelPre);
 }
 
 void SDK_HookWeapon(int iWeapon)
@@ -369,6 +376,23 @@ public MRESReturn DHook_UpdateChargeMeterPost(Address pPlayerShared)
 {
 	int iClient = GetClientFromPlayerShared(pPlayerShared);
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+}
+
+public MRESReturn DHook_SetWeaponModelPre(int iViewModel, Handle hParams)
+{
+	if (DHookIsNullParam(hParams, 1) || DHookIsNullParam(hParams, 2))
+		return MRES_Ignored;
+	
+	char sModel[PLATFORM_MAX_PATH];
+	int iWeapon = DHookGetParam(hParams, 2);
+	
+	if (ViewModel_GetFromItem(iWeapon, sModel, sizeof(sModel)))
+	{
+		DHookSetParamString(hParams, 1, sModel);
+		return MRES_ChangedHandled;
+	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_SecondaryWeaponPre(int iWeapon)

@@ -19,11 +19,6 @@
 #define CLASS_MIN	1	//First valid TFClassType, Scout
 #define CLASS_MAX	9	//Last valid TFClassType, Engineer
 
-#define ITEM_PDA_BUILD		25
-#define ITEM_PDA_DESTROY	26
-#define ITEM_PDA_DISGUISE	27
-#define ITEM_PDA_TOOLBOX	28
-
 #define ATTRIB_AIR_DASH_COUNT			250
 
 enum
@@ -64,6 +59,7 @@ int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 #include "randomizer/huds.sp"
 #include "randomizer/sdk.sp"
 #include "randomizer/stocks.sp"
+#include "randomizer/viewmodels.sp"
 #include "randomizer/weapons.sp"
 
 public Plugin myinfo =
@@ -108,6 +104,11 @@ public void OnPluginStart()
 	}
 }
 
+public void OnMapStart()
+{
+	ViewModel_Precache();
+}
+
 public void OnLibraryAdded(const char[] sName)
 {
 	if (StrEqual(sName, "TF2Items"))
@@ -150,6 +151,8 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 {
 	if (StrContains(sClassname, "tf_weapon_") == 0)
 		SDK_HookWeapon(iEntity);
+	else if (StrEqual(sClassname, "tf_viewmodel"))
+		SDK_HookViewModel(iEntity);
 }
 
 public void GenerateRandonWeapon(int iClient)
@@ -241,7 +244,7 @@ KeyValues LoadConfig(const char[] sFilepath, const char[] sName)
 {
 	char sConfigPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sConfigPath, sizeof(sConfigPath), sFilepath);
-	if(!FileExists(sConfigPath))
+	if (!FileExists(sConfigPath))
 	{
 		LogError("Failed to load Randomizer %s config file (file missing): %s", sName, sConfigPath);
 		return null;
@@ -250,7 +253,7 @@ KeyValues LoadConfig(const char[] sFilepath, const char[] sName)
 	KeyValues kv = new KeyValues(sName);
 	kv.SetEscapeSequences(true);
 
-	if(!kv.ImportFromFile(sConfigPath))
+	if (!kv.ImportFromFile(sConfigPath))
 	{
 		LogError("Failed to parse Randomizer %s config file: %s", sName, sConfigPath);
 		delete kv;
