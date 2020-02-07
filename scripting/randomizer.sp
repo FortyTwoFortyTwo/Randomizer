@@ -85,9 +85,9 @@ public Plugin myinfo =
 {
 	name = "Randomizer",
 	author = "42",
-	description = "",
+	description = "Gamemode where everyone plays as random class with random weapons",
 	version = "0.0.0",
-	url = "",
+	url = "https://github.com/FortyTwoFortyTwo/Randomizer",
 };
 
 public void OnPluginStart()
