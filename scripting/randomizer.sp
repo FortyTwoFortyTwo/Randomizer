@@ -21,6 +21,25 @@
 
 #define ATTRIB_AIR_DASH_COUNT			250
 
+// entity effects
+enum
+{
+	EF_BONEMERGE			= (1<<0),	// Performs bone merge on client side
+	EF_BRIGHTLIGHT			= (1<<1),	// DLIGHT centered at entity origin
+	EF_DIMLIGHT				= (1<<2),	// player flashlight
+	EF_NOINTERP				= (1<<3),	// don't interpolate the next frame
+	EF_NOSHADOW				= (1<<4),	// Don't cast no shadow
+	EF_NODRAW				= (1<<5),	// don't draw entity
+	EF_NORECEIVESHADOW		= (1<<6),	// Don't receive no shadow
+	EF_BONEMERGE_FASTCULL	= (1<<7),	// For use with EF_BONEMERGE. If this is set, then it places this ent's origin at its
+										// parent and uses the parent's bbox + the max extents of the aiment.
+										// Otherwise, it sets up the parent's bones every frame to figure out where to place
+										// the aiment, which is inefficient because it'll setup the parent's bones even if
+										// the parent is not in the PVS.
+	EF_ITEM_BLINK			= (1<<8),	// blink an item so that the user notices it.
+	EF_PARENT_ANIMATES		= (1<<9),	// always assume that the parent entity is animating
+};
+
 enum
 {
 	WeaponSlot_Primary = 0,
@@ -137,6 +156,10 @@ public void OnLibraryRemoved(const char[] sName)
 public void OnClientPutInServer(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Huds_ClientDisplay);
+//	SDKHook(iClient, SDKHook_PreThink, ViewModel_Think);
+	
+//	SDKHook(iClient, SDKHook_WeaponSwitchPost, ViewModel_WeaponSwitch);
+	
 	SDK_HookGiveNamedItem(iClient);
 	
 	GenerateRandonWeapon(iClient);
@@ -151,8 +174,6 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 {
 	if (StrContains(sClassname, "tf_weapon_") == 0)
 		SDK_HookWeapon(iEntity);
-	else if (StrEqual(sClassname, "tf_viewmodel"))
-		SDK_HookViewModel(iEntity);
 }
 
 public void GenerateRandonWeapon(int iClient)
@@ -223,6 +244,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			continue;
 		
 		TF2_RemoveItemInSlot(iClient, iSlot);
+		g_iViewModelHand[iClient][iSlot] = -1;
 		
 		//Create weapon
 		if (g_iClientWeaponIndex[iClient][iSlot] >= 0)

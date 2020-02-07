@@ -156,11 +156,6 @@ bool SDK_IsGiveNamedItemActive()
 	return false;
 }
 
-void SDK_HookViewModel(int iViewModel)
-{
-	DHookEntity(g_hDHookSetWeaponModel, false, iViewModel, _, DHook_SetWeaponModelPre);
-}
-
 void SDK_HookWeapon(int iWeapon)
 {
 	DHookEntity(g_hDHookSecondaryAttack, false, iWeapon, _, DHook_SecondaryWeaponPre);
@@ -376,23 +371,6 @@ public MRESReturn DHook_UpdateChargeMeterPost(Address pPlayerShared)
 {
 	int iClient = GetClientFromPlayerShared(pPlayerShared);
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
-}
-
-public MRESReturn DHook_SetWeaponModelPre(int iViewModel, Handle hParams)
-{
-	if (DHookIsNullParam(hParams, 1) || DHookIsNullParam(hParams, 2))
-		return MRES_Ignored;
-	
-	char sModel[PLATFORM_MAX_PATH];
-	int iWeapon = DHookGetParam(hParams, 2);
-	
-	if (ViewModel_GetFromItem(iWeapon, sModel, sizeof(sModel)))
-	{
-		DHookSetParamString(hParams, 1, sModel);
-		return MRES_ChangedHandled;
-	}
-	
-	return MRES_Ignored;
 }
 
 public MRESReturn DHook_SecondaryWeaponPre(int iWeapon)

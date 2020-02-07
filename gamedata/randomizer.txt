@@ -60,11 +60,6 @@
 				"linux"		"6"
 				"windows"	"5"
 			}
-			"CBaseViewModel::SetWeaponModel"
-			{
-				"linux"		"221"
-				"windows"	"220"
-			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"linux"		"286"
@@ -187,24 +182,6 @@
 				"callconv"	"thiscall"
 				"return"	"void"
 				"this"		"address"
-			}
-			"CBaseViewModel::SetWeaponModel"
-			{
-				"offset"	"CBaseViewModel::SetWeaponModel"
-				"hooktype"	"entity"
-				"return"	"void"
-				"this"		"entity"
-				"arguments"
-				{
-					"modelname"
-					{
-						"type"	"charptr"
-					}
-					"weapon"
-					{
-						"type"	"cbaseentity"
-					}
-				}
 			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{

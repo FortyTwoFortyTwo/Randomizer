@@ -1,15 +1,11 @@
-stock void Client_AddHealth(int iClient, int iAdditionalHeal, int iMaxOverHeal=0)
+stock void AddEffectFlags(int iEntity, int iEffects)
 {
-	int iMaxHealth = SDK_GetMaxHealth(iClient);
-	int iHealth = GetEntProp(iClient, Prop_Send, "m_iHealth");
-	int iTrueMaxHealth = iMaxHealth+iMaxOverHeal;
-	
-	if (iHealth < iTrueMaxHealth)
-	{
-		iHealth += iAdditionalHeal;
-		if (iHealth > iTrueMaxHealth) iHealth = iTrueMaxHealth;
-		SetEntProp(iClient, Prop_Send, "m_iHealth", iHealth);
-	}
+    SetEntProp(iEntity, Prop_Send, "m_fEffects", iEffects | GetEntProp(iEntity, Prop_Send, "m_fEffects"));
+}
+
+stock void RemoveEffectFlags(int iEntity, int iEffects)
+{
+    SetEntProp(iEntity, Prop_Send, "m_fEffects", ~iEffects & GetEntProp(iEntity, Prop_Send, "m_fEffects"));
 }
 
 stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
@@ -43,6 +39,8 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 		
 		if (StrContains(sClassname, "tf_weapon") == 0)
 		{
+			//ViewModel_CreateWeapon(iClient, iSlot, iWeapon);
+			
 			EquipPlayerWeapon(iClient, iWeapon);
 			
 			//Set ammo to 0, CTFPlayer::GetMaxAmmo detour will correct this, adding ammo by current
