@@ -252,6 +252,8 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		}
 	}
 	
+	Huds_RefreshClient(iClient);
+	
 	//Validate active weapon after deleting and generating weapons
 	if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
 	{

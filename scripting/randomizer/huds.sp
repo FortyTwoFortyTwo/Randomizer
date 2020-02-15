@@ -144,7 +144,18 @@ enum struct HudInfo
 	}
 }
 
-static ArrayList g_aHuds;
+enum struct HudWeapon
+{
+	int iRef;				//Weapon ref
+	char sName[64];			//Name of weapon to display
+	ArrayList aHudInfo;		//Arrays of HudInfo to display
+	bool bAttack2;			//Does this weapon do something on attack2
+	bool bPassive;			//Does this weapon have attack2 works on any weapons?
+	char sPassiveText[64];	//Text to display if bPassive
+}
+
+static ArrayList g_aHuds;	//Arrays of HudInfo
+static HudWeapon g_hudWeapon[TF_MAXPLAYERS+1][WeaponSlot_InvisWatch+1];	//What to display for each weapons
 
 void Huds_Init()
 {
@@ -297,37 +308,23 @@ void Huds_Refresh()
 	}
 }
 
-public void Huds_ClientDisplay(int iClient)
+void Huds_RefreshClient(int iClient)
 {
-	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon <= MaxClients)
-		return;
-	
-	char sDisplay[512];
-	
 	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
 	{
+		delete g_hudWeapon[iClient][iSlot].aHudInfo;
+		
 		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
 		if (iWeapon > MaxClients)
 		{
-			//Break line
-			if (!StrEqual(sDisplay, ""))
-				Format(sDisplay, sizeof(sDisplay), "%s\n", sDisplay);
-			//else
-			//	Format(sDisplay, sizeof(sDisplay), "GetGameTime (%.8f)\n", GetGameTime());
+			HudWeapon hudWeapon;
+			hudWeapon.iRef = EntIndexToEntRef(iWeapon);
 			
-			//Get Index
 			int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+			if (!Weapons_GetName(iIndex, hudWeapon.sName, sizeof(hudWeapon.sName)))
+				hudWeapon.sName = "Unknown Name";
 			
-			//TODO translation support
-			char sName[256];
-			if (Weapons_GetName(iIndex, sName, sizeof(sName)))
-				Format(sDisplay, sizeof(sDisplay), "%s%s", sDisplay, sName);
-			else
-				Format(sDisplay, sizeof(sDisplay), "%sUnknown Name", sDisplay);
-			
-			//Go through every netprops to see whenever if meter needs to be displayed
-			
+			//Go through every HudInfo to see whenever which weapon can use
 			int iLength = g_aHuds.Length;
 			for (int i = 0; i < iLength; i++)
 			{
@@ -340,6 +337,57 @@ public void Huds_ClientDisplay(int iClient)
 				
 				if (!hudInfo.IsIndexAllowed(iIndex))
 					continue;
+				
+				if (!hudWeapon.aHudInfo)
+					hudWeapon.aHudInfo = new ArrayList(sizeof(HudInfo));
+				
+				hudWeapon.aHudInfo.PushArray(hudInfo);
+			}
+			
+			hudWeapon.bAttack2 = Controls_IsUsingAttack2(iWeapon);
+			hudWeapon.bPassive = Controls_GetPassiveDisplay(iWeapon, hudWeapon.sPassiveText, sizeof(hudWeapon.sPassiveText));
+			
+			g_hudWeapon[iClient][iSlot] = hudWeapon;
+		}
+		else
+		{
+			HudWeapon nothing;
+			g_hudWeapon[iClient][iSlot] = nothing;
+		}
+	}
+}
+
+public void Huds_ClientDisplay(int iClient)
+{
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon <= MaxClients)
+		return;
+	
+	int iActiveSlot = TF2_GetSlotFromItem(iClient, iActiveWeapon);
+	
+	char sDisplay[512];
+	
+	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
+	{
+		int iWeapon = EntRefToEntIndex(g_hudWeapon[iClient][iSlot].iRef);
+		if (iWeapon <= MaxClients)
+			continue;
+		
+		//Break line
+		if (sDisplay[0] != '\0')
+			StrCat(sDisplay, sizeof(sDisplay), "\n");
+		
+		StrCat(sDisplay, sizeof(sDisplay), g_hudWeapon[iClient][iSlot].sName);
+		
+		//Go through every netprops to display
+		if (g_hudWeapon[iClient][iSlot].aHudInfo)
+		{
+			int iLength = g_hudWeapon[iClient][iSlot].aHudInfo.Length;
+			for (int i = 0; i < iLength; i++)
+			{
+				HudInfo hudInfo;
+				g_hudWeapon[iClient][iSlot].aHudInfo.GetArray(i, hudInfo);
+				int iEntity = hudInfo.GetEntity(iClient, iWeapon);
 				
 				switch (hudInfo.nType)
 				{
@@ -364,13 +412,12 @@ public void Huds_ClientDisplay(int iClient)
 				}
 			}
 			
-			char sPassiveText[CONFIG_MAXCHAR];
-			if (Controls_GetPassiveDisplay(iWeapon, sPassiveText, sizeof(sPassiveText)))
+			if (g_hudWeapon[iClient][iSlot].bPassive)
 			{
-				if (Controls_IsUsingAttack2(iActiveWeapon) && iWeapon != iActiveWeapon)
-					Format(sDisplay, sizeof(sDisplay), "%s (reload to %s)", sDisplay, sPassiveText);
+				if (g_hudWeapon[iClient][iActiveSlot].bAttack2 && iWeapon != iActiveWeapon)
+					Format(sDisplay, sizeof(sDisplay), "%s (reload to %s)", sDisplay, g_hudWeapon[iClient][iSlot].sPassiveText);
 				else
-					Format(sDisplay, sizeof(sDisplay), "%s (right click to %s)", sDisplay, sPassiveText);
+					Format(sDisplay, sizeof(sDisplay), "%s (right click to %s)", sDisplay, g_hudWeapon[iClient][iSlot].sPassiveText);
 			}
 		}
 	}
