@@ -299,9 +299,13 @@ void Huds_Refresh()
 
 public void Huds_ClientDisplay(int iClient)
 {
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon <= MaxClients)
+		return;
+	
 	char sDisplay[512];
 	
-	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_Melee; iSlot++)
+	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
 	{
 		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
 		if (iWeapon > MaxClients)
@@ -358,6 +362,15 @@ public void Huds_ClientDisplay(int iClient)
 							Format(sDisplay, sizeof(sDisplay), "%s: %.0f%s", sDisplay, flVal, hudInfo.sText);
 					}
 				}
+			}
+			
+			char sPassiveText[CONFIG_MAXCHAR];
+			if (Controls_GetPassiveDisplay(iWeapon, sPassiveText, sizeof(sPassiveText)))
+			{
+				if (Controls_IsUsingAttack2(iActiveWeapon) && iWeapon != iActiveWeapon)
+					Format(sDisplay, sizeof(sDisplay), "%s (reload to %s)", sDisplay, sPassiveText);
+				else
+					Format(sDisplay, sizeof(sDisplay), "%s (right click to %s)", sDisplay, sPassiveText);
 			}
 		}
 	}

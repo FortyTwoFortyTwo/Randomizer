@@ -74,7 +74,7 @@ TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 
 #include "randomizer/commands.sp"
-#include "randomizer/config.sp"
+#include "randomizer/controls.sp"
 #include "randomizer/huds.sp"
 #include "randomizer/sdk.sp"
 #include "randomizer/stocks.sp"
@@ -103,11 +103,11 @@ public void OnPluginStart()
 	SDK_Init();
 	
 	Commands_Init();
-	Config_Init();
+	Controls_Init();
 	Huds_Init();
 	Weapons_Init();
 	
-	Config_Refresh();
+	Controls_Refresh();
 	Huds_Refresh();
 	Weapons_Refresh();
 	
@@ -168,6 +168,13 @@ public void OnClientPutInServer(int iClient)
 public void OnClientDisconnect(int iClient)
 {
 	SDK_UnhookGiveNamedItem(iClient);
+}
+
+public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const float vecVel[3], const float vecAngles[3], int iWeapon, int iSubtype, int iCmdNum, int iTickCount, int iSeed, const int iMouse[2]) 
+{
+	//Call DoClassSpecialSkill for detour to manage with any weapons replaced from attack2 to reload
+	if (GetClientButtons(iClient) & IN_RELOAD)
+		SDK_DoClassSpecialSkill(iClient);
 }
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)

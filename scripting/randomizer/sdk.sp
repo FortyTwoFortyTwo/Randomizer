@@ -5,7 +5,6 @@ static Handle g_hSDKGetMaxAmmo;
 static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKGetBaseEntity;
 
-static Handle g_hDHookSetWeaponModel;
 static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookGiveNamedItem;
 
@@ -85,7 +84,6 @@ public void SDK_Init()
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateItemChargeMeters", DHook_UpdateItemChargeMetersPre, DHook_UpdateItemChargeMetersPost);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateChargeMeter", DHook_UpdateChargeMeterPre, DHook_UpdateChargeMeterPost);
 	
-	g_hDHookSetWeaponModel = DHook_CreateVirtual(hGameData, "CBaseViewModel::SetWeaponModel");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	
@@ -158,11 +156,9 @@ bool SDK_IsGiveNamedItemActive()
 
 void SDK_HookWeapon(int iWeapon)
 {
-	DHookEntity(g_hDHookSecondaryAttack, false, iWeapon, _, DHook_SecondaryWeaponPre);
 	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
 	
 	SDKHook(iWeapon, SDKHook_Reload, Hook_ReloadPre);
-	SDKHook(iWeapon, SDKHook_ReloadPost, Hook_ReloadPost);
 }
 
 stock int SDK_GetMaxHealth(int iClient)
@@ -299,39 +295,41 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 	//and allow demoman stuffs only if holding reload, not from attack2
 	
 	g_bDoClassSpecialSkill[iClient] = true;
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon <= MaxClients)
+		return MRES_Ignored;
+	
 	int iButtons = GetClientButtons(iClient);
 	if (iButtons & IN_ATTACK2)
 	{
-		//Check if active weapon does something with attack2, if so prevent call
-		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-		if (iWeapon > MaxClients && Config_IsUsingAttack2(iWeapon))
+		//Check if active weapon does something with attack2 and not replaced to reload, if so prevent call
+		if (iActiveWeapon > MaxClients && Controls_IsUsingAttack2(iActiveWeapon) && !Controls_IsPassive(iActiveWeapon))
 		{
 			DHookSetReturn(hReturn, false);
 			return MRES_Supercede;
 		}
 	}
 	
-	int iSecondary = TF2_GetItemInSlot(iClient, WeaponSlot_Secondary);
-	if (iSecondary > MaxClients)
+	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 	{
-		TFClassType nDefaultClass = TF2_GetDefaultClassFromItem(iClient, iSecondary);
-		if (nDefaultClass == TFClass_DemoMan)
+		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
+		if (iWeapon > MaxClients && Controls_IsPassive(iWeapon))
 		{
-			if (iButtons & IN_RELOAD)
+			//This weapon is passive, determine whenever if attack2 or reload should be used, and change class for passive weapon
+			
+			if (iButtons & IN_RELOAD && iWeapon != iActiveWeapon && Controls_IsUsingAttack2(iActiveWeapon))
 			{
-				//Change class to allow detonate/charge from reload
-				TF2_SetPlayerClass(iClient, TFClass_DemoMan);
+				TF2_SetPlayerClass(iClient, TF2_GetDefaultClassFromItem(iClient, iWeapon));
 				return MRES_Ignored;
 			}
-			else if (TF2_GetPlayerClass(iClient) == TFClass_DemoMan)
+			else if (iButtons & IN_ATTACK2)
 			{
-				//If not holding reload and player is already demoman, prevent detonate/charge
-				DHookSetReturn(hReturn, false);
-				return MRES_Supercede;
+				TF2_SetPlayerClass(iClient, TF2_GetDefaultClassFromItem(iClient, iWeapon));
+				return MRES_Ignored;
 			}
 		}
 	}
-	
+		
 	if (iButtons & IN_RELOAD && !(iButtons & IN_ATTACK2))
 	{
 		//Nothing fancy need to do from SDK_DoClassSpecialSkill reload, prevent call
@@ -373,26 +371,16 @@ public MRESReturn DHook_UpdateChargeMeterPost(Address pPlayerShared)
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
-public MRESReturn DHook_SecondaryWeaponPre(int iWeapon)
-{
-	//Prevent this called if stickybomb, moved to reload
-	char sClassname[64];
-	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-	if (StrEqual(sClassname, "tf_weapon_pipebomblauncher"))
-		return MRES_Supercede;
-	
-	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
-	g_bDoClassSpecialSkill[iClient] = false;
-	return MRES_Ignored;
-}
-
 public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
 	
 	//If DoClassSpecialSkill not called during secondary attack, do it anyway lol
 	if (!g_bDoClassSpecialSkill[iClient])
+	{
+		g_bDoClassSpecialSkill[iClient] = true;
 		SDK_DoClassSpecialSkill(iClient);
+	}
 	
 	g_bDoClassSpecialSkill[iClient] = false;
 }
@@ -439,14 +427,6 @@ public Action Hook_ReloadPre(int iWeapon)
 		return Plugin_Handled;
 	
 	return Plugin_Continue;
-}
-
-public void Hook_ReloadPost(int iWeapon, bool bResult)
-{
-	//Call DoClassSpecialSkill for detour to manage with stickybomb and charging, only if holding reload and not automated
-	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
-	if (GetClientButtons(iClient) & IN_RELOAD)
-		SDK_DoClassSpecialSkill(iClient);
 }
 
 static int GetClientFromPlayerShared(Address pPlayerShared)
