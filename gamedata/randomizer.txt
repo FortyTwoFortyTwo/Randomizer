@@ -65,6 +65,11 @@
 				"linux"		"286"
 				"windows"	"280"
 			}
+			"CBasePlayer::EquipWearable"
+			{
+				"linux"		"431"
+				"windows"	"430"
+			}
 			"CTFPlayer::GiveNamedItem"
 			{
 				"linux"		"482"

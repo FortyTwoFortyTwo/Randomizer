@@ -92,7 +92,7 @@ stock int TF2_GetItemInSlot(int iClient, int iSlot)
 	int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
 	
 	//If weapon not found in slot, check if it a wearable
-	if (!IsValidEdict(iWeapon))
+	if (!IsValidEntity(iWeapon))
 		return TF2_GetWearableInSlot(iClient, iSlot);
 	
 	return iWeapon;
@@ -184,10 +184,7 @@ stock void TF2_RemoveItemInSlot(int iClient, int iSlot)
 
 	int iWearable = TF2_GetWearableInSlot(iClient, iSlot);
 	if (iWearable > MaxClients)
-	{
-		SDK_RemoveWearable(iClient, iWearable);
-		AcceptEntityInput(iWearable, "Kill");
-	}
+		TF2_RemoveWearable(iClient, iWearable);
 }
 
 stock int TF2_GetAmmo(int iWeapon)

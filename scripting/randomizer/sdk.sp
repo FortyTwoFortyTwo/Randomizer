@@ -1,7 +1,4 @@
-static Handle g_hSDKGetMaxHealth;
-static Handle g_hSDKRemoveWearable;
 static Handle g_hSDKEquipWearable;
-static Handle g_hSDKGetMaxAmmo;
 static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKGetBaseEntity;
 
@@ -16,64 +13,9 @@ static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
 
 public void SDK_Init()
 {
-	GameData hGameData = new GameData("sdkhooks.games");
-	if (!hGameData)
-		SetFailState("Could not find sdkhooks.games gamedata");
-	
-	//Max health
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "GetMaxHealth");
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-	g_hSDKGetMaxHealth = EndPrepSDKCall();
-	if(!g_hSDKGetMaxHealth)
-		LogError("Failed to create call: CTFPlayer::GetMaxHealth");
-	
-	delete hGameData;
-	
-	hGameData = new GameData("sm-tf2.games");
-	if (!hGameData)
-		SetFailState("Could not find sm-tf2.games gamedata");
-	
-	int iRemoveWearableOffset = hGameData.GetOffset("RemoveWearable");
-	
-	//Remove Wearable
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetVirtual(iRemoveWearableOffset);
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKRemoveWearable = EndPrepSDKCall();
-	if (!g_hSDKRemoveWearable)
-		LogError("Failed to create call: CBasePlayer::RemoveWearable");
-	
-	//Equip Wearable
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetVirtual(iRemoveWearableOffset-1);//Equip Wearable is right behind Remove Wearable, should be good if valve dont add one between
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKEquipWearable = EndPrepSDKCall();
-	if (!g_hSDKEquipWearable)
-		LogError("Failed to create call: CBasePlayer::EquipWearable");
-	
-	delete hGameData;
-	
-	hGameData = new GameData("randomizer");
+	GameData hGameData = new GameData("randomizer");
 	if (!hGameData)
 		SetFailState("Could not find randomizer gamedata");
-	
-	//Get Max Ammo
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-	g_hSDKGetMaxAmmo = EndPrepSDKCall();
-	if (!g_hSDKGetMaxAmmo)
-		LogError("Failed to create call: CTFPlayer::GetMaxAmmo");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::DoClassSpecialSkill");
-	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
-	g_hSDKDoClassSpecialSkill = EndPrepSDKCall();
-	if (!g_hSDKDoClassSpecialSkill)
-		LogError("Failed to create call: CTFPlayer::DoClassSpecialSkill");
 	
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
@@ -93,6 +35,20 @@ public void SDK_Init()
 	g_hSDKGetBaseEntity = EndPrepSDKCall();
 	if (!g_hSDKGetBaseEntity)
 		LogError("Failed to create call: CBaseEntity::GetBaseEntity");
+	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	g_hSDKEquipWearable = EndPrepSDKCall();
+	if (!g_hSDKEquipWearable)
+		LogError("Failed to create call: CBasePlayer::EquipWearable");
+	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::DoClassSpecialSkill");
+	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+	g_hSDKDoClassSpecialSkill = EndPrepSDKCall();
+	if (!g_hSDKDoClassSpecialSkill)
+		LogError("Failed to create call: CTFPlayer::DoClassSpecialSkill");
 	
 	g_pPlayerSharedOuter = view_as<Address>(hGameData.GetOffset("CTFPlayerShared::m_pOuter"));
 	g_iOffsetItemDefinitionIndex = hGameData.GetOffset("CEconItemView::m_iItemDefinitionIndex");
@@ -161,35 +117,13 @@ void SDK_HookWeapon(int iWeapon)
 	SDKHook(iWeapon, SDKHook_Reload, Hook_ReloadPre);
 }
 
-stock int SDK_GetMaxHealth(int iClient)
-{
-	if (g_hSDKGetMaxHealth)
-		return SDKCall(g_hSDKGetMaxHealth, iClient);
-	
-	return 0;
-}
-
-stock void SDK_RemoveWearable(int iClient, int iWearable)
-{
-	if (g_hSDKRemoveWearable)
-		SDKCall(g_hSDKRemoveWearable, iClient, iWearable);
-}
-
-stock void SDK_EquipWearable(int iClient, int iWearable)
+void SDK_EquipWearable(int iClient, int iWearable)
 {
 	if (g_hSDKEquipWearable)
 		SDKCall(g_hSDKEquipWearable, iClient, iWearable);
 }
 
-stock int SDK_GetMaxAmmo(int iClient, int iAmmoType)
-{
-	if (g_hSDKGetMaxAmmo)
-		return SDKCall(g_hSDKGetMaxAmmo, iClient, iAmmoType, -1);
-	
-	return -1;
-}
-
-stock bool SDK_DoClassSpecialSkill(int iClient)
+bool SDK_DoClassSpecialSkill(int iClient)
 {
 	if (g_hSDKDoClassSpecialSkill)
 		return SDKCall(g_hSDKDoClassSpecialSkill, iClient);
