@@ -65,6 +65,11 @@
 				"linux"		"286"
 				"windows"	"280"
 			}
+			"CBaseObject::CanBeUpgraded"
+			{
+				"linux"		"376"
+				"windows"	"374"
+			}
 			"CBasePlayer::EquipWearable"
 			{
 				"linux"		"431"
@@ -194,6 +199,20 @@
 				"hooktype"	"entity"
 				"return"	"void"
 				"this"		"entity"
+			}
+			"CBaseObject::CanBeUpgraded"
+			{
+				"offset"	"CBaseObject::CanBeUpgraded"
+				"hooktype"	"entity"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"	"cbaseentity"
+					}
+				}
 			}
 			"CTFPlayer::GiveNamedItem"
 			{

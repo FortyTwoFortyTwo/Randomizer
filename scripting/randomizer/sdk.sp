@@ -3,6 +3,7 @@ static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKGetBaseEntity;
 
 static Handle g_hDHookSecondaryAttack;
+static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookGiveNamedItem;
 
 static int g_iOffsetItemDefinitionIndex = -1;
@@ -27,6 +28,7 @@ public void SDK_Init()
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateChargeMeter", DHook_UpdateChargeMeterPre, DHook_UpdateChargeMeterPost);
 	
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
+	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	
 	StartPrepSDKCall(SDKCall_Raw);
@@ -115,6 +117,12 @@ void SDK_HookWeapon(int iWeapon)
 	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
 	
 	SDKHook(iWeapon, SDKHook_Reload, Hook_ReloadPre);
+}
+
+void SDK_HookObject(int iObject)
+{
+	DHookEntity(g_hDHookCanBeUpgraded, false, iObject, _, DHook_CanBeUpgradedPre);
+	DHookEntity(g_hDHookCanBeUpgraded, true, iObject, _, DHook_CanBeUpgradedPost);
 }
 
 void SDK_EquipWearable(int iClient, int iWearable)
@@ -323,6 +331,19 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 	}
 	
 	g_bDoClassSpecialSkill[iClient] = false;
+}
+
+public MRESReturn DHook_CanBeUpgradedPre(int iObject, Handle hReturn, Handle hParams)
+{
+	//This function have engineer class check
+	int iClient = DHookGetParam(hParams, 1);
+	TF2_SetPlayerClass(iClient, TFClass_Engineer);
+}
+
+public MRESReturn DHook_CanBeUpgradedPost(int iObject, Handle hReturn, Handle hParams)
+{
+	int iClient = DHookGetParam(hParams, 1);
+	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
 public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hParams)
