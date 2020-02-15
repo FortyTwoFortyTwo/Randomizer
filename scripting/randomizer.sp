@@ -173,7 +173,7 @@ public void OnClientDisconnect(int iClient)
 public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const float vecVel[3], const float vecAngles[3], int iWeapon, int iSubtype, int iCmdNum, int iTickCount, int iSeed, const int iMouse[2]) 
 {
 	//Call DoClassSpecialSkill for detour to manage with any weapons replaced from attack2 to reload
-	if (GetClientButtons(iClient) & IN_RELOAD)
+	if (iButtons & IN_RELOAD)
 		SDK_DoClassSpecialSkill(iClient);
 }
 

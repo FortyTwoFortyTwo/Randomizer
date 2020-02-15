@@ -373,6 +373,12 @@ public MRESReturn DHook_UpdateChargeMeterPost(Address pPlayerShared)
 
 public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 {
+	//Why is this function getting called from tf_viewmodel angery
+	char sClassname[256];
+	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	if (StrContains(sClassname, "tf_weapon_") != 0)
+		return;
+	
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
 	
 	//If DoClassSpecialSkill not called during secondary attack, do it anyway lol
