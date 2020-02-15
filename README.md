@@ -13,3 +13,8 @@ Apart from the obvious random class and weapon generator, this plugin currently 
 - Many hook/detours on several SDK functions that have hardcode player classes, fixed by simply changing player class during SDK functions.
 - Config with list of weapons to select from random pool, along with name for each weapons for HUD display.
 - Config with huds to specify every weapons which netprop and maths to calculate meters to display.
+
+## Requirements
+- SourceMod 1.10
+- [tf_econ_data](https://forums.alliedmods.net/showthread.php?t=315011)
+- [dhooks with detour support](https://forums.alliedmods.net/showpost.php?p=2588686&postcount=589)
