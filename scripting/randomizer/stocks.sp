@@ -63,8 +63,8 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 	}
 	else
 	{
-		PrintToChatAll("Unable to create weapon for client (%N), class (%d), classname (%s)", iClient, TF2_GetPlayerClass(iClient), sClassname);
-		LogError("Unable to create weapon for client (%N), class (%d), classname (%s)", iClient, TF2_GetPlayerClass(iClient), sClassname);
+		PrintToChat(iClient, "Unable to create weapon! index (%d) classname (%s)", iIndex, sClassname);
+		LogError("Unable to create weapon! index (%d), classname (%s)", iIndex, sClassname);
 	}
 	
 	return iWeapon;

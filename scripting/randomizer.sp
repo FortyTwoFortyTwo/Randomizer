@@ -239,7 +239,17 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		
 		//Create weapon
 		if (g_iClientWeaponIndex[iClient][iSlot] >= 0)
+		{
 			TF2_CreateAndEquipWeapon(iClient, g_iClientWeaponIndex[iClient][iSlot], iSlot);
+			
+			//Check if weapon actually generated and equipped
+			iWeapon = TF2_GetItemInSlot(iClient, iSlot);
+			if (iWeapon <= MaxClients)
+			{
+				PrintToChat(iClient, "Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
+				LogError("Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
+			}
+		}
 	}
 	
 	//Validate active weapon after deleting and generating weapons
