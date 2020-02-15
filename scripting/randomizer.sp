@@ -261,9 +261,10 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 {
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
 	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
+	bool bDeadRinger = (event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER) != 0;
 	
 	//Only generate new weapons if killed from attacker
-	if (0 < iAttacker <= MaxClients && IsClientInGame(iAttacker) && iClient != iAttacker)
+	if (0 < iAttacker <= MaxClients && IsClientInGame(iAttacker) && iClient != iAttacker && !bDeadRinger)
 		RequestFrame(GenerateRandonWeapon, iClient);	//Can be buggy if done same frame as death
 }
 
