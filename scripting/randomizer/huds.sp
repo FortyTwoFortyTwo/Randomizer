@@ -414,7 +414,7 @@ public void Huds_ClientDisplay(int iClient)
 			
 			if (g_hudWeapon[iClient][iSlot].bPassive)
 			{
-				if (g_hudWeapon[iClient][iActiveSlot].bAttack2 && iWeapon != iActiveWeapon)
+				if (0 <= iActiveSlot < sizeof(g_hudWeapon[]) && g_hudWeapon[iClient][iActiveSlot].bAttack2 && iWeapon != iActiveWeapon)
 					Format(sDisplay, sizeof(sDisplay), "%s (reload to %s)", sDisplay, g_hudWeapon[iClient][iSlot].sPassiveText);
 				else
 					Format(sDisplay, sizeof(sDisplay), "%s (right click to %s)", sDisplay, g_hudWeapon[iClient][iSlot].sPassiveText);
