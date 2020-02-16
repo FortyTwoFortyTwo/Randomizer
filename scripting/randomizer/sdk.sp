@@ -1,13 +1,17 @@
+static Handle g_hSDKGetBaseEntity;
+static Handle g_hSDKGetDefaultItemChargeMeterValue;
 static Handle g_hSDKEquipWearable;
 static Handle g_hSDKDoClassSpecialSkill;
-static Handle g_hSDKGetBaseEntity;
+static Handle g_hSDKUpdateItemChargeMeters;
 
 static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookCanBeUpgraded;
+static Handle g_hDHookItemPostFrame;
 static Handle g_hDHookGiveNamedItem;
 
-static int g_iOffsetItemDefinitionIndex = -1;
+static Address g_pPlayerShared;
 static Address g_pPlayerSharedOuter;
+static int g_iOffsetItemDefinitionIndex = -1;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
@@ -24,11 +28,11 @@ public void SDK_Init()
 	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::OnDealtDamage", DHook_OnDealtDamagePre, DHook_OnDealtDamagePost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
-	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateItemChargeMeters", DHook_UpdateItemChargeMetersPre, DHook_UpdateItemChargeMetersPost);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateChargeMeter", DHook_UpdateChargeMeterPre, DHook_UpdateChargeMeterPost);
 	
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
+	g_hDHookItemPostFrame = DHook_CreateVirtual(hGameData, "CBasePlayer::ItemPostFrame");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	
 	StartPrepSDKCall(SDKCall_Raw);
@@ -37,6 +41,13 @@ public void SDK_Init()
 	g_hSDKGetBaseEntity = EndPrepSDKCall();
 	if (!g_hSDKGetBaseEntity)
 		LogError("Failed to create call: CBaseEntity::GetBaseEntity");
+	
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetDefaultItemChargeMeterValue");
+	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
+	g_hSDKGetDefaultItemChargeMeterValue = EndPrepSDKCall();
+	if (!g_hSDKGetDefaultItemChargeMeterValue)
+		LogError("Failed to create call: CBaseEntity::GetDefaultItemChargeMeterValue");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
@@ -52,6 +63,13 @@ public void SDK_Init()
 	if (!g_hSDKDoClassSpecialSkill)
 		LogError("Failed to create call: CTFPlayer::DoClassSpecialSkill");
 	
+	StartPrepSDKCall(SDKCall_Raw);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayerShared::UpdateItemChargeMeters");
+	g_hSDKUpdateItemChargeMeters = EndPrepSDKCall();
+	if (!g_hSDKUpdateItemChargeMeters)
+		LogError("Failed to create call: CTFPlayerShared::UpdateItemChargeMeters");
+	
+	g_pPlayerShared = view_as<Address>(FindSendPropInfo("CTFPlayer", "m_Shared"));
 	g_pPlayerSharedOuter = view_as<Address>(hGameData.GetOffset("CTFPlayerShared::m_pOuter"));
 	g_iOffsetItemDefinitionIndex = hGameData.GetOffset("CEconItemView::m_iItemDefinitionIndex");
 	
@@ -112,6 +130,11 @@ bool SDK_IsGiveNamedItemActive()
 	return false;
 }
 
+void SDK_HookClient(int iClient)
+{
+	DHookEntity(g_hDHookItemPostFrame, false, iClient, _, DHook_ItemPostFramePre);
+}
+
 void SDK_HookWeapon(int iWeapon)
 {
 	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
@@ -123,6 +146,14 @@ void SDK_HookObject(int iObject)
 {
 	DHookEntity(g_hDHookCanBeUpgraded, false, iObject, _, DHook_CanBeUpgradedPre);
 	DHookEntity(g_hDHookCanBeUpgraded, true, iObject, _, DHook_CanBeUpgradedPost);
+}
+
+float SDK_GetDefaultItemChargeMeterValue(int iWeapon)
+{
+	if (g_hSDKGetDefaultItemChargeMeterValue)
+		return SDKCall(g_hSDKGetDefaultItemChargeMeterValue, iWeapon);
+	
+	return 0.0;
 }
 
 void SDK_EquipWearable(int iClient, int iWearable)
@@ -137,6 +168,15 @@ bool SDK_DoClassSpecialSkill(int iClient)
 		return SDKCall(g_hSDKDoClassSpecialSkill, iClient);
 	
 	return false;
+}
+
+void SDK_UpdateItemChargeMeters(int iClient)
+{
+	if (g_hSDKUpdateItemChargeMeters)
+	{
+		Address pThis = GetEntityAddress(iClient) + g_pPlayerShared;
+		SDKCall(g_hSDKUpdateItemChargeMeters, pThis);
+	}
 }
 
 public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
@@ -287,17 +327,34 @@ public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, Handle hReturn)
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
-public MRESReturn DHook_UpdateItemChargeMetersPre(Address pPlayerShared)
+public MRESReturn DHook_ItemPostFramePre(int iClient)
 {
-	//Dragon Fury and Gas Passer meter have hardcode pyro check in this call
-	int iClient = GetClientFromPlayerShared(pPlayerShared);
-	TF2_SetPlayerClass(iClient, TFClass_Pyro);
-}
-
-public MRESReturn DHook_UpdateItemChargeMetersPost(Address pPlayerShared)
-{
-	int iClient = GetClientFromPlayerShared(pPlayerShared);
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+	//This is the only function that calls CTFPlayerShared::UpdateItemChargeMeters,
+	// but only works if playing as default class, Loop through each weapons that
+	// uses this function, and call with said class
+	
+	bool bClassPlayed[CLASS_MAX+1];
+	bClassPlayed[g_iClientClass[iClient]] = true;
+	
+	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
+	{
+		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
+		
+		float flVal;
+		if (iWeapon > MaxClients && TF2_WeaponFindAttribute(iWeapon, ATTRIB_ITEM_METER_CHARGE_TYPE, flVal))
+		{
+			TFClassType nDefaultClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
+			
+			if (!bClassPlayed[nDefaultClass])
+			{
+				bClassPlayed[nDefaultClass] = true;
+				
+				TF2_SetPlayerClass(iClient, nDefaultClass);
+				SDK_UpdateItemChargeMeters(iClient);
+				TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+			}
+		}
+	}
 }
 
 public MRESReturn DHook_UpdateChargeMeterPre(Address pPlayerShared)

@@ -19,7 +19,9 @@
 #define CLASS_MIN	1	//First valid TFClassType, Scout
 #define CLASS_MAX	9	//Last valid TFClassType, Engineer
 
-#define ATTRIB_AIR_DASH_COUNT			250
+#define ATTRIB_AIR_DASH_COUNT				250
+#define ATTRIB_ITEM_METER_RESUPPLY_DENIED	848
+#define ATTRIB_ITEM_METER_CHARGE_TYPE		856
 
 // entity effects
 enum
@@ -161,6 +163,7 @@ public void OnClientPutInServer(int iClient)
 //	SDKHook(iClient, SDKHook_WeaponSwitchPost, ViewModel_WeaponSwitch);
 	
 	SDK_HookGiveNamedItem(iClient);
+	SDK_HookClient(iClient);
 	
 	GenerateRandonWeapon(iClient);
 }
@@ -256,17 +259,18 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	
 	Huds_RefreshClient(iClient);
 	
-	//Validate active weapon after deleting and generating weapons
-	if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
+	for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
 	{
-		for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
+		int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);	//Dont want wearables for m_hActiveWeapon
+		if (iWeapon > MaxClients)
 		{
-			int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
-			if (iWeapon > MaxClients)
-			{
+			float flVal;
+			if (!TF2_WeaponFindAttribute(iWeapon, ATTRIB_ITEM_METER_RESUPPLY_DENIED, flVal) || flVal == 0.0)
+				SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", SDK_GetDefaultItemChargeMeterValue(iWeapon), iSlot);
+			
+			//Set active weapon if dont have one
+			if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
 				SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
-				break;
-			}
 		}
 	}
 }

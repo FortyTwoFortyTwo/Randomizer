@@ -60,6 +60,11 @@
 				"linux"		"6"
 				"windows"	"5"
 			}
+			"CBaseEntity::GetDefaultItemChargeMeterValue"
+			{
+				"linux"		"191"
+				"windows"	"190"
+			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"linux"		"286"
@@ -69,6 +74,11 @@
 			{
 				"linux"		"376"
 				"windows"	"374"
+			}
+			"CBasePlayer::ItemPostFrame"
+			{
+				"linux"		"404"
+				"windows"	"403"
 			}
 			"CBasePlayer::EquipWearable"
 			{
@@ -179,13 +189,6 @@
 				"return"	"bool"
 				"this"		"entity"
 			}
-			"CTFPlayerShared::UpdateItemChargeMeters"
-			{
-				"signature"	"CTFPlayerShared::UpdateItemChargeMeters"
-				"callconv"	"thiscall"
-				"return"	"void"
-				"this"		"address"
-			}
 			"CTFPlayerShared::UpdateChargeMeter"
 			{
 				"signature"	"CTFPlayerShared::UpdateChargeMeter"
@@ -213,6 +216,13 @@
 						"type"	"cbaseentity"
 					}
 				}
+			}
+			"CBasePlayer::ItemPostFrame"
+			{
+				"offset"	"CBasePlayer::ItemPostFrame"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
