@@ -29,6 +29,7 @@ public void SDK_Init()
 	DHook_CreateDetour(hGameData, "CTFPlayer::OnDealtDamage", DHook_OnDealtDamagePre, DHook_OnDealtDamagePost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateChargeMeter", DHook_UpdateChargeMeterPre, DHook_UpdateChargeMeterPost);
+	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
 	
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
@@ -368,6 +369,18 @@ public MRESReturn DHook_UpdateChargeMeterPost(Address pPlayerShared)
 {
 	int iClient = GetClientFromPlayerShared(pPlayerShared);
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+}
+
+public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
+{
+	//Not all weapons remove disguise
+	int iClient = DHookGetParam(hParams, 1);
+	
+	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguising))
+		TF2_RemoveCondition(iClient, TFCond_Disguising);
+	
+	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
+		TF2_RemoveCondition(iClient, TFCond_Disguised);
 }
 
 public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)

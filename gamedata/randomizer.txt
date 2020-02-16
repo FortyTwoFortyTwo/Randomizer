@@ -52,6 +52,12 @@
 				"linux"		"@_ZN15CTFPlayerShared17UpdateChargeMeterEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x56\x8B\xF1\x6A\x04"
 			}
+			"CTFGameStats::Event_PlayerFiredWeapon"
+			{
+				"library"	"server"
+				"linux"		"@_ZN12CTFGameStats23Event_PlayerFiredWeaponEP9CTFPlayerb"
+				"windows"	"\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x56\x8B\x75\x08"
+			}
 		}
 		"Offsets"
 		{
@@ -195,6 +201,24 @@
 				"callconv"	"thiscall"
 				"return"	"void"
 				"this"		"address"
+			}
+			"CTFGameStats::Event_PlayerFiredWeapon"
+			{
+				"signature"	"CTFGameStats::Event_PlayerFiredWeapon"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"address"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"	"cbaseentity"
+					}
+					"bCritical"
+					{
+						"type"	"bool"
+					}
+				}
 			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
