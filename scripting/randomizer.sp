@@ -14,7 +14,8 @@
 
 #pragma newdecls required
 
-#define TF_MAXPLAYERS 32
+#define TF_MAXPLAYERS	32
+#define CONFIG_MAXCHAR	64
 
 #define CLASS_MIN	1	//First valid TFClassType, Scout
 #define CLASS_MAX	9	//Last valid TFClassType, Engineer
@@ -69,6 +70,127 @@ enum
 	TF_AMMO_GRENADES2,
 	TF_AMMO_COUNT
 };
+
+enum Button
+{
+	Button_Invalid = -1,
+	
+	Button_Attack2 = 0,
+	Button_Attack3,
+	Button_Reload,
+	
+	Button_MAX
+}
+
+enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
+{
+	ArrayList aClassname;
+	ArrayList aAttrib;
+	ArrayList aIndex;
+	
+	void Load(KeyValues kv, const char[] sSection)
+	{
+		if (kv.JumpToKey(sSection, false))
+		{
+			if (kv.GotoFirstSubKey(false))	//netprop name
+			{
+				do
+				{
+					char sType[CONFIG_MAXCHAR], sValue[CONFIG_MAXCHAR];
+					kv.GetSectionName(sType, sizeof(sType));
+					kv.GetString(NULL_STRING, sValue, sizeof(sValue));
+					
+					if (StrEqual(sType, "classname", false))
+					{
+						if (!this.aClassname)
+							this.aClassname = new ArrayList(CONFIG_MAXCHAR);
+						
+						this.aClassname.PushString(sValue);
+					}
+					else if (StrEqual(sType, "attrib", false))
+					{
+						if (!this.aAttrib)
+							this.aAttrib = new ArrayList();
+						
+						this.aAttrib.Push(TF2Econ_TranslateAttributeNameToDefinitionIndex(sValue));
+					}
+					else if (StrEqual(sType, "index", false))
+					{
+						if (!this.aIndex)
+							this.aIndex = new ArrayList();
+						
+						this.aIndex.Push(StringToInt(sValue));
+					}
+				}
+				while (kv.GotoNextKey(false));
+				kv.GoBack();
+			}
+			kv.GoBack();
+		}
+	}
+	
+	bool IsIndexAllowed(int iIndex)
+	{
+		if (this.aClassname)
+		{
+			char sClassname[256];
+			TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+			
+			int iLength = this.aClassname.Length;
+			for (int i = 0; i < iLength; i++)
+			{
+				char sBuffer[256];
+				this.aClassname.GetString(i, sBuffer, sizeof(sBuffer));
+				if (StrEqual(sClassname, sBuffer))
+					return true;
+			}
+		}
+		
+		if (this.aAttrib)
+		{
+			ArrayList aIndexAttrib = TF2Econ_GetItemStaticAttributes(iIndex);
+			int iIndexAttribLength = aIndexAttrib.Length;
+			int iAllowedAttribLength = this.aAttrib.Length;
+			
+			for (int i = 0; i < iIndexAttribLength; i++)
+			{
+				int iIndexAttrib = aIndexAttrib.Get(i);
+				for (int j = 0; j < iAllowedAttribLength; j++)
+				{
+					if (iIndexAttrib == this.aAttrib.Get(j))
+					{
+						delete aIndexAttrib;
+						return true;
+					}
+				}
+			}
+			
+			delete aIndexAttrib;
+		}
+		
+		if (this.aIndex)
+		{
+			int iLength = this.aIndex.Length;
+			for (int i = 0; i < iLength; i++)
+				if (iIndex == this.aIndex.Get(i))
+					return true;
+		}
+		
+		return false;
+	}
+	
+	bool IsEmpty()
+	{
+		return !this.aClassname && !this.aAttrib && !this.aIndex;
+	}
+	
+	void Delete()
+	{
+		delete this.aClassname;
+		delete this.aAttrib;
+		delete this.aIndex;
+	}
+}
 
 bool g_bTF2Items;
 
@@ -175,8 +297,8 @@ public void OnClientDisconnect(int iClient)
 
 public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const float vecVel[3], const float vecAngles[3], int iWeapon, int iSubtype, int iCmdNum, int iTickCount, int iSeed, const int iMouse[2]) 
 {
-	//Call DoClassSpecialSkill for detour to manage with any weapons replaced from attack2 to reload
-	if (iButtons & IN_RELOAD)
+	//Call DoClassSpecialSkill for detour to manage with any weapons replaced from attack2 to attack3 or reload
+	if (iButtons & IN_ATTACK3 || iButtons & IN_RELOAD)
 		SDK_DoClassSpecialSkill(iClient);
 }
 
@@ -287,6 +409,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		}
 	}
 	
+	Controls_RefreshClient(iClient);
 	Huds_RefreshClient(iClient);
 }
 

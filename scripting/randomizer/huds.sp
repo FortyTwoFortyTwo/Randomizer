@@ -1,13 +1,5 @@
 #define FILEPATH_CONFIG_HUDS "configs/randomizer/huds.cfg"
 
-enum
-{
-	HudWeapon_Classname,
-	HudWeapon_Attrib,
-	HudWeapon_Index,
-	HudWeapon_MAX,
-}
-
 enum HudEntity
 {
 	HudEntity_Client,
@@ -23,7 +15,7 @@ enum HudType
 
 enum struct HudInfo
 {
-	ArrayList aWeapons[HudWeapon_MAX];	//If any not null, only display if weapon have one of those
+	WeaponWhitelist weaponWhitelist;	//Weapons that uses this netprop
 	char sNetprop[32];	//Netprop to get value
 	int iElement;		//If netprop is array, element postition to get
 	HudEntity nEntity;	//Entity to target from netprop
@@ -35,61 +27,6 @@ enum struct HudInfo
 	float flMax;		//Netprop max value inorder to display
 	char sText[64];		//Text to display next to value
 	StringMap mText;	//If not null, use this instead of sText to get text depending on netprop value
-	
-	bool IsIndexAllowed(int iIndex)
-	{
-		bool bNull = true;
-		
-		if (this.aWeapons[HudWeapon_Classname])
-		{
-			bNull = false;
-			char sClassname[256];
-			TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
-			
-			int iLength = this.aWeapons[HudWeapon_Classname].Length;
-			for (int i = 0; i < iLength; i++)
-			{
-				char sBuffer[256];
-				this.aWeapons[HudWeapon_Classname].GetString(i, sBuffer, sizeof(sBuffer));
-				if (StrEqual(sClassname, sBuffer))
-					return true;
-			}
-		}
-		
-		if (this.aWeapons[HudWeapon_Attrib])
-		{
-			bNull = false;
-			ArrayList aIndexAttrib = TF2Econ_GetItemStaticAttributes(iIndex);
-			int iIndexAttribLength = aIndexAttrib.Length;
-			int iAllowedAttribLength = this.aWeapons[HudWeapon_Attrib].Length;
-			
-			for (int i = 0; i < iIndexAttribLength; i++)
-			{
-				int iIndexAttrib = aIndexAttrib.Get(i);
-				for (int j = 0; j < iAllowedAttribLength; j++)
-				{
-					if (iIndexAttrib == this.aWeapons[HudWeapon_Attrib].Get(j))
-					{
-						delete aIndexAttrib;
-						return true;
-					}
-				}
-			}
-			
-			delete aIndexAttrib;
-		}
-		
-		if (this.aWeapons[HudWeapon_Index])
-		{
-			int iLength = this.aWeapons[HudWeapon_Index].Length;
-			for (int i = 0; i < iLength; i++)
-				if (iIndex == this.aWeapons[HudWeapon_Index].Get(i))
-					return true;
-		}
-		
-		//If all whitelist arrays is null, assume it for all weapons
-		return bNull;
-	}
 	
 	int GetEntity(int iClient, int iWeapon)
 	{
@@ -146,12 +83,9 @@ enum struct HudInfo
 
 enum struct HudWeapon
 {
-	int iRef;				//Weapon ref
-	char sName[64];			//Name of weapon to display
-	ArrayList aHudInfo;		//Arrays of HudInfo to display
-	bool bAttack2;			//Does this weapon do something on attack2
-	bool bPassive;			//Does this weapon have attack2 works on any weapons?
-	char sPassiveText[64];	//Text to display if bPassive
+	int iRef;					//Weapon ref
+	char sName[64];				//Name of weapon to display
+	ArrayList aHudInfo;			//Arrays of HudInfo to display
 }
 
 static ArrayList g_aHuds;	//Arrays of HudInfo
@@ -174,10 +108,7 @@ void Huds_Refresh()
 	{
 		HudInfo hudInfo;
 		g_aHuds.GetArray(i, hudInfo);
-		
-		for (int j = 0; j < sizeof(hudInfo.aWeapons); j++)
-			delete hudInfo.aWeapons[j];
-		
+		hudInfo.weaponWhitelist.Delete();
 		delete hudInfo.mText;
 	}
 	
@@ -265,40 +196,7 @@ void Huds_Refresh()
 				kv.GoBack();
 			}
 			
-			if (kv.JumpToKey("weapon", false))
-			{
-				if (kv.GotoFirstSubKey(false))	//netprop name
-				{
-					do
-					{
-						char sType[CONFIG_MAXCHAR], sValue[CONFIG_MAXCHAR];
-						kv.GetSectionName(sType, sizeof(sType));
-						kv.GetString(NULL_STRING, sValue, sizeof(sValue));
-						
-						if (StrEqual(sType, "classname", false))
-						{
-							if (!hudInfo.aWeapons[HudWeapon_Classname])
-								hudInfo.aWeapons[HudWeapon_Classname] = new ArrayList(CONFIG_MAXCHAR);
-							hudInfo.aWeapons[HudWeapon_Classname].PushString(sValue);
-						}
-						else if (StrEqual(sType, "attrib", false))
-						{
-							if (!hudInfo.aWeapons[HudWeapon_Attrib])
-								hudInfo.aWeapons[HudWeapon_Attrib] = new ArrayList();
-							hudInfo.aWeapons[HudWeapon_Attrib].Push(TF2Econ_TranslateAttributeNameToDefinitionIndex(sValue));
-						}
-						else if (StrEqual(sType, "index", false))
-						{
-							if (!hudInfo.aWeapons[HudWeapon_Index])
-								hudInfo.aWeapons[HudWeapon_Index] = new ArrayList();
-							hudInfo.aWeapons[HudWeapon_Index].Push(StringToInt(sValue));
-						}
-					}
-					while (kv.GotoNextKey(false));
-					kv.GoBack();
-				}
-				kv.GoBack();
-			}
+			hudInfo.weaponWhitelist.Load(kv, "weapon");
 			
 			//Push all of the stuffs to ArrayList
 			g_aHuds.PushArray(hudInfo);
@@ -335,7 +233,7 @@ void Huds_RefreshClient(int iClient)
 				if (!HasEntProp(iEntity, Prop_Send, hudInfo.sNetprop))
 					continue;
 				
-				if (!hudInfo.IsIndexAllowed(iIndex))
+				if (!hudInfo.weaponWhitelist.IsEmpty() && !hudInfo.weaponWhitelist.IsIndexAllowed(iIndex))
 					continue;
 				
 				if (!hudWeapon.aHudInfo)
@@ -343,9 +241,6 @@ void Huds_RefreshClient(int iClient)
 				
 				hudWeapon.aHudInfo.PushArray(hudInfo);
 			}
-			
-			hudWeapon.bAttack2 = Controls_IsUsingAttack2(iWeapon);
-			hudWeapon.bPassive = Controls_GetPassiveDisplay(iWeapon, hudWeapon.sPassiveText, sizeof(hudWeapon.sPassiveText));
 			
 			g_hudWeapon[iClient][iSlot] = hudWeapon;
 		}
@@ -363,9 +258,8 @@ public void Huds_ClientDisplay(int iClient)
 	if (iActiveWeapon <= MaxClients)
 		return;
 	
-	int iActiveSlot = TF2_GetSlotFromItem(iClient, iActiveWeapon);
-	
 	char sDisplay[512];
+	bool bAllowAttack2 = true;
 	
 	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
 	{
@@ -412,13 +306,9 @@ public void Huds_ClientDisplay(int iClient)
 				}
 			}
 			
-			if (g_hudWeapon[iClient][iSlot].bPassive)
-			{
-				if (0 <= iActiveSlot < sizeof(g_hudWeapon[]) && g_hudWeapon[iClient][iActiveSlot].bAttack2 && iWeapon != iActiveWeapon)
-					Format(sDisplay, sizeof(sDisplay), "%s (reload to %s)", sDisplay, g_hudWeapon[iClient][iSlot].sPassiveText);
-				else
-					Format(sDisplay, sizeof(sDisplay), "%s (right click to %s)", sDisplay, g_hudWeapon[iClient][iSlot].sPassiveText);
-			}
+			char sBuffer[64];
+			if (Controls_GetPassiveInfo(iClient, iSlot, bAllowAttack2, sBuffer, sizeof(sBuffer)))
+				Format(sDisplay, sizeof(sDisplay), "%s (%s)", sDisplay, sBuffer);
 		}
 	}
 	

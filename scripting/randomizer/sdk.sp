@@ -301,9 +301,6 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 	//If Demoman, detonate stickies or charge
 	//If Engineer, pickup buildings
 	//If Spy, cloak or uncloak
-	//
-	//We want to prevent Engineer and Spy stuffs from reload,
-	//and allow demoman stuffs only if holding reload, not from attack2
 	
 	g_bDoClassSpecialSkill[iClient] = true;
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
@@ -311,44 +308,21 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 		return MRES_Ignored;
 	
 	int iButtons = GetClientButtons(iClient);
-	if (iButtons & IN_ATTACK2)
-	{
-		//Check if active weapon does something with attack2 and not replaced to reload, if so prevent call
-		if (iActiveWeapon > MaxClients && Controls_IsUsingAttack2(iActiveWeapon) && !Controls_IsPassive(iActiveWeapon))
-		{
-			DHookSetReturn(hReturn, false);
-			return MRES_Supercede;
-		}
-	}
+	bool bAllowAttack2 = true;
 	
 	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 	{
-		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-		if (iWeapon > MaxClients && Controls_IsPassive(iWeapon))
+		int iButton = Controls_GetPassiveButtonBit(iClient, iSlot, bAllowAttack2);
+		if (iButton > 0 && iButtons & iButton)
 		{
-			//This weapon is passive, determine whenever if attack2 or reload should be used, and change class for passive weapon
-			
-			if (iButtons & IN_RELOAD && iWeapon != iActiveWeapon && Controls_IsUsingAttack2(iActiveWeapon))
-			{
-				TF2_SetPlayerClass(iClient, TF2_GetDefaultClassFromItem(iClient, iWeapon));
-				return MRES_Ignored;
-			}
-			else if (iButtons & IN_ATTACK2)
-			{
-				TF2_SetPlayerClass(iClient, TF2_GetDefaultClassFromItem(iClient, iWeapon));
-				return MRES_Ignored;
-			}
+			TF2_SetPlayerClass(iClient, TF2_GetDefaultClassFromItem(iClient, TF2_GetItemInSlot(iClient, iSlot)));
+			return MRES_Ignored;
 		}
 	}
-		
-	if (iButtons & IN_RELOAD && !(iButtons & IN_ATTACK2))
-	{
-		//Nothing fancy need to do from SDK_DoClassSpecialSkill reload, prevent call
-		DHookSetReturn(hReturn, false);
-		return MRES_Supercede;
-	}
 	
-	return MRES_Ignored;
+	//Cant find any valid passive weapon to use, prevent function called
+	DHookSetReturn(hReturn, false);
+	return MRES_Supercede;
 }
 
 public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, Handle hReturn)

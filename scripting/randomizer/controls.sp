@@ -1,13 +1,39 @@
 #define FILEPATH_CONFIG_CONTROLS "configs/randomizer/controls.cfg"
-#define CONFIG_MAXCHAR	64
 
-StringMap g_mWeaponAttack2;
-StringMap g_mWeaponPassive;
+enum struct ControlsInfo
+{
+	int iButton;	//Bitflag button
+	char sKey[64];	//String in config to get stuffs
+	char sText[64];	//Text to display
+	WeaponWhitelist weaponWhitelist;	//List of weapons that uses this control
+}
+
+enum struct ControlsPassive
+{
+	Button nButton;
+	char sText[64];
+}
+
+ControlsInfo g_controlsInfo[Button_MAX];
+StringMap g_mControlsPassive;
+bool g_bControlsButton[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1][Button_MAX];
 
 public void Controls_Init()
 {
-	g_mWeaponAttack2 = new StringMap();
-	g_mWeaponPassive = new StringMap();
+	g_controlsInfo[Button_Attack2].iButton = IN_ATTACK2;
+	g_controlsInfo[Button_Attack2].sKey = "attack2";
+	g_controlsInfo[Button_Attack2].sText = "right click";
+	
+	g_controlsInfo[Button_Attack3].iButton = IN_ATTACK3;
+	g_controlsInfo[Button_Attack3].sKey = "attack3";
+	g_controlsInfo[Button_Attack3].sText = "middle click";
+	
+	g_controlsInfo[Button_Reload].iButton = IN_RELOAD;
+	g_controlsInfo[Button_Reload].sKey = "reload";
+	g_controlsInfo[Button_Reload].sText = "reload";
+	
+	
+	g_mControlsPassive = new StringMap();
 }
 
 public void Controls_Refresh()
@@ -16,57 +42,135 @@ public void Controls_Refresh()
 	if (!kv)
 		return;
 	
-	Controls_LoadList(kv, "attack2", g_mWeaponAttack2);
-	Controls_LoadList(kv, "passive", g_mWeaponPassive);
+	for (int i = 0; i < sizeof(g_controlsInfo); i++)
+	{
+		g_controlsInfo[i].weaponWhitelist.Delete();
+		g_controlsInfo[i].weaponWhitelist.Load(kv, g_controlsInfo[i].sKey);
+	}
 	
-	delete kv;
-}
-
-void Controls_LoadList(KeyValues kv, char[] sSection, StringMap mMap)
-{
-	mMap.Clear();
+	g_mControlsPassive.Clear();
 	
-	if (kv.JumpToKey(sSection, false))
+	if (kv.JumpToKey("passive", false))
 	{
 		if (kv.GotoFirstSubKey(false))
 		{
 			do
 			{
-				char sName[CONFIG_MAXCHAR], sValue[CONFIG_MAXCHAR];
+				ControlsPassive controlsPassive;
+				char sName[CONFIG_MAXCHAR], sButton[CONFIG_MAXCHAR];
 				kv.GetSectionName(sName, sizeof(sName));
-				kv.GetString(NULL_STRING, sValue, sizeof(sValue));
+				kv.GetString("button", sButton, sizeof(sButton));
+				kv.GetString("text", controlsPassive.sText, sizeof(controlsPassive.sText));
 				
-				mMap.SetString(sName, sValue);
+				if (StrEqual(sButton, "attack2"))
+					controlsPassive.nButton = Button_Attack2;
+				else if (StrEqual(sButton, "attack3"))
+					controlsPassive.nButton = Button_Attack3;
+				else if (StrEqual(sButton, "reload"))
+					controlsPassive.nButton = Button_Reload;
+				
+				g_mControlsPassive.SetArray(sName, controlsPassive, sizeof(controlsPassive));
 			}
 			while (kv.GotoNextKey(false));
 		}
 		kv.GoBack();
 	}
 	kv.GoBack();
+	
+	delete kv;
 }
 
-bool Controls_IsUsingAttack2(int iWeapon)
+void Controls_RefreshClient(int iClient)
 {
+	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
+	{
+		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
+		if (iWeapon > MaxClients)
+		{
+			int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+			
+			for (Button nButton; nButton < Button_MAX; nButton++)
+				g_bControlsButton[iClient][iSlot][nButton] = g_controlsInfo[nButton].weaponWhitelist.IsIndexAllowed(iIndex);
+		}
+		else
+		{
+			for (Button nButton; nButton < Button_MAX; nButton++)
+				g_bControlsButton[iClient][iSlot][nButton] = false;
+		}
+	}
+}
+
+Button Controls_GetPassiveButton(int iClient, int iSlot, bool &bAllowAttack2)
+{
+	int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
+	if (iWeapon <= MaxClients)
+		return Button_Invalid;
+	
 	char sClassname[CONFIG_MAXCHAR];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
 	
-	char sBuffer[1];
-	return g_mWeaponAttack2.GetString(sClassname, sBuffer, sizeof(sBuffer));
+	ControlsPassive controlsPassive;
+	if (!g_mControlsPassive.GetArray(sClassname, controlsPassive, sizeof(controlsPassive)))
+		return Button_Invalid;
+	
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon <= MaxClients)
+		return Button_Invalid;
+	
+	int iActiveSlot = TF2_GetSlotFromItem(iClient, iActiveWeapon);
+	
+	if (iWeapon == iActiveWeapon && bAllowAttack2)
+	{
+		bAllowAttack2 = false;
+		return Button_Attack2;
+	}
+	else if (iWeapon == iActiveWeapon)
+	{
+		return controlsPassive.nButton;
+	}
+	else if (bAllowAttack2 && !g_bControlsButton[iClient][iActiveSlot][Button_Attack2])
+	{
+		bAllowAttack2 = false;
+		return Button_Attack2;
+	}
+	else if (!g_bControlsButton[iClient][iActiveSlot][controlsPassive.nButton])
+	{
+		return controlsPassive.nButton;
+	}
+	else
+	{
+		return Button_Invalid;
+	}
 }
 
-bool Controls_IsPassive(int iWeapon)
+int Controls_GetPassiveButtonBit(int iClient, int iSlot, bool &bAllowAttack2)
 {
+	Button nButton = Controls_GetPassiveButton(iClient, iSlot, bAllowAttack2);
+	if (nButton == Button_Invalid)
+		return 0;
+	
+	return g_controlsInfo[nButton].iButton;
+}
+
+bool Controls_GetPassiveInfo(int iClient, int iSlot, bool &bAllowAttack2, char[] sBuffer, int iLength)
+{
+	int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
+	if (iWeapon <= MaxClients)
+		return false;
+	
 	char sClassname[CONFIG_MAXCHAR];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
 	
-	char sBuffer[1];
-	return g_mWeaponPassive.GetString(sClassname, sBuffer, sizeof(sBuffer));
-}
-
-bool Controls_GetPassiveDisplay(int iWeapon, char[] sBuffer, int iLength)
-{
-	char sClassname[CONFIG_MAXCHAR];
-	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	ControlsPassive controlsPassive;
+	if (!g_mControlsPassive.GetArray(sClassname, controlsPassive, sizeof(controlsPassive)))
+		return false;
 	
-	return g_mWeaponPassive.GetString(sClassname, sBuffer, iLength);
+	Button nButton = Controls_GetPassiveButton(iClient, iSlot, bAllowAttack2);
+	
+	if (nButton == Button_Invalid)
+		Format(sBuffer, iLength, "unable to %s", controlsPassive.sText);
+	else
+		Format(sBuffer, iLength, "%s to %s", g_controlsInfo[nButton].sText, controlsPassive.sText);
+	
+	return true;
 }
