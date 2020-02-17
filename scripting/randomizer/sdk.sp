@@ -1,6 +1,8 @@
 static Handle g_hSDKGetBaseEntity;
 static Handle g_hSDKGetDefaultItemChargeMeterValue;
 static Handle g_hSDKEquipWearable;
+static Handle g_hSDKAddObject;
+static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKUpdateItemChargeMeters;
 
@@ -56,6 +58,20 @@ public void SDK_Init()
 	g_hSDKEquipWearable = EndPrepSDKCall();
 	if (!g_hSDKEquipWearable)
 		LogError("Failed to create call: CBasePlayer::EquipWearable");
+	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::AddObject");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	g_hSDKAddObject = EndPrepSDKCall();
+	if (g_hSDKAddObject == null)
+		LogMessage("Failed to create call: CTFPlayer::AddObject");
+	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::RemoveObject");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	g_hSDKRemoveObject = EndPrepSDKCall();
+	if (g_hSDKRemoveObject == null)
+		LogMessage("Failed to create call: CTFPlayer::RemoveObject");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::DoClassSpecialSkill");
@@ -161,6 +177,18 @@ void SDK_EquipWearable(int iClient, int iWearable)
 {
 	if (g_hSDKEquipWearable)
 		SDKCall(g_hSDKEquipWearable, iClient, iWearable);
+}
+
+void SDK_AddObject(int iClient, int iObject)
+{
+	if (g_hSDKAddObject)
+		SDKCall(g_hSDKAddObject, iClient, iObject);
+}
+
+void SDK_RemoveObject(int iClient, int iObject)
+{
+	if (g_hSDKRemoveObject)
+		SDKCall(g_hSDKRemoveObject, iClient, iObject);
 }
 
 bool SDK_DoClassSpecialSkill(int iClient)

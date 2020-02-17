@@ -28,6 +28,18 @@
 				"linux"		"@_ZN9CTFPlayer15ValidateWeaponsEP19TFPlayerClassData_tb"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x38\x81\x65\xE4\xFF\xFF\x0F\xFF"
 			}
+			"CTFPlayer::AddObject"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer9AddObjectEP11CBaseObject"
+				"windows"	"\x55\x8B\xEC\x53\x56\x57\x8B\x7D\x08\x8B\xD9\x85\xFF\x74\x2A\x8B\x07\x8B\xCF\xFF\x50\x08\x8B\xCF"
+			}
+			"CTFPlayer::RemoveObject"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer12RemoveObjectEP11CBaseObject"
+				"windows"	"\x55\x8B\xEC\x8B\xD1\x56\x8B\xB2\x7C\x21\x00\x00"
+			}
 			"CTFPlayer::OnDealtDamage"
 			{
 				"library"	"server"

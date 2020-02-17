@@ -190,6 +190,12 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 
 public void GenerateRandonWeapon(int iClient)
 {
+	//Detach client's object so it doesnt get destroyed on losing toolbox
+	int iBuilding = MaxClients+1;
+	while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
+		if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
+			SDK_RemoveObject(iClient, iBuilding);
+	
 	//Random Class
 	g_iClientClass[iClient] = view_as<TFClassType>(GetRandomInt(CLASS_MIN, CLASS_MAX));
 	SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(g_iClientClass[iClient]));
@@ -232,7 +238,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
 	
-	for (int iSlot = 0; iSlot < WeaponSlot_BuilderEngie; iSlot++)	//Generating tf_weapon_builder is weird, allow engi keeps it
+	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 	{
 		//Allow player keep weapon if same index
 		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
@@ -257,7 +263,14 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		}
 	}
 	
-	Huds_RefreshClient(iClient);
+	if (TF2_GetItemInSlot(iClient, WeaponSlot_BuilderEngie) > MaxClients)
+	{
+		//Find any toolbox thay may have been detached from client, reattach it
+		int iBuilding = MaxClients+1;
+		while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
+			if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
+				SDK_AddObject(iClient, iBuilding);
+	}
 	
 	for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
 	{
@@ -273,6 +286,8 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 				SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
 		}
 	}
+	
+	Huds_RefreshClient(iClient);
 }
 
 public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroadcast)
