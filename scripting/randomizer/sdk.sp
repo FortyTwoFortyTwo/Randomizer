@@ -6,6 +6,7 @@ static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKUpdateItemChargeMeters;
+static Handle g_hSDKDrainCharge;
 
 static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookCanBeUpgraded;
@@ -31,7 +32,9 @@ public void SDK_Init()
 	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::OnDealtDamage", DHook_OnDealtDamagePre, DHook_OnDealtDamagePost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateChargeMeter", DHook_UpdateChargeMeterPre, DHook_UpdateChargeMeterPost);
+	DHook_CreateDetour(hGameData, "CTFPlayerShared::ConditionGameRulesThink", _, DHook_ConditionGameRulesThinkPost);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
 	
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
@@ -92,6 +95,12 @@ public void SDK_Init()
 	g_hSDKUpdateItemChargeMeters = EndPrepSDKCall();
 	if (!g_hSDKUpdateItemChargeMeters)
 		LogError("Failed to create call: CTFPlayerShared::UpdateItemChargeMeters");
+	
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CWeaponMedigun::DrainCharge");
+	g_hSDKDrainCharge = EndPrepSDKCall();
+	if (!g_hSDKDrainCharge)
+		LogError("Failed to create call: CWeaponMedigun::DrainCharge");
 	
 	g_pPlayerShared = view_as<Address>(FindSendPropInfo("CTFPlayer", "m_Shared"));
 	g_pPlayerSharedOuter = view_as<Address>(hGameData.GetOffset("CTFPlayerShared::m_pOuter"));
@@ -219,6 +228,12 @@ void SDK_UpdateItemChargeMeters(int iClient)
 		Address pThis = GetEntityAddress(iClient) + g_pPlayerShared;
 		SDKCall(g_hSDKUpdateItemChargeMeters, pThis);
 	}
+}
+
+void SDK_DrainCharge(int iMedigun)
+{
+	if (g_hSDKDrainCharge)
+		SDKCall(g_hSDKDrainCharge, iMedigun);
 }
 
 public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
@@ -351,6 +366,34 @@ public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, Handle hReturn)
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
+public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, Handle hReturn)
+{
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iWeapon <= MaxClients)
+	{
+		DHookSetReturn(hReturn, TF_CHARGE_NONE);
+		return MRES_Supercede;
+	}
+	
+	char sClassname[256];
+	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	if (!StrEqual(sClassname, "tf_weapon_medigun") || !GetEntProp(iWeapon, Prop_Send, "m_bChargeRelease") || GetEntProp(iWeapon, Prop_Send, "m_bHolstered"))
+	{
+		DHookSetReturn(hReturn, TF_CHARGE_NONE);
+		return MRES_Supercede;
+	}
+	
+	float flVal;
+	if (TF2_WeaponFindAttribute(iWeapon, ATTRIB_SET_CHARGE_TYPE, flVal))
+	{
+		DHookSetReturn(hReturn, RoundToNearest(flVal));
+		return MRES_Supercede;
+	}
+	
+	DHookSetReturn(hReturn, TF_CHARGE_INVULNERABLE);
+	return MRES_Supercede;
+}
+
 public MRESReturn DHook_UpdateChargeMeterPre(Address pPlayerShared)
 {
 	//This function is only used to manage demoshield meter, but have hardcode demoman class
@@ -368,6 +411,27 @@ public MRESReturn DHook_UpdateChargeMeterPost(Address pPlayerShared)
 		return;
 	
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+}
+
+public MRESReturn DHook_ConditionGameRulesThinkPost(Address pPlayerShared)
+{
+	//There a medic call check for draining uber.
+	//Pre and post hooks is a bit broken, so changing class to medic won't do the trick
+	
+	int iClient = GetClientFromPlayerShared(pPlayerShared);
+	if (TF2_GetPlayerClass(iClient) == TFClass_Medic)
+		return;
+	
+	int iSecondary = TF2_GetItemInSlot(iClient, WeaponSlot_Secondary);
+	if (iSecondary <= MaxClients)
+		return;
+	
+	char sClassname[256];
+	GetEntityClassname(iSecondary, sClassname, sizeof(sClassname));
+	if (!StrEqual(sClassname, "tf_weapon_medigun"))
+		return;
+	
+	SDK_DrainCharge(iSecondary);
 }
 
 public MRESReturn DHook_ItemPostFramePre(int iClient)

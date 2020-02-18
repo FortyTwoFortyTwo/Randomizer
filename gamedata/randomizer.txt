@@ -52,6 +52,12 @@
 				"linux"		"@_ZN9CTFPlayer19DoClassSpecialSkillEv"
 				"windows"	"\x56\x8B\xF1\x8B\x06\x8B\x80\x04\x01\x00\x00\xFF\xD0\x84\xC0\x75\x2A\x32\xC0\x5E\xC3\xF7\x86\x74\x1A\x00\x00\x00\x00\x04\x00"
 			}
+			"CTFPlayer::GetChargeEffectBeingProvided"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer28GetChargeEffectBeingProvidedEv"
+				"windows"	"\x55\x8B\xEC\x51\x56\x8B\xF1\x8D\x86\xFC\x20\x00\x00"
+			}
 			"CTFPlayerShared::UpdateItemChargeMeters"
 			{
 				"library"	"server"
@@ -63,6 +69,18 @@
 				"library"	"server"
 				"linux"		"@_ZN15CTFPlayerShared17UpdateChargeMeterEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x56\x8B\xF1\x6A\x04"
+			}
+			"CTFPlayerShared::ConditionGameRulesThink"
+			{
+				"library"	"server"
+				"linux"		"@_ZN15CTFPlayerShared23ConditionGameRulesThinkEv"
+				"windows"	"\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x81\xEC\xC8\x00\x00\x00\x56\x57\x8B\xF9\x89\x7D\xDC\x8D\x8F\xE0\x00\x00\x00"
+			}
+			"CWeaponMedigun::DrainCharge"
+			{
+				"library"	"server"
+				"linux"		"@_ZN14CWeaponMedigun11DrainChargeEv"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x57\x8B\xF9\x80\xBF\xF9\x07\x00\x00\x00"
 			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{
@@ -210,6 +228,13 @@
 				"signature"	"CTFPlayer::DoClassSpecialSkill"
 				"callconv"	"thiscall"
 				"return"	"bool"
+				"this"		"entity"
+			}
+			"CTFPlayer::GetChargeEffectBeingProvided"
+			{
+				"signature"	"CTFPlayer::GetChargeEffectBeingProvided"
+				"callconv"	"thiscall"
+				"return"	"int"
 				"this"		"entity"
 			}
 			"CTFPlayerShared::UpdateChargeMeter"
