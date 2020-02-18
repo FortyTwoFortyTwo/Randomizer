@@ -88,6 +88,11 @@
 				"linux"		"286"
 				"windows"	"280"
 			}
+			"CTFWeaponBase::WeaponReset"
+			{
+				"linux"		"426"
+				"windows"	"419"
+			}
 			"CBaseObject::CanBeUpgraded"
 			{
 				"linux"		"376"

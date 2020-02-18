@@ -1,6 +1,7 @@
 static Handle g_hSDKGetBaseEntity;
 static Handle g_hSDKGetDefaultItemChargeMeterValue;
 static Handle g_hSDKEquipWearable;
+static Handle g_hSDKWeaponReset;
 static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
@@ -58,6 +59,12 @@ public void SDK_Init()
 	g_hSDKEquipWearable = EndPrepSDKCall();
 	if (!g_hSDKEquipWearable)
 		LogError("Failed to create call: CBasePlayer::EquipWearable");
+	
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CTFWeaponBase::WeaponReset");
+	g_hSDKWeaponReset = EndPrepSDKCall();
+	if (!g_hSDKWeaponReset)
+		LogError("Failed to create call: CTFWeaponBase::WeaponReset");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::AddObject");
@@ -179,6 +186,12 @@ void SDK_EquipWearable(int iClient, int iWearable)
 		SDKCall(g_hSDKEquipWearable, iClient, iWearable);
 }
 
+void SDK_WeaponReset(int iWeapon)
+{
+	if (g_hSDKWeaponReset)
+		SDKCall(g_hSDKWeaponReset, iWeapon);
+}
+
 void SDK_AddObject(int iClient, int iObject)
 {
 	if (g_hSDKAddObject)
@@ -280,7 +293,15 @@ public MRESReturn DHook_CanAirDashPost(int iClient, Handle hReturn)
 
 public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
 {
-	//Dont validate any weapons, TF2 attempting to remove randomizer weapon for player's TF2 loadout
+	//Dont validate any weapons, TF2 attempting to remove randomizer weapon for player's TF2 loadout,
+	// however need to manually call WeaponReset virtual so randomizer weapons get restored back to what it was
+	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
+	{
+		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
+		if (iWeapon > MaxClients)
+			SDK_WeaponReset(iWeapon);
+	}
+	
 	return MRES_Supercede;
 }
 
