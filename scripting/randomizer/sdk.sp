@@ -351,8 +351,30 @@ public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, Handle hReturn)
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
+public MRESReturn DHook_UpdateChargeMeterPre(Address pPlayerShared)
+{
+	//This function is only used to manage demoshield meter, but have hardcode demoman class
+	int iClient = GetClientFromPlayerShared(pPlayerShared);
+	if (!IsPlayerAlive(iClient))
+		return;
+	
+	TF2_SetPlayerClass(iClient, TFClass_DemoMan);
+}
+
+public MRESReturn DHook_UpdateChargeMeterPost(Address pPlayerShared)
+{
+	int iClient = GetClientFromPlayerShared(pPlayerShared);
+	if (!IsPlayerAlive(iClient))
+		return;
+	
+	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+}
+
 public MRESReturn DHook_ItemPostFramePre(int iClient)
 {
+	if (!IsPlayerAlive(iClient))
+		return;
+	
 	//This is the only function that calls CTFPlayerShared::UpdateItemChargeMeters,
 	// but only works if playing as default class, Loop through each weapons that
 	// uses this function, and call with said class
@@ -379,19 +401,6 @@ public MRESReturn DHook_ItemPostFramePre(int iClient)
 			}
 		}
 	}
-}
-
-public MRESReturn DHook_UpdateChargeMeterPre(Address pPlayerShared)
-{
-	//This function is only used to manage demoshield meter, but have hardcode demoman class
-	int iClient = GetClientFromPlayerShared(pPlayerShared);
-	TF2_SetPlayerClass(iClient, TFClass_DemoMan);
-}
-
-public MRESReturn DHook_UpdateChargeMeterPost(Address pPlayerShared)
-{
-	int iClient = GetClientFromPlayerShared(pPlayerShared);
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
 public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
