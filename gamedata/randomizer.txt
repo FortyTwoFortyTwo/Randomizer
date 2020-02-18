@@ -244,6 +244,13 @@
 				"return"	"void"
 				"this"		"address"
 			}
+			"CTFPlayerShared::ConditionGameRulesThink"
+			{
+				"signature"	"CTFPlayerShared::ConditionGameRulesThink"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"address"
+			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{
 				"signature"	"CTFGameStats::Event_PlayerFiredWeapon"
