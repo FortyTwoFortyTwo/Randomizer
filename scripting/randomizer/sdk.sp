@@ -348,9 +348,13 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 	
 	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 	{
+		if (Controls_IsPassiveInCooldown(iClient, iSlot))
+			continue;
+		
 		int iButton = Controls_GetPassiveButtonBit(iClient, iSlot, bAllowAttack2);
 		if (iButton > 0 && iButtons & iButton)
 		{
+			Controls_OnPassiveUse(iClient, iSlot);
 			TF2_SetPlayerClass(iClient, TF2_GetDefaultClassFromItem(iClient, TF2_GetItemInSlot(iClient, iSlot)));
 			return MRES_Ignored;
 		}

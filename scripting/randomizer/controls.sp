@@ -12,11 +12,13 @@ enum struct ControlsPassive
 {
 	Button nButton;
 	char sText[64];
+	float flCooldown;
 }
 
 ControlsInfo g_controlsInfo[Button_MAX];
 StringMap g_mControlsPassive;
-bool g_bControlsButton[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1][Button_MAX];
+bool g_bControlsButton[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1][view_as<int>(Button_MAX)];
+float g_flControlsCooldown[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 
 public void Controls_Init()
 {
@@ -61,6 +63,7 @@ public void Controls_Refresh()
 				kv.GetSectionName(sName, sizeof(sName));
 				kv.GetString("button", sButton, sizeof(sButton));
 				kv.GetString("text", controlsPassive.sText, sizeof(controlsPassive.sText));
+				controlsPassive.flCooldown = kv.GetFloat("cooldown", 0.0);
 				
 				if (StrEqual(sButton, "attack2"))
 					controlsPassive.nButton = Button_Attack2;
@@ -84,6 +87,8 @@ void Controls_RefreshClient(int iClient)
 {
 	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
 	{
+		g_flControlsCooldown[iClient][iSlot] = 0.0;
+		
 		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
 		if (iWeapon > MaxClients)
 		{
@@ -102,21 +107,15 @@ void Controls_RefreshClient(int iClient)
 
 Button Controls_GetPassiveButton(int iClient, int iSlot, bool &bAllowAttack2)
 {
-	int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-	if (iWeapon <= MaxClients)
-		return Button_Invalid;
-	
-	char sClassname[CONFIG_MAXCHAR];
-	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-	
 	ControlsPassive controlsPassive;
-	if (!g_mControlsPassive.GetArray(sClassname, controlsPassive, sizeof(controlsPassive)))
+	if (!Controls_GetPassiveFromSlot(iClient, iSlot, controlsPassive))
 		return Button_Invalid;
 	
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon <= MaxClients)
 		return Button_Invalid;
 	
+	int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
 	int iActiveSlot = TF2_GetSlotFromItem(iClient, iActiveWeapon);
 	
 	if (iWeapon == iActiveWeapon && bAllowAttack2)
@@ -154,15 +153,8 @@ int Controls_GetPassiveButtonBit(int iClient, int iSlot, bool &bAllowAttack2)
 
 bool Controls_GetPassiveInfo(int iClient, int iSlot, bool &bAllowAttack2, char[] sBuffer, int iLength)
 {
-	int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-	if (iWeapon <= MaxClients)
-		return false;
-	
-	char sClassname[CONFIG_MAXCHAR];
-	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-	
 	ControlsPassive controlsPassive;
-	if (!g_mControlsPassive.GetArray(sClassname, controlsPassive, sizeof(controlsPassive)))
+	if (!Controls_GetPassiveFromSlot(iClient, iSlot, controlsPassive))
 		return false;
 	
 	Button nButton = Controls_GetPassiveButton(iClient, iSlot, bAllowAttack2);
@@ -173,4 +165,27 @@ bool Controls_GetPassiveInfo(int iClient, int iSlot, bool &bAllowAttack2, char[]
 		Format(sBuffer, iLength, "%s to %s", g_controlsInfo[nButton].sText, controlsPassive.sText);
 	
 	return true;
+}
+
+void Controls_OnPassiveUse(int iClient, int iSlot)
+{
+	ControlsPassive controlsPassive;
+	if (Controls_GetPassiveFromSlot(iClient, iSlot, controlsPassive))
+		g_flControlsCooldown[iClient][iSlot] = GetGameTime() + controlsPassive.flCooldown;
+}
+
+bool Controls_IsPassiveInCooldown(int iClient, int iSlot)
+{
+	return g_flControlsCooldown[iClient][iSlot] > GetGameTime();
+}
+
+bool Controls_GetPassiveFromSlot(int iClient, int iSlot, ControlsPassive controlsPassive)
+{
+	int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
+	if (iWeapon <= MaxClients)
+		return false;
+	
+	char sClassname[CONFIG_MAXCHAR];
+	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	return g_mControlsPassive.GetArray(sClassname, controlsPassive, sizeof(controlsPassive));
 }
