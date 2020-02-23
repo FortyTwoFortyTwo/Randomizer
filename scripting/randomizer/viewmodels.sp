@@ -1,128 +1,96 @@
-char g_sViewModelClass[][] = {
-	"",
-	"models/weapons/c_models/c_scout_arms.mdl",
-	"models/weapons/c_models/c_sniper_arms.mdl",
-	"models/weapons/c_models/c_soldier_arms.mdl",
-	"models/weapons/c_models/c_demo_arms.mdl",
-	"models/weapons/c_models/c_medic_arms.mdl",
-	"models/weapons/c_models/c_heavy_arms.mdl",
-	"models/weapons/c_models/c_pyro_arms.mdl",
-	"models/weapons/c_models/c_spy_arms.mdl",
-	"models/weapons/c_models/c_engineer_arms.mdl",
-};
+#define FILEPATH_CONFIG_VIEWMODELS "configs/randomizer/viewmodels.cfg"
 
-int g_iViewModelIndex[sizeof(g_sViewModelClass)];
-
-int g_iViewModelHand[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
-
-void ViewModel_Precache()
+methodmap ViewModelsInvisible < StringMap
 {
-	for (int i = 1; i < sizeof(g_sViewModelClass); i++)
-		g_iViewModelIndex[i] = PrecacheModel(g_sViewModelClass[i]);
-}
-
-stock int ViewModel_GetIndex(TFClassType nClass)
-{
-	return g_iViewModelIndex[nClass];
-}
-
-stock bool ViewModel_GetFromItem(int iWeapon, char[] sModel, int iLength, int &iModelIndex, TFClassType &nClass)
-{
-	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
-	int iSlot = TF2_GetSlotFromItem(iClient, iWeapon);
-	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-	
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	public ViewModelsInvisible()
 	{
-		if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) == iSlot)
-		{
-			iModelIndex = g_iViewModelIndex[iClass];
-			nClass = view_as<TFClassType>(iClass);
-			Format(sModel, iLength, g_sViewModelClass[iClass]);
-			return true;
-		}
+		return view_as<ViewModelsInvisible>(new StringMap());
 	}
 	
-	return false;
+	public void Set(const char[] sClassname, const char[] sTF2Class)
+	{
+		TFClassType nClass = TF2_GetClass(sTF2Class);
+		
+		PrintToChatAll("%s %s", sClassname, sTF2Class);
+		
+		bool bInvisible[10];
+		this.GetArray(sClassname, bInvisible, sizeof(bInvisible));
+		bInvisible[nClass] = true;
+		this.SetArray(sClassname, bInvisible, sizeof(bInvisible));
+	}
+	
+	public bool Exists(int iWeapon, TFClassType nClass)
+	{
+		char sClassname[CONFIG_MAXCHAR];
+		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+		
+		bool bInvisible[10];
+		this.GetArray(sClassname, bInvisible, sizeof(bInvisible));
+		PrintToChatAll("%s %d", sClassname, bInvisible[nClass]);
+		return bInvisible[nClass];
+	}
 }
 
-stock int ViewModel_CreateWeapon(int iClient, int iSlot, int iWeapon)
+static ViewModelsInvisible g_mViewModelsInvisible;
+
+void ViewModels_Init()
 {
-	TFClassType nDefaultClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
-	
-	g_iViewModelHand[iClient][iSlot] = ViewModel_Create(iClient, g_iViewModelIndex[nDefaultClass]);
-	int iViewModelWeapon = ViewModel_Create(iClient, GetEntProp(iWeapon, Prop_Send, "m_nModelIndex"));
-	
-	SetEntPropEnt(g_iViewModelHand[iClient][iSlot], Prop_Send, "m_hWeaponAssociatedWith", iWeapon);
-	SetEntPropEnt(iViewModelWeapon, Prop_Send, "m_hWeaponAssociatedWith", iWeapon);
-	
-	SetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearableViewModel", g_iViewModelHand[iClient][iSlot]);
-	/*
-	SetVariantString("!activator");
-	AcceptEntityInput(iViewModel, "SetParent", iOldViewModel);
-	*/
-	return iViewModel;
+	g_mViewModelsInvisible = new ViewModelsInvisible();
 }
 
-stock int ViewModel_Create(int iClient, int iModelIndex)
+void ViewModels_Refresh()
 {
-	int iViewModel = CreateEntityByName("tf_wearable_vm");
-	SetEntProp(iViewModel, Prop_Send, "m_nModelIndex", iModelIndex);
-	SetEntProp(iViewModel, Prop_Send, "m_fEffects", EF_BONEMERGE|EF_BONEMERGE_FASTCULL);
-	SetEntProp(iViewModel, Prop_Send, "m_iTeamNum", GetClientTeam(iClient));
-	SetEntProp(iViewModel, Prop_Send, "m_usSolidFlags", 4);
-	SetEntProp(iViewModel, Prop_Send, "m_CollisionGroup", 11);
-	SetEntPropEnt(iViewModel, Prop_Send, "m_hOwnerEntity", iClient);
-	
-	SetEntProp(iViewModel, Prop_Send, "m_bValidatedAttachedEntity", true);
-	
-	DispatchSpawn(iViewModel);
-	SetVariantString("!activator");
-	ActivateEntity(iViewModel);
-	
-	SDK_EquipWearable(iClient, iViewModel);
-	
-	return iViewModel;
-}
-
-public void ViewModel_Think(int iClient)
-{
-	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iWeapon <= MaxClients)
+	KeyValues kv = LoadConfig(FILEPATH_CONFIG_VIEWMODELS, "ViewModels");
+	if (!kv)
 		return;
 	
-	int iOldViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
-	if (iOldViewModel > MaxClients)
-		AddEffectFlags(iOldViewModel, EF_NODRAW);
+	g_mViewModelsInvisible.Clear();
 	
-	int iSlotActive = TF2_GetSlotFromItem(iClient, iWeapon);
-	for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
+	if (kv.JumpToKey("Invisible"))
 	{
-		if (g_iViewModelHand[iClient][iSlot] > MaxClients)
+		if (kv.GotoFirstSubKey(false))
 		{
-			if (iSlot == iSlotActive)
-				RemoveEffectFlags(g_iViewModelHand[iClient][iSlot], EF_NODRAW);
-			else
-				AddEffectFlags(g_iViewModelHand[iClient][iSlot], EF_NODRAW);
+			do
+			{
+				char sClassname[CONFIG_MAXCHAR], sTF2Class[CONFIG_MAXCHAR];
+				kv.GetSectionName(sClassname, sizeof(sClassname));
+				kv.GetString(NULL_STRING, sTF2Class, sizeof(sTF2Class));
+				
+				g_mViewModelsInvisible.Set(sClassname, sTF2Class);
+			}
+			while (kv.GotoNextKey(false));
+			kv.GoBack();
 		}
 	}
 }
 
-public void ViewModel_WeaponSwitch(int iClient, int iWeapon)
+bool ViewModels_ShouldBeInvisible(int iWeapon, TFClassType nClass)
 {
-	int iOldViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
-	if (iOldViewModel > MaxClients)
-		AddEffectFlags(iOldViewModel, EF_NODRAW);
-	
-	int iSlotActive = TF2_GetSlotFromItem(iClient, iWeapon);
-	for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
+	return g_mViewModelsInvisible.Exists(iWeapon, nClass);
+}
+
+bool ViewModels_ToggleInvisible(int iWeapon)
+{
+	if (GetEntityRenderMode(iWeapon) == RENDER_NORMAL)
 	{
-		if (g_iViewModelHand[iClient][iSlot] > MaxClients)
-		{
-			if (iSlot == iSlotActive)
-				RemoveEffectFlags(g_iViewModelHand[iClient][iSlot], EF_NODRAW);
-			else
-				AddEffectFlags(g_iViewModelHand[iClient][iSlot], EF_NODRAW);
-		}
+		ViewModels_EnableInvisible(iWeapon);
+		return true;
 	}
+	else
+	{
+		ViewModels_DisableInvisible(iWeapon);
+		return false;
+	}
+}
+
+void ViewModels_EnableInvisible(int iWeapon)
+{
+	SetEntityRenderMode(iWeapon, RENDER_TRANSCOLOR);
+	SetEntityRenderColor(iWeapon, 255, 255, 255, 75);
+}
+
+void ViewModels_DisableInvisible(int iWeapon)
+{
+	SetEntityRenderMode(iWeapon, RENDER_NORMAL); 
+	SetEntityRenderColor(iWeapon, 255, 255, 255, 255);
 }

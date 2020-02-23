@@ -16,18 +16,10 @@ public Action Command_CantSee(int iClient, int iArgs)
 	if (iWeapon <= MaxClients)
 		return Plugin_Handled;
 	
-	if (GetEntityRenderMode(iWeapon) == RENDER_TRANSCOLOR)
-	{
-		SetEntityRenderMode(iWeapon, RENDER_NORMAL); 
-		SetEntityRenderColor(iWeapon, 255, 255, 255, 255);
+	if (ViewModels_ToggleInvisible(iWeapon))
 		ReplyToCommand(iClient, "Your active weapon is now fully visible.");
-	}
 	else
-	{
-		SetEntityRenderMode(iWeapon, RENDER_TRANSCOLOR);
-		SetEntityRenderColor(iWeapon, 255, 255, 255, 75);
 		ReplyToCommand(iClient, "Your active weapon is now transparent.");
-	}
 	
 	return Plugin_Handled;
 }

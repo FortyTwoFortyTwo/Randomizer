@@ -210,13 +210,14 @@ bool g_bTF2Items;
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 
-#include "randomizer/commands.sp"
 #include "randomizer/controls.sp"
 #include "randomizer/huds.sp"
-#include "randomizer/sdk.sp"
-#include "randomizer/stocks.sp"
 #include "randomizer/viewmodels.sp"
 #include "randomizer/weapons.sp"
+
+#include "randomizer/commands.sp"
+#include "randomizer/sdk.sp"
+#include "randomizer/stocks.sp"
 
 public Plugin myinfo =
 {
@@ -242,10 +243,12 @@ public void OnPluginStart()
 	Commands_Init();
 	Controls_Init();
 	Huds_Init();
+	ViewModels_Init();
 	Weapons_Init();
 	
 	Controls_Refresh();
 	Huds_Refresh();
+	ViewModels_Refresh();
 	Weapons_Refresh();
 	
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
@@ -258,11 +261,6 @@ public void OnPluginStart()
 		if (IsClientInGame(iClient))
 			OnClientPutInServer(iClient);
 	}
-}
-
-public void OnMapStart()
-{
-	ViewModel_Precache();
 }
 
 public void OnLibraryAdded(const char[] sName)
@@ -293,9 +291,6 @@ public void OnLibraryRemoved(const char[] sName)
 public void OnClientPutInServer(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Huds_ClientDisplay);
-//	SDKHook(iClient, SDKHook_PreThink, ViewModel_Think);
-	
-//	SDKHook(iClient, SDKHook_WeaponSwitchPost, ViewModel_WeaponSwitch);
 	
 	SDK_HookGiveNamedItem(iClient);
 	SDK_HookClient(iClient);
@@ -381,7 +376,6 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			continue;
 		
 		TF2_RemoveItemInSlot(iClient, iSlot);
-		g_iViewModelHand[iClient][iSlot] = -1;
 		
 		//Create weapon
 		if (g_iClientWeaponIndex[iClient][iSlot] >= 0)
@@ -394,6 +388,10 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			{
 				PrintToChat(iClient, "Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
 				LogError("Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
+			}
+			else if (ViewModels_ShouldBeInvisible(iWeapon, g_iClientClass[iClient]))
+			{
+				ViewModels_EnableInvisible(iWeapon);
 			}
 		}
 	}
