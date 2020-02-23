@@ -285,17 +285,21 @@ public MRESReturn DHook_TauntPost(int iClient, Handle hParams)
 
 public MRESReturn DHook_CanAirDashPost(int iClient, Handle hReturn)
 {
-	//Atomizer's extra jumps does not work for non-scouts, fix that
+	//Soda Popper and Atomizer's extra jumps does not work for non-scouts, fix that
 	if (!DHookGetReturn(hReturn))
 	{
-		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+		int iAirDash = GetEntProp(iClient, Prop_Send, "m_iAirDash");
+		
+		if (TF2_IsPlayerInCondition(iClient, TFCond_CritHype) && iAirDash <= 6)
+		{
+			SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
+			DHookSetReturn(hReturn, true);
+			return MRES_Supercede;
+		}
 		
 		float flVal;
-		if (!TF2_WeaponFindAttribute(iWeapon, ATTRIB_AIR_DASH_COUNT, flVal))
-			return MRES_Ignored;
-		
-		int iAirDash = GetEntProp(iClient, Prop_Send, "m_iAirDash");
-		if (iAirDash < RoundToNearest(flVal))
+		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+		if (TF2_WeaponFindAttribute(iWeapon, ATTRIB_AIR_DASH_COUNT, flVal) && iAirDash < RoundToNearest(flVal))
 		{
 			SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
 			DHookSetReturn(hReturn, true);
