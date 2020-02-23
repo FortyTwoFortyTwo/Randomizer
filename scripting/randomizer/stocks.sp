@@ -57,7 +57,7 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 		}
 		else
 		{
-			AcceptEntityInput(iWeapon, "Kill");
+			RemoveEntity(iWeapon);
 			return -1;
 		}
 	}

@@ -316,6 +316,8 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 		SDK_HookWeapon(iEntity);
 	else if (StrContains(sClassname, "obj_") == 0)
 		SDK_HookObject(iEntity);
+	else if (StrEqual(sClassname, "tf_dropped_weapon"))
+		RemoveEntity(iEntity);
 }
 
 public void GenerateRandonWeapon(int iClient)
