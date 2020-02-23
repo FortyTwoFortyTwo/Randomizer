@@ -15,10 +15,10 @@ enum struct ControlsPassive
 	float flCooldown;
 }
 
-ControlsInfo g_controlsInfo[Button_MAX];
-StringMap g_mControlsPassive;
-bool g_bControlsButton[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1][view_as<int>(Button_MAX)];
-float g_flControlsCooldown[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
+static ControlsInfo g_controlsInfo[Button_MAX];
+static StringMap g_mControlsPassive;
+static bool g_bControlsButton[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1][view_as<int>(Button_MAX)];
+static float g_flControlsCooldown[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 
 public void Controls_Init()
 {

@@ -13,8 +13,8 @@ enum
 	ConfigWeapon_MAX
 }
 
-ArrayList g_aWeapons[ConfigWeapon_MAX];
-StringMap g_mWeaponsName;
+static ArrayList g_aWeapons[ConfigWeapon_MAX];
+static StringMap g_mWeaponsName;
 
 public void Weapons_Init()
 {
