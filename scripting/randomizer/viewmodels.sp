@@ -11,8 +11,6 @@ methodmap ViewModelsInvisible < StringMap
 	{
 		TFClassType nClass = TF2_GetClass(sTF2Class);
 		
-		PrintToChatAll("%s %s", sClassname, sTF2Class);
-		
 		bool bInvisible[10];
 		this.GetArray(sClassname, bInvisible, sizeof(bInvisible));
 		bInvisible[nClass] = true;
@@ -26,7 +24,6 @@ methodmap ViewModelsInvisible < StringMap
 		
 		bool bInvisible[10];
 		this.GetArray(sClassname, bInvisible, sizeof(bInvisible));
-		PrintToChatAll("%s %d", sClassname, bInvisible[nClass]);
 		return bInvisible[nClass];
 	}
 }
