@@ -166,6 +166,9 @@ bool SDK_IsGiveNamedItemActive()
 void SDK_HookClient(int iClient)
 {
 	DHookEntity(g_hDHookItemPostFrame, false, iClient, _, DHook_ItemPostFramePre);
+	
+	SDKHook(iClient, SDKHook_PreThink, Hook_PreThink);
+	SDKHook(iClient, SDKHook_PreThinkPost, Hook_PreThinkPost);
 }
 
 void SDK_HookWeapon(int iWeapon)
@@ -473,6 +476,17 @@ public MRESReturn DHook_ItemPostFramePre(int iClient)
 			}
 		}
 	}
+}
+
+public void Hook_PreThink(int iClient)
+{
+	//Has class check for Soda Popper hype drain
+	TF2_SetPlayerClass(iClient, TFClass_Scout);
+}
+
+public void Hook_PreThinkPost(int iClient)
+{
+	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
 public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
