@@ -58,17 +58,17 @@
 				"linux"		"@_ZN9CTFPlayer28GetChargeEffectBeingProvidedEv"
 				"windows"	"\x55\x8B\xEC\x51\x56\x8B\xF1\x8D\x86\xFC\x20\x00\x00"
 			}
+			"CTFPlayer::IsPlayerClass"
+			{
+				"library"	"server"
+				"linux"		"@_ZNK9CTFPlayer13IsPlayerClassEi"
+				"windows"	"\x55\x8B\xEC\x8D\x81\xFC\x20\x00\x00"
+			}
 			"CTFPlayerShared::UpdateItemChargeMeters"
 			{
 				"library"	"server"
 				"linux"		"@_ZN15CTFPlayerShared22UpdateItemChargeMetersEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x8B\xC1\x56\x57\x89\x45\xFC\x33\xF6"
-			}
-			"CTFPlayerShared::UpdateChargeMeter"
-			{
-				"library"	"server"
-				"linux"		"@_ZN15CTFPlayerShared17UpdateChargeMeterEv"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x56\x8B\xF1\x6A\x04"
 			}
 			"CTFPlayerShared::ConditionGameRulesThink"
 			{
@@ -237,12 +237,19 @@
 				"return"	"int"
 				"this"		"entity"
 			}
-			"CTFPlayerShared::UpdateChargeMeter"
+			"CTFPlayer::IsPlayerClass"
 			{
-				"signature"	"CTFPlayerShared::UpdateChargeMeter"
+				"signature"	"CTFPlayer::IsPlayerClass"
 				"callconv"	"thiscall"
-				"return"	"void"
-				"this"		"address"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"iClass"
+					{
+						"type"	"int"
+					}
+				}
 			}
 			"CTFPlayerShared::ConditionGameRulesThink"
 			{

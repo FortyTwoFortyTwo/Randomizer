@@ -19,6 +19,7 @@ static int g_iOffsetItemDefinitionIndex = -1;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
+static bool g_bAllowPlayerClass[TF_MAXPLAYERS+1];
 
 public void SDK_Init()
 {
@@ -33,7 +34,7 @@ public void SDK_Init()
 	DHook_CreateDetour(hGameData, "CTFPlayer::OnDealtDamage", DHook_OnDealtDamagePre, DHook_OnDealtDamagePost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, _);
-	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateChargeMeter", DHook_UpdateChargeMeterPre, DHook_UpdateChargeMeterPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::IsPlayerClass", DHook_IsPlayerClassPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::ConditionGameRulesThink", _, DHook_ConditionGameRulesThinkPost);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
 	
@@ -405,23 +406,15 @@ public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, Handle hRet
 	return MRES_Supercede;
 }
 
-public MRESReturn DHook_UpdateChargeMeterPre(Address pPlayerShared)
+public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hParams)
 {
-	//This function is only used to manage demoshield meter, but have hardcode demoman class
-	int iClient = GetClientFromPlayerShared(pPlayerShared);
-	if (!IsPlayerAlive(iClient))
-		return;
+	if (g_bAllowPlayerClass[iClient])
+	{
+		DHookSetReturn(hReturn, true);
+		return MRES_Supercede;
+	}
 	
-	TF2_SetPlayerClass(iClient, TFClass_DemoMan);
-}
-
-public MRESReturn DHook_UpdateChargeMeterPost(Address pPlayerShared)
-{
-	int iClient = GetClientFromPlayerShared(pPlayerShared);
-	if (!IsPlayerAlive(iClient))
-		return;
-	
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_ConditionGameRulesThinkPost(Address pPlayerShared)
@@ -480,13 +473,13 @@ public MRESReturn DHook_ItemPostFramePre(int iClient)
 
 public void Hook_PreThink(int iClient)
 {
-	//Has class check for Soda Popper hype drain
-	TF2_SetPlayerClass(iClient, TFClass_Scout);
+	//PreThink have way too many IsPlayerClass check, always return true during it
+	g_bAllowPlayerClass[iClient] = true;
 }
 
 public void Hook_PreThinkPost(int iClient)
 {
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+	g_bAllowPlayerClass[iClient] = false;
 }
 
 public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
