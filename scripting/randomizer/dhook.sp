@@ -1,32 +1,16 @@
-static Handle g_hSDKGetBaseEntity;
-static Handle g_hSDKGetDefaultItemChargeMeterValue;
-static Handle g_hSDKEquipWearable;
-static Handle g_hSDKWeaponReset;
-static Handle g_hSDKAddObject;
-static Handle g_hSDKRemoveObject;
-static Handle g_hSDKDoClassSpecialSkill;
-static Handle g_hSDKUpdateItemChargeMeters;
-static Handle g_hSDKDrainCharge;
-
 static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookItemPostFrame;
 static Handle g_hDHookGiveNamedItem;
 
-static Address g_pPlayerShared;
-static Address g_pPlayerSharedOuter;
 static int g_iOffsetItemDefinitionIndex = -1;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
 static bool g_bAllowPlayerClass[TF_MAXPLAYERS+1];
 
-public void SDK_Init()
+public void DHook_Init(GameData hGameData)
 {
-	GameData hGameData = new GameData("randomizer");
-	if (!hGameData)
-		SetFailState("Could not find randomizer gamedata");
-	
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", _, DHook_CanAirDashPost);
@@ -43,71 +27,7 @@ public void SDK_Init()
 	g_hDHookItemPostFrame = DHook_CreateVirtual(hGameData, "CBasePlayer::ItemPostFrame");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	
-	StartPrepSDKCall(SDKCall_Raw);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetBaseEntity");
-	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKGetBaseEntity = EndPrepSDKCall();
-	if (!g_hSDKGetBaseEntity)
-		LogError("Failed to create call: CBaseEntity::GetBaseEntity");
-	
-	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetDefaultItemChargeMeterValue");
-	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
-	g_hSDKGetDefaultItemChargeMeterValue = EndPrepSDKCall();
-	if (!g_hSDKGetDefaultItemChargeMeterValue)
-		LogError("Failed to create call: CBaseEntity::GetDefaultItemChargeMeterValue");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKEquipWearable = EndPrepSDKCall();
-	if (!g_hSDKEquipWearable)
-		LogError("Failed to create call: CBasePlayer::EquipWearable");
-	
-	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CTFWeaponBase::WeaponReset");
-	g_hSDKWeaponReset = EndPrepSDKCall();
-	if (!g_hSDKWeaponReset)
-		LogError("Failed to create call: CTFWeaponBase::WeaponReset");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::AddObject");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKAddObject = EndPrepSDKCall();
-	if (g_hSDKAddObject == null)
-		LogMessage("Failed to create call: CTFPlayer::AddObject");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::RemoveObject");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKRemoveObject = EndPrepSDKCall();
-	if (g_hSDKRemoveObject == null)
-		LogMessage("Failed to create call: CTFPlayer::RemoveObject");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::DoClassSpecialSkill");
-	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
-	g_hSDKDoClassSpecialSkill = EndPrepSDKCall();
-	if (!g_hSDKDoClassSpecialSkill)
-		LogError("Failed to create call: CTFPlayer::DoClassSpecialSkill");
-	
-	StartPrepSDKCall(SDKCall_Raw);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayerShared::UpdateItemChargeMeters");
-	g_hSDKUpdateItemChargeMeters = EndPrepSDKCall();
-	if (!g_hSDKUpdateItemChargeMeters)
-		LogError("Failed to create call: CTFPlayerShared::UpdateItemChargeMeters");
-	
-	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CWeaponMedigun::DrainCharge");
-	g_hSDKDrainCharge = EndPrepSDKCall();
-	if (!g_hSDKDrainCharge)
-		LogError("Failed to create call: CWeaponMedigun::DrainCharge");
-	
-	g_pPlayerShared = view_as<Address>(FindSendPropInfo("CTFPlayer", "m_Shared"));
-	g_pPlayerSharedOuter = view_as<Address>(hGameData.GetOffset("CTFPlayerShared::m_pOuter"));
 	g_iOffsetItemDefinitionIndex = hGameData.GetOffset("CEconItemView::m_iItemDefinitionIndex");
-	
-	delete hGameData;
 }
 
 static void DHook_CreateDetour(GameData hGameData, const char[] sName, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION)
@@ -140,13 +60,13 @@ static Handle DHook_CreateVirtual(GameData hGameData, const char[] sName)
 	return hHook;
 }
 
-void SDK_HookGiveNamedItem(int iClient)
+void DHook_HookGiveNamedItem(int iClient)
 {
 	if (g_hDHookGiveNamedItem && !g_bTF2Items)
 		g_iHookIdGiveNamedItem[iClient] = DHookEntity(g_hDHookGiveNamedItem, false, iClient, DHook_GiveNamedItemRemoved, DHook_GiveNamedItemPre);
 }
 
-void SDK_UnhookGiveNamedItem(int iClient)
+void DHook_UnhookGiveNamedItem(int iClient)
 {
 	if (g_iHookIdGiveNamedItem[iClient])
 	{
@@ -155,7 +75,7 @@ void SDK_UnhookGiveNamedItem(int iClient)
 	}
 }
 
-bool SDK_IsGiveNamedItemActive()
+bool DHook_IsGiveNamedItemActive()
 {
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 		if (g_iHookIdGiveNamedItem[iClient])
@@ -164,7 +84,7 @@ bool SDK_IsGiveNamedItemActive()
 	return false;
 }
 
-void SDK_HookClient(int iClient)
+void DHook_HookClient(int iClient)
 {
 	DHookEntity(g_hDHookItemPostFrame, false, iClient, _, DHook_ItemPostFramePre);
 	
@@ -172,72 +92,17 @@ void SDK_HookClient(int iClient)
 	SDKHook(iClient, SDKHook_PreThinkPost, Hook_PreThinkPost);
 }
 
-void SDK_HookWeapon(int iWeapon)
+void DHook_HookWeapon(int iWeapon)
 {
 	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
 	
 	SDKHook(iWeapon, SDKHook_Reload, Hook_ReloadPre);
 }
 
-void SDK_HookObject(int iObject)
+void DHook_HookObject(int iObject)
 {
 	DHookEntity(g_hDHookCanBeUpgraded, false, iObject, _, DHook_CanBeUpgradedPre);
 	DHookEntity(g_hDHookCanBeUpgraded, true, iObject, _, DHook_CanBeUpgradedPost);
-}
-
-float SDK_GetDefaultItemChargeMeterValue(int iWeapon)
-{
-	if (g_hSDKGetDefaultItemChargeMeterValue)
-		return SDKCall(g_hSDKGetDefaultItemChargeMeterValue, iWeapon);
-	
-	return 0.0;
-}
-
-void SDK_EquipWearable(int iClient, int iWearable)
-{
-	if (g_hSDKEquipWearable)
-		SDKCall(g_hSDKEquipWearable, iClient, iWearable);
-}
-
-void SDK_WeaponReset(int iWeapon)
-{
-	if (g_hSDKWeaponReset)
-		SDKCall(g_hSDKWeaponReset, iWeapon);
-}
-
-void SDK_AddObject(int iClient, int iObject)
-{
-	if (g_hSDKAddObject)
-		SDKCall(g_hSDKAddObject, iClient, iObject);
-}
-
-void SDK_RemoveObject(int iClient, int iObject)
-{
-	if (g_hSDKRemoveObject)
-		SDKCall(g_hSDKRemoveObject, iClient, iObject);
-}
-
-bool SDK_DoClassSpecialSkill(int iClient)
-{
-	if (g_hSDKDoClassSpecialSkill)
-		return SDKCall(g_hSDKDoClassSpecialSkill, iClient);
-	
-	return false;
-}
-
-void SDK_UpdateItemChargeMeters(int iClient)
-{
-	if (g_hSDKUpdateItemChargeMeters)
-	{
-		Address pThis = GetEntityAddress(iClient) + g_pPlayerShared;
-		SDKCall(g_hSDKUpdateItemChargeMeters, pThis);
-	}
-}
-
-void SDK_DrainCharge(int iMedigun)
-{
-	if (g_hSDKDrainCharge)
-		SDKCall(g_hSDKDrainCharge, iMedigun);
 }
 
 public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
@@ -322,7 +187,7 @@ public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
 	{
 		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
 		if (iWeapon > MaxClients)
-			SDK_WeaponReset(iWeapon);
+			SDKCall_WeaponReset(iWeapon);
 	}
 	
 	return MRES_Supercede;
@@ -422,7 +287,7 @@ public MRESReturn DHook_ConditionGameRulesThinkPost(Address pPlayerShared)
 	//There a medic call check for draining uber.
 	//Pre and post hooks is a bit broken, so changing class to medic won't do the trick
 	
-	int iClient = GetClientFromPlayerShared(pPlayerShared);
+	int iClient = SDKCall_GetClientFromPlayerShared(pPlayerShared);
 	if (TF2_GetPlayerClass(iClient) == TFClass_Medic)
 		return;
 	
@@ -435,7 +300,7 @@ public MRESReturn DHook_ConditionGameRulesThinkPost(Address pPlayerShared)
 	if (!StrEqual(sClassname, "tf_weapon_medigun"))
 		return;
 	
-	SDK_DrainCharge(iSecondary);
+	SDKCall_DrainCharge(iSecondary);
 }
 
 public MRESReturn DHook_ItemPostFramePre(int iClient)
@@ -464,7 +329,7 @@ public MRESReturn DHook_ItemPostFramePre(int iClient)
 				bClassPlayed[nDefaultClass] = true;
 				
 				TF2_SetPlayerClass(iClient, nDefaultClass);
-				SDK_UpdateItemChargeMeters(iClient);
+				SDKCall_UpdateItemChargeMeters(iClient);
 				TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 			}
 		}
@@ -508,7 +373,7 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 	if (!g_bDoClassSpecialSkill[iClient])
 	{
 		g_bDoClassSpecialSkill[iClient] = true;
-		SDK_DoClassSpecialSkill(iClient);
+		SDKCall_DoClassSpecialSkill(iClient);
 	}
 	
 	g_bDoClassSpecialSkill[iClient] = false;
@@ -569,10 +434,4 @@ public Action Hook_ReloadPre(int iWeapon)
 		return Plugin_Handled;
 	
 	return Plugin_Continue;
-}
-
-static int GetClientFromPlayerShared(Address pPlayerShared)
-{
-	Address pEntity = view_as<Address>(LoadFromAddress(pPlayerShared + g_pPlayerSharedOuter, NumberType_Int32));
-	return SDKCall(g_hSDKGetBaseEntity, pEntity);
 }

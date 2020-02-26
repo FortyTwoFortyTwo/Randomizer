@@ -216,7 +216,8 @@ int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 #include "randomizer/weapons.sp"
 
 #include "randomizer/commands.sp"
-#include "randomizer/sdk.sp"
+#include "randomizer/dhook.sp"
+#include "randomizer/sdkcall.sp"
 #include "randomizer/stocks.sp"
 
 public Plugin myinfo =
@@ -233,12 +234,14 @@ public void OnPluginStart()
 	//OnLibraryAdded dont always call TF2Items on plugin start
 	g_bTF2Items = LibraryExists("TF2Items");
 	
-	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
-	HookEvent("player_spawn", Event_PlayerSpawn);
-	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
-	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
+	GameData hGameData = new GameData("randomizer");
+	if (!hGameData)
+		SetFailState("Could not find randomizer gamedata");
 	
-	SDK_Init();
+	DHook_Init(hGameData);
+	SDKCall_Init(hGameData);
+	
+	delete hGameData;
 	
 	Commands_Init();
 	Controls_Init();
@@ -250,6 +253,11 @@ public void OnPluginStart()
 	Huds_Refresh();
 	ViewModels_Refresh();
 	Weapons_Refresh();
+	
+	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
+	HookEvent("player_spawn", Event_PlayerSpawn);
+	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
+	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
@@ -270,7 +278,7 @@ public void OnLibraryAdded(const char[] sName)
 		g_bTF2Items = true;
 		
 		//We cant allow TF2Items load while GiveNamedItem already hooked due to crash
-		if (SDK_IsGiveNamedItemActive())
+		if (DHook_IsGiveNamedItemActive())
 			SetFailState("Do not load TF2Items midgame while Randomizer is already loaded!");
 	}
 }
@@ -284,7 +292,7 @@ public void OnLibraryRemoved(const char[] sName)
 		//TF2Items unloaded with GiveNamedItem unhooked, we can now safely hook GiveNamedItem ourself
 		for (int iClient = 1; iClient <= MaxClients; iClient++)
 			if (IsClientInGame(iClient))
-				SDK_HookGiveNamedItem(iClient);
+				DHook_HookGiveNamedItem(iClient);
 	}
 }
 
@@ -292,30 +300,30 @@ public void OnClientPutInServer(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Huds_ClientDisplay);
 	
-	SDK_HookGiveNamedItem(iClient);
-	SDK_HookClient(iClient);
+	DHook_HookGiveNamedItem(iClient);
+	DHook_HookClient(iClient);
 	
 	GenerateRandonWeapon(iClient);
 }
 
 public void OnClientDisconnect(int iClient)
 {
-	SDK_UnhookGiveNamedItem(iClient);
+	DHook_UnhookGiveNamedItem(iClient);
 }
 
 public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const float vecVel[3], const float vecAngles[3], int iWeapon, int iSubtype, int iCmdNum, int iTickCount, int iSeed, const int iMouse[2]) 
 {
 	//Call DoClassSpecialSkill for detour to manage with any weapons replaced from attack2 to attack3 or reload
 	if (iButtons & IN_ATTACK3 || iButtons & IN_RELOAD)
-		SDK_DoClassSpecialSkill(iClient);
+		SDKCall_DoClassSpecialSkill(iClient);
 }
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)
 {
 	if (StrContains(sClassname, "tf_weapon_") == 0)
-		SDK_HookWeapon(iEntity);
+		DHook_HookWeapon(iEntity);
 	else if (StrContains(sClassname, "obj_") == 0)
-		SDK_HookObject(iEntity);
+		DHook_HookObject(iEntity);
 	else if (StrEqual(sClassname, "tf_dropped_weapon"))
 		RemoveEntity(iEntity);
 }
@@ -326,7 +334,7 @@ public void GenerateRandonWeapon(int iClient)
 	int iBuilding = MaxClients+1;
 	while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
 		if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
-			SDK_RemoveObject(iClient, iBuilding);
+			SDKCall_RemoveObject(iClient, iBuilding);
 	
 	//Random Class
 	g_iClientClass[iClient] = view_as<TFClassType>(GetRandomInt(CLASS_MIN, CLASS_MAX));
@@ -404,7 +412,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		int iBuilding = MaxClients+1;
 		while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
 			if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
-				SDK_AddObject(iClient, iBuilding);
+				SDKCall_AddObject(iClient, iBuilding);
 	}
 	
 	for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
@@ -414,7 +422,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		{
 			float flVal;
 			if (!TF2_WeaponFindAttribute(iWeapon, ATTRIB_ITEM_METER_RESUPPLY_DENIED, flVal) || flVal == 0.0)
-				SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", SDK_GetDefaultItemChargeMeterValue(iWeapon), iSlot);
+				SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", SDKCall_GetDefaultItemChargeMeterValue(iWeapon), iSlot);
 			
 			//Set active weapon if dont have one
 			if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)

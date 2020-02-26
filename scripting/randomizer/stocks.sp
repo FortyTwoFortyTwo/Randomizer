@@ -49,11 +49,11 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 				SetEntProp(iClient, Prop_Send, "m_iAmmo", 0, _, iAmmoType);
 			
 			//Set charge meter to default value
-			SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", SDK_GetDefaultItemChargeMeterValue(iWeapon), iSlot);
+			SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", SDKCall_GetDefaultItemChargeMeterValue(iWeapon), iSlot);
 		}
 		else if (StrContains(sClassname, "tf_wearable") == 0)
 		{
-			SDK_EquipWearable(iClient, iWeapon);
+			SDKCall_EquipWearable(iClient, iWeapon);
 		}
 		else
 		{
