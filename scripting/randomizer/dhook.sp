@@ -8,7 +8,7 @@ static int g_iOffsetItemDefinitionIndex = -1;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
-static bool g_bAllowPlayerClass[TF_MAXPLAYERS+1];
+static int g_iAllowPlayerClass[TF_MAXPLAYERS+1];
 
 public void DHook_Init(GameData hGameData)
 {
@@ -18,7 +18,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::OnDealtDamage", DHook_OnDealtDamagePre, DHook_OnDealtDamagePost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
-	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::IsPlayerClass", DHook_IsPlayerClassPre, _);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
 	
@@ -252,35 +252,18 @@ public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, Handle hReturn)
 
 public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, Handle hReturn)
 {
-	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iWeapon <= MaxClients)
-	{
-		DHookSetReturn(hReturn, TF_CHARGE_NONE);
-		return MRES_Supercede;
-	}
-	
-	char sClassname[256];
-	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-	if (!StrEqual(sClassname, "tf_weapon_medigun") || !GetEntProp(iWeapon, Prop_Send, "m_bChargeRelease") || GetEntProp(iWeapon, Prop_Send, "m_bHolstered"))
-	{
-		DHookSetReturn(hReturn, TF_CHARGE_NONE);
-		return MRES_Supercede;
-	}
-	
-	float flVal;
-	if (TF2_WeaponFindAttribute(iWeapon, ATTRIB_SET_CHARGE_TYPE, flVal))
-	{
-		DHookSetReturn(hReturn, RoundToNearest(flVal));
-		return MRES_Supercede;
-	}
-	
-	DHookSetReturn(hReturn, TF_CHARGE_INVULNERABLE);
-	return MRES_Supercede;
+	//Has medic class check
+	g_iAllowPlayerClass[iClient]++;
+}
+
+public MRESReturn DHook_GetChargeEffectBeingProvidedPost(int iClient, Handle hReturn)
+{
+	g_iAllowPlayerClass[iClient]--;
 }
 
 public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hParams)
 {
-	if (g_bAllowPlayerClass[iClient])
+	if (g_iAllowPlayerClass[iClient] > 0)
 	{
 		DHookSetReturn(hReturn, true);
 		return MRES_Supercede;
@@ -325,12 +308,12 @@ public MRESReturn DHook_ItemPostFramePre(int iClient)
 public void Hook_PreThink(int iClient)
 {
 	//PreThink have way too many IsPlayerClass check, always return true during it
-	g_bAllowPlayerClass[iClient] = true;
+	g_iAllowPlayerClass[iClient]++;
 }
 
 public void Hook_PreThinkPost(int iClient)
 {
-	g_bAllowPlayerClass[iClient] = false;
+	g_iAllowPlayerClass[iClient]--;
 }
 
 public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
@@ -416,13 +399,13 @@ public MRESReturn DHook_FrameUpdatePostEntityThinkPre()
 {
 	//This function call all clients to reduce medigun charge from medic class check
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
-		g_bAllowPlayerClass[iClient] = true;
+		g_iAllowPlayerClass[iClient]++;
 }
 
 public MRESReturn DHook_FrameUpdatePostEntityThinkPost()
 {
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
-		g_bAllowPlayerClass[iClient] = false;
+		g_iAllowPlayerClass[iClient]--;
 }
 
 public Action Hook_ReloadPre(int iWeapon)
