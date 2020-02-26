@@ -271,6 +271,11 @@ public void OnPluginStart()
 	}
 }
 
+public void OnMapStart()
+{
+	DHook_HookGamerules();
+}
+
 public void OnLibraryAdded(const char[] sName)
 {
 	if (StrEqual(sName, "TF2Items"))

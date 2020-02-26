@@ -2,6 +2,7 @@ static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookItemPostFrame;
 static Handle g_hDHookGiveNamedItem;
+static Handle g_hDHookFrameUpdatePostEntityThink;
 
 static int g_iOffsetItemDefinitionIndex = -1;
 
@@ -19,13 +20,13 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::IsPlayerClass", DHook_IsPlayerClassPre, _);
-	DHook_CreateDetour(hGameData, "CTFPlayerShared::ConditionGameRulesThink", _, DHook_ConditionGameRulesThinkPost);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
 	
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
 	g_hDHookItemPostFrame = DHook_CreateVirtual(hGameData, "CBasePlayer::ItemPostFrame");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
+	g_hDHookFrameUpdatePostEntityThink = DHook_CreateVirtual(hGameData, "CGameRules::FrameUpdatePostEntityThink");
 	
 	g_iOffsetItemDefinitionIndex = hGameData.GetOffset("CEconItemView::m_iItemDefinitionIndex");
 }
@@ -103,6 +104,12 @@ void DHook_HookObject(int iObject)
 {
 	DHookEntity(g_hDHookCanBeUpgraded, false, iObject, _, DHook_CanBeUpgradedPre);
 	DHookEntity(g_hDHookCanBeUpgraded, true, iObject, _, DHook_CanBeUpgradedPost);
+}
+
+void DHook_HookGamerules()
+{
+	DHookGamerules(g_hDHookFrameUpdatePostEntityThink, false, _, DHook_FrameUpdatePostEntityThinkPre);
+	DHookGamerules(g_hDHookFrameUpdatePostEntityThink, true, _, DHook_FrameUpdatePostEntityThinkPost);
 }
 
 public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
@@ -282,27 +289,6 @@ public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hPa
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_ConditionGameRulesThinkPost(Address pPlayerShared)
-{
-	//There a medic call check for draining uber.
-	//Pre and post hooks is a bit broken, so changing class to medic won't do the trick
-	
-	int iClient = SDKCall_GetClientFromPlayerShared(pPlayerShared);
-	if (TF2_GetPlayerClass(iClient) == TFClass_Medic)
-		return;
-	
-	int iSecondary = TF2_GetItemInSlot(iClient, WeaponSlot_Secondary);
-	if (iSecondary <= MaxClients)
-		return;
-	
-	char sClassname[256];
-	GetEntityClassname(iSecondary, sClassname, sizeof(sClassname));
-	if (!StrEqual(sClassname, "tf_weapon_medigun"))
-		return;
-	
-	SDKCall_DrainCharge(iSecondary);
-}
-
 public MRESReturn DHook_ItemPostFramePre(int iClient)
 {
 	if (!IsPlayerAlive(iClient))
@@ -424,6 +410,19 @@ public void DHook_GiveNamedItemRemoved(int iHookId)
 			return;
 		}
 	}
+}
+
+public MRESReturn DHook_FrameUpdatePostEntityThinkPre()
+{
+	//This function call all clients to reduce medigun charge from medic class check
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+		g_bAllowPlayerClass[iClient] = true;
+}
+
+public MRESReturn DHook_FrameUpdatePostEntityThinkPost()
+{
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+		g_bAllowPlayerClass[iClient] = false;
 }
 
 public Action Hook_ReloadPre(int iWeapon)

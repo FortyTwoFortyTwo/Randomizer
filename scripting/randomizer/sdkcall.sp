@@ -1,4 +1,3 @@
-static Handle g_hSDKGetBaseEntity;
 static Handle g_hSDKGetDefaultItemChargeMeterValue;
 static Handle g_hSDKEquipWearable;
 static Handle g_hSDKWeaponReset;
@@ -6,20 +5,11 @@ static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKUpdateItemChargeMeters;
-static Handle g_hSDKDrainCharge;
 
 static Address g_pPlayerShared;
-static Address g_pPlayerSharedOuter;
 
 public void SDKCall_Init(GameData hGameData)
 {
-	StartPrepSDKCall(SDKCall_Raw);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetBaseEntity");
-	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKGetBaseEntity = EndPrepSDKCall();
-	if (!g_hSDKGetBaseEntity)
-		LogError("Failed to create call: CBaseEntity::GetBaseEntity");
-	
 	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetDefaultItemChargeMeterValue");
 	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
@@ -67,14 +57,7 @@ public void SDKCall_Init(GameData hGameData)
 	if (!g_hSDKUpdateItemChargeMeters)
 		LogError("Failed to create call: CTFPlayerShared::UpdateItemChargeMeters");
 	
-	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CWeaponMedigun::DrainCharge");
-	g_hSDKDrainCharge = EndPrepSDKCall();
-	if (!g_hSDKDrainCharge)
-		LogError("Failed to create call: CWeaponMedigun::DrainCharge");
-	
 	g_pPlayerShared = view_as<Address>(FindSendPropInfo("CTFPlayer", "m_Shared"));
-	g_pPlayerSharedOuter = view_as<Address>(hGameData.GetOffset("CTFPlayerShared::m_pOuter"));
 }
 
 float SDKCall_GetDefaultItemChargeMeterValue(int iWeapon)
@@ -124,16 +107,4 @@ void SDKCall_UpdateItemChargeMeters(int iClient)
 		Address pThis = GetEntityAddress(iClient) + g_pPlayerShared;
 		SDKCall(g_hSDKUpdateItemChargeMeters, pThis);
 	}
-}
-
-void SDKCall_DrainCharge(int iMedigun)
-{
-	if (g_hSDKDrainCharge)
-		SDKCall(g_hSDKDrainCharge, iMedigun);
-}
-
-int SDKCall_GetClientFromPlayerShared(Address pPlayerShared)
-{
-	Address pEntity = view_as<Address>(LoadFromAddress(pPlayerShared + g_pPlayerSharedOuter, NumberType_Int32));
-	return SDKCall(g_hSDKGetBaseEntity, pEntity);
 }

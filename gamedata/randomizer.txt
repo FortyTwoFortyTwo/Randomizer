@@ -70,18 +70,6 @@
 				"linux"		"@_ZN15CTFPlayerShared22UpdateItemChargeMetersEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x8B\xC1\x56\x57\x89\x45\xFC\x33\xF6"
 			}
-			"CTFPlayerShared::ConditionGameRulesThink"
-			{
-				"library"	"server"
-				"linux"		"@_ZN15CTFPlayerShared23ConditionGameRulesThinkEv"
-				"windows"	"\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x81\xEC\xC8\x00\x00\x00\x56\x57\x8B\xF9\x89\x7D\xDC\x8D\x8F\xE0\x00\x00\x00"
-			}
-			"CWeaponMedigun::DrainCharge"
-			{
-				"library"	"server"
-				"linux"		"@_ZN14CWeaponMedigun11DrainChargeEv"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x57\x8B\xF9\x80\xBF\xF9\x07\x00\x00\x00"
-			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{
 				"library"	"server"
@@ -91,11 +79,6 @@
 		}
 		"Offsets"
 		{
-			"CBaseEntity::GetBaseEntity"
-			{
-				"linux"		"6"
-				"windows"	"5"
-			}
 			"CBaseEntity::GetDefaultItemChargeMeterValue"
 			{
 				"linux"		"191"
@@ -131,10 +114,10 @@
 				"linux"		"482"
 				"windows"	"475"
 			}
-			"CTFPlayerShared::m_pOuter"
+			"CGameRules::FrameUpdatePostEntityThink"
 			{
-				"linux"		"400"
-				"windows"	"400"
+				"linux"		"16"
+				"windows"	"15"
 			}
 			"CEconItemView::m_iItemDefinitionIndex"
 			{
@@ -251,13 +234,6 @@
 					}
 				}
 			}
-			"CTFPlayerShared::ConditionGameRulesThink"
-			{
-				"signature"	"CTFPlayerShared::ConditionGameRulesThink"
-				"callconv"	"thiscall"
-				"return"	"void"
-				"this"		"address"
-			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{
 				"signature"	"CTFGameStats::Event_PlayerFiredWeapon"
@@ -329,6 +305,13 @@
 						"type"	"bool"
 					}
 				}
+			}
+			"CGameRules::FrameUpdatePostEntityThink"
+			{
+				"offset"	"CGameRules::FrameUpdatePostEntityThink"
+				"hooktype"	"gamerules"
+				"return"	"void"
+				"this"		"ignore"
 			}
 		}
 	}
