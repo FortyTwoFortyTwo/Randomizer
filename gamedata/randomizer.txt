@@ -40,12 +40,6 @@
 				"linux"		"@_ZN9CTFPlayer12RemoveObjectEP11CBaseObject"
 				"windows"	"\x55\x8B\xEC\x8B\xD1\x56\x8B\xB2\x7C\x21\x00\x00"
 			}
-			"CTFPlayer::OnDealtDamage"
-			{
-				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer13OnDealtDamageEP20CBaseCombatCharacterRK15CTakeDamageInfo"
-				"windows"	"\x55\x8B\xEC\x51\x83\x7D\x08\x00\x8B\x45\x0C"
-			}
 			"CTFPlayer::DoClassSpecialSkill"
 			{
 				"library"	"server"
@@ -64,11 +58,11 @@
 				"linux"		"@_ZNK9CTFPlayer13IsPlayerClassEi"
 				"windows"	"\x55\x8B\xEC\x8D\x81\xFC\x20\x00\x00"
 			}
-			"CTFPlayerShared::UpdateItemChargeMeters"
+			"CTFPlayer::GetEntityForLoadoutSlot"
 			{
 				"library"	"server"
-				"linux"		"@_ZN15CTFPlayerShared22UpdateItemChargeMetersEv"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x8B\xC1\x56\x57\x89\x45\xFC\x33\xF6"
+				"linux"		"@_ZN9CTFPlayer23GetEntityForLoadoutSlotEib"
+				"windows"	"\x55\x8B\xEC\x51\x53\x8B\x5D\x08\x57\x8B\xF9\x89\x7D\xFC\x83\xFB\x07"
 			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{
@@ -79,11 +73,6 @@
 		}
 		"Offsets"
 		{
-			"CBaseEntity::GetDefaultItemChargeMeterValue"
-			{
-				"linux"		"191"
-				"windows"	"190"
-			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"linux"		"286"
@@ -98,11 +87,6 @@
 			{
 				"linux"		"376"
 				"windows"	"374"
-			}
-			"CBasePlayer::ItemPostFrame"
-			{
-				"linux"		"404"
-				"windows"	"403"
 			}
 			"CBasePlayer::EquipWearable"
 			{
@@ -188,24 +172,6 @@
 					}
 				}
 			}
-			"CTFPlayer::OnDealtDamage"
-			{
-				"signature"	"CTFPlayer::OnDealtDamage"
-				"callconv"	"thiscall"
-				"return"	"void"
-				"this"		"entity"
-				"arguments"
-				{
-					"CBaseCombatCharacter"
-					{
-						"type"	"objectptr"
-					}
-					"CTakeDamageInfo"
-					{
-						"type"	"objectptr"
-					}
-				}
-			}
 			"CTFPlayer::DoClassSpecialSkill"
 			{
 				"signature"	"CTFPlayer::DoClassSpecialSkill"
@@ -231,6 +197,24 @@
 					"iClass"
 					{
 						"type"	"int"
+					}
+				}
+			}
+			"CTFPlayer::GetEntityForLoadoutSlot"
+			{
+				"signature"	"CTFPlayer::GetEntityForLoadoutSlot"
+				"callconv"	"thiscall"
+				"return"	"cbaseentity"
+				"this"		"entity"
+				"arguments"
+				{
+					"iSlot"
+					{
+						"type"	"int"
+					}
+					"bool"
+					{
+						"type"	"bool"
 					}
 				}
 			}
@@ -272,13 +256,6 @@
 						"type"	"cbaseentity"
 					}
 				}
-			}
-			"CBasePlayer::ItemPostFrame"
-			{
-				"offset"	"CBasePlayer::ItemPostFrame"
-				"hooktype"	"entity"
-				"return"	"void"
-				"this"		"entity"
 			}
 			"CTFPlayer::GiveNamedItem"
 			{

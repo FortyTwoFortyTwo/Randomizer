@@ -1,6 +1,5 @@
 static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookCanBeUpgraded;
-static Handle g_hDHookItemPostFrame;
 static Handle g_hDHookGiveNamedItem;
 static Handle g_hDHookFrameUpdatePostEntityThink;
 
@@ -16,15 +15,14 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", _, DHook_CanAirDashPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, _);
-	DHook_CreateDetour(hGameData, "CTFPlayer::OnDealtDamage", DHook_OnDealtDamagePre, DHook_OnDealtDamagePost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::IsPlayerClass", DHook_IsPlayerClassPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::GetEntityForLoadoutSlot", DHook_GetEntityForLoadoutSlotPre, _);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
 	
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
-	g_hDHookItemPostFrame = DHook_CreateVirtual(hGameData, "CBasePlayer::ItemPostFrame");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	g_hDHookFrameUpdatePostEntityThink = DHook_CreateVirtual(hGameData, "CGameRules::FrameUpdatePostEntityThink");
 	
@@ -87,8 +85,6 @@ bool DHook_IsGiveNamedItemActive()
 
 void DHook_HookClient(int iClient)
 {
-	DHookEntity(g_hDHookItemPostFrame, false, iClient, _, DHook_ItemPostFramePre);
-	
 	SDKHook(iClient, SDKHook_PreThink, Hook_PreThink);
 	SDKHook(iClient, SDKHook_PreThinkPost, Hook_PreThinkPost);
 }
@@ -200,17 +196,6 @@ public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
 	return MRES_Supercede;
 }
 
-public MRESReturn DHook_OnDealtDamagePre(int iClient, Handle hParams)
-{
-	//Gas Passer meter have hardcode pyro check in this call
-	TF2_SetPlayerClass(iClient, TFClass_Pyro);
-}
-
-public MRESReturn DHook_OnDealtDamagePost(int iClient, Handle hParams)
-{
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
-}
-
 public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 {
 	//There 3 things going on in this function depending on player class attempting to:
@@ -272,37 +257,22 @@ public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hPa
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_ItemPostFramePre(int iClient)
+public MRESReturn DHook_GetEntityForLoadoutSlotPre(int iClient, Handle hReturn, Handle hParams)
 {
-	if (!IsPlayerAlive(iClient))
-		return;
+	int iSlot = DHookGetParam(hParams, 1);
+	if (iSlot < 0 || iSlot > WeaponSlot_BuilderEngie)
+		return MRES_Ignored;
 	
-	//This is the only function that calls CTFPlayerShared::UpdateItemChargeMeters,
-	// but only works if playing as default class, Loop through each weapons that
-	// uses this function, and call with said class
-	
-	bool bClassPlayed[CLASS_MAX+1];
-	bClassPlayed[g_iClientClass[iClient]] = true;
-	
-	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
+	//This function sucks as it have default class check, lets do this ourself
+	int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
+	if (iWeapon <= MaxClients)
 	{
-		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-		
-		float flVal;
-		if (iWeapon > MaxClients && TF2_WeaponFindAttribute(iWeapon, ATTRIB_ITEM_METER_CHARGE_TYPE, flVal))
-		{
-			TFClassType nDefaultClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
-			
-			if (!bClassPlayed[nDefaultClass])
-			{
-				bClassPlayed[nDefaultClass] = true;
-				
-				TF2_SetPlayerClass(iClient, nDefaultClass);
-				SDKCall_UpdateItemChargeMeters(iClient);
-				TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
-			}
-		}
+		DHookSetReturn(hReturn, 0);
+		return MRES_Supercede;
 	}
+	
+	DHookSetReturn(hReturn, iWeapon);
+	return MRES_Supercede;
 }
 
 public void Hook_PreThink(int iClient)

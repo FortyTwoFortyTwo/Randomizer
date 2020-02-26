@@ -1,22 +1,11 @@
-static Handle g_hSDKGetDefaultItemChargeMeterValue;
 static Handle g_hSDKEquipWearable;
 static Handle g_hSDKWeaponReset;
 static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
-static Handle g_hSDKUpdateItemChargeMeters;
-
-static Address g_pPlayerShared;
 
 public void SDKCall_Init(GameData hGameData)
 {
-	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetDefaultItemChargeMeterValue");
-	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
-	g_hSDKGetDefaultItemChargeMeterValue = EndPrepSDKCall();
-	if (!g_hSDKGetDefaultItemChargeMeterValue)
-		LogError("Failed to create call: CBaseEntity::GetDefaultItemChargeMeterValue");
-	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
@@ -50,22 +39,6 @@ public void SDKCall_Init(GameData hGameData)
 	g_hSDKDoClassSpecialSkill = EndPrepSDKCall();
 	if (!g_hSDKDoClassSpecialSkill)
 		LogError("Failed to create call: CTFPlayer::DoClassSpecialSkill");
-	
-	StartPrepSDKCall(SDKCall_Raw);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayerShared::UpdateItemChargeMeters");
-	g_hSDKUpdateItemChargeMeters = EndPrepSDKCall();
-	if (!g_hSDKUpdateItemChargeMeters)
-		LogError("Failed to create call: CTFPlayerShared::UpdateItemChargeMeters");
-	
-	g_pPlayerShared = view_as<Address>(FindSendPropInfo("CTFPlayer", "m_Shared"));
-}
-
-float SDKCall_GetDefaultItemChargeMeterValue(int iWeapon)
-{
-	if (g_hSDKGetDefaultItemChargeMeterValue)
-		return SDKCall(g_hSDKGetDefaultItemChargeMeterValue, iWeapon);
-	
-	return 0.0;
 }
 
 void SDKCall_EquipWearable(int iClient, int iWearable)
@@ -98,13 +71,4 @@ bool SDKCall_DoClassSpecialSkill(int iClient)
 		return SDKCall(g_hSDKDoClassSpecialSkill, iClient);
 	
 	return false;
-}
-
-void SDKCall_UpdateItemChargeMeters(int iClient)
-{
-	if (g_hSDKUpdateItemChargeMeters)
-	{
-		Address pThis = GetEntityAddress(iClient) + g_pPlayerShared;
-		SDKCall(g_hSDKUpdateItemChargeMeters, pThis);
-	}
 }
