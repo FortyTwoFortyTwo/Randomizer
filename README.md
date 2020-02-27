@@ -1,20 +1,25 @@
-# Randomizer
+# Randomizer  [![Action Status](https://github.com/FortyTwoFortyTwo/Randomizer/workflows/Package/badge.svg)](https://github.com/FortyTwoFortyTwo/Randomizer/actions?query=workflow%3APackage+branch%3Amaster)
 
 TF2 Gamemode where everyone plays as random class with random weapons, a rewritten of many old randomizer plugins.
 
-## Development
-This plugin is currently in early development, barely enough for testing but likely will contain bugs, missing bits around or weapon just don't work on some classes. This plugin aims to:
-- Not break from upcoming major TF2 update, however gamedata will likely needs updating from it.
-- Not break any balances from TF2 weapon rebalances update.
-- Keeping as low hardcodes as possible, weapon not working for specific class, etc.
-
-## Features
-Apart from the obvious random class and weapon generator, this plugin currently includes:
-- Many hook/detours on several SDK functions that have hardcode player classes, fixed by simply changing player class during SDK functions.
-- Config with list of weapons to select from random pool, along with name for each weapons for HUD display.
-- Config with huds to specify every weapons which netprop and maths to calculate meters to display.
+## Builds
+All builds can be found [here](https://github.com/FortyTwoFortyTwo/Randomizer/actions?query=workflow%3APackage+branch%3Amaster).
+To download latest build version, select latest package then "Artifacts" button at top right.
 
 ## Requirements
 - SourceMod 1.10
 - [tf_econ_data](https://forums.alliedmods.net/showthread.php?t=315011)
 - [dhooks with detour support](https://forums.alliedmods.net/showpost.php?p=2588686&postcount=589)
+
+## TF2 Major Updates
+Whenever valve releases a major TF2 update, this gamemode expects to:
+- Require gamedata update for several SDK call/hooks
+- Update configs for any possible weapon balance changes for HUD meter, or adding new TF2 weapons
+- Not require any SP plugin update/changes (hopefully)
+
+## Configs
+There currently 4 [configs](https://github.com/FortyTwoFortyTwo/Randomizer/tree/master/configs/randomizer) able to easily change for future TF2 updates:
+- `controls.cfg`: Manages how weapons with `attack2` passive button should be handled, should it be `attack3` or `reload` instead.
+- `huds.cfg`: Lists all of the netprop meters to display in hud for many weapons.
+- `viewmodels.cfg`: List of all weapons with class specified to set transparent by default, without needing to use `sm_cantsee` on weapon that covers player screen everytime.
+- `weapons.cfg`: Whitelist of weapon indexs to select from random pool, along with weapon name to display in HUD.
