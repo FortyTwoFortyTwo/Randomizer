@@ -43,32 +43,25 @@ public void SDKCall_Init(GameData hGameData)
 
 void SDKCall_EquipWearable(int iClient, int iWearable)
 {
-	if (g_hSDKEquipWearable)
-		SDKCall(g_hSDKEquipWearable, iClient, iWearable);
+	SDKCall(g_hSDKEquipWearable, iClient, iWearable);
 }
 
 void SDKCall_WeaponReset(int iWeapon)
 {
-	if (g_hSDKWeaponReset)
-		SDKCall(g_hSDKWeaponReset, iWeapon);
+	SDKCall(g_hSDKWeaponReset, iWeapon);
 }
 
 void SDKCall_AddObject(int iClient, int iObject)
 {
-	if (g_hSDKAddObject)
-		SDKCall(g_hSDKAddObject, iClient, iObject);
+	SDKCall(g_hSDKAddObject, iClient, iObject);
 }
 
 void SDKCall_RemoveObject(int iClient, int iObject)
 {
-	if (g_hSDKRemoveObject)
-		SDKCall(g_hSDKRemoveObject, iClient, iObject);
+	SDKCall(g_hSDKRemoveObject, iClient, iObject);
 }
 
 bool SDKCall_DoClassSpecialSkill(int iClient)
 {
-	if (g_hSDKDoClassSpecialSkill)
-		return SDKCall(g_hSDKDoClassSpecialSkill, iClient);
-	
-	return false;
+	return SDKCall(g_hSDKDoClassSpecialSkill, iClient);
 }

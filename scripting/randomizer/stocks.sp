@@ -37,19 +37,17 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 		DispatchSpawn(iWeapon);
 		SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
 		
+		//Reset charge meter
+		SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 0.0, iSlot);
+		
 		if (StrContains(sClassname, "tf_weapon") == 0)
 		{
-			//ViewModel_CreateWeapon(iClient, iSlot, iWeapon);
-			
 			EquipPlayerWeapon(iClient, iWeapon);
 			
 			//Set ammo to 0, CTFPlayer::GetMaxAmmo detour will correct this, adding ammo by current
 			int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
 			if (iAmmoType > -1)
 				SetEntProp(iClient, Prop_Send, "m_iAmmo", 0, _, iAmmoType);
-			
-			//Reset charge meter
-			SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 0.0, iSlot);
 		}
 		else if (StrContains(sClassname, "tf_wearable") == 0)
 		{

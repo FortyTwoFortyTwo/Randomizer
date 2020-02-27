@@ -20,9 +20,7 @@
 #define CLASS_MIN	1	//First valid TFClassType, Scout
 #define CLASS_MAX	9	//Last valid TFClassType, Engineer
 
-#define ATTRIB_SET_CHARGE_TYPE				18
 #define ATTRIB_AIR_DASH_COUNT				250
-#define ATTRIB_ITEM_METER_CHARGE_TYPE		856
 
 // entity effects
 enum
@@ -295,7 +293,7 @@ public void OnClientPutInServer(int iClient)
 	DHook_HookGiveNamedItem(iClient);
 	DHook_HookClient(iClient);
 	
-	GenerateRandonWeapon(iClient);
+	GenerateRandomWeapon(iClient);
 }
 
 public void OnClientDisconnect(int iClient)
@@ -320,7 +318,7 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 		RemoveEntity(iEntity);
 }
 
-public void GenerateRandonWeapon(int iClient)
+public void GenerateRandomWeapon(int iClient)
 {
 	//Detach client's object so it doesnt get destroyed on losing toolbox
 	int iBuilding = MaxClients+1;
@@ -345,7 +343,7 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 	//New round, generate new weapons for everyone
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 		if (IsClientInGame(iClient))
-			GenerateRandonWeapon(iClient);
+			GenerateRandomWeapon(iClient);
 }
 
 public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadcast)
@@ -433,7 +431,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	
 	//Only generate new weapons if killed from attacker
 	if (0 < iAttacker <= MaxClients && IsClientInGame(iAttacker) && iClient != iAttacker && !bDeadRinger)
-		RequestFrame(GenerateRandonWeapon, iClient);	//Can be buggy if done same frame as death
+		RequestFrame(GenerateRandomWeapon, iClient);	//Can be buggy if done same frame as death
 }
 
 KeyValues LoadConfig(const char[] sFilepath, const char[] sName)

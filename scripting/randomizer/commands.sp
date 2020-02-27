@@ -63,7 +63,7 @@ public Action Command_Generate(int iClient, int iArgs)
 	if (iClient == 0)
 		return Plugin_Handled;
 	
-	GenerateRandonWeapon(iClient);
+	GenerateRandomWeapon(iClient);
 	TF2_RespawnPlayer(iClient);
 	
 	return Plugin_Handled;
