@@ -14,6 +14,9 @@
 
 #pragma newdecls required
 
+#define PLUGIN_VERSION			"0.0.0"
+#define PLUGIN_VERSION_REVISION	"manual"
+
 #define TF_MAXPLAYERS	32
 #define CONFIG_MAXCHAR	64
 
@@ -210,7 +213,7 @@ public Plugin myinfo =
 	name = "Randomizer",
 	author = "42",
 	description = "Gamemode where everyone plays as random class with random weapons",
-	version = "0.0.0",
+	version = PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION,
 	url = "https://github.com/FortyTwoFortyTwo/Randomizer",
 };
 
@@ -238,6 +241,8 @@ public void OnPluginStart()
 	Huds_Refresh();
 	ViewModels_Refresh();
 	Weapons_Refresh();
+	
+	CreateConVar("randomizer_version", PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION, "Randomizer plugin version", FCVAR_SPONLY|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	
 	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
 	HookEvent("player_spawn", Event_PlayerSpawn);
