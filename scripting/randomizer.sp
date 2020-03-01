@@ -63,12 +63,12 @@ enum
 
 enum
 {
-	TF_AMMO_DUMMY = 0,	// Dummy index to make the CAmmoDef indices correct for the other ammo types.
-	TF_AMMO_PRIMARY,
-	TF_AMMO_SECONDARY,
-	TF_AMMO_METAL,
-	TF_AMMO_GRENADES1,
-	TF_AMMO_GRENADES2,
+	TF_AMMO_DUMMY = 0,
+	TF_AMMO_PRIMARY,	//General primary weapon ammo
+	TF_AMMO_SECONDARY,	//General secondary weapon ammo
+	TF_AMMO_METAL,		//Engineer's metal
+	TF_AMMO_GRENADES1,	//Weapon misc ammo 1, in randomizer we force all melee weapon misc ammo to this
+	TF_AMMO_GRENADES2,	//Weapon misc ammo 2, in randomizer we force all secondary weapon misc ammo to this
 	TF_AMMO_COUNT
 };
 
@@ -203,6 +203,7 @@ int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 #include "randomizer/viewmodels.sp"
 #include "randomizer/weapons.sp"
 
+#include "randomizer/ammo.sp"
 #include "randomizer/commands.sp"
 #include "randomizer/dhook.sp"
 #include "randomizer/sdkcall.sp"
@@ -231,6 +232,7 @@ public void OnPluginStart()
 	
 	delete hGameData;
 	
+	Ammo_Init();
 	Commands_Init();
 	Controls_Init();
 	Huds_Init();
@@ -316,11 +318,18 @@ public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const fl
 public void OnEntityCreated(int iEntity, const char[] sClassname)
 {
 	if (StrContains(sClassname, "tf_weapon_") == 0)
+	{
+		SDKHook(iEntity, SDKHook_SpawnPost, Ammo_OnEntitySpawned);
 		DHook_HookWeapon(iEntity);
+	}
 	else if (StrContains(sClassname, "obj_") == 0)
+	{
 		DHook_HookObject(iEntity);
+	}
 	else if (StrEqual(sClassname, "tf_dropped_weapon"))
+	{
 		RemoveEntity(iEntity);
+	}
 }
 
 public void GenerateRandomWeapon(int iClient)

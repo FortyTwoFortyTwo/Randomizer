@@ -113,27 +113,18 @@ public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParam
 	int iAmmoType = DHookGetParam(hParams, 1);
 	TFClassType nClass = DHookGetParam(hParams, 2);
 	
-	if (nClass != view_as<TFClassType>(-1))
-		return MRES_Ignored;
-	
-	if (iAmmoType == TF_AMMO_METAL)
+	//By default iClassNumber returns -1, which would get client's class instead of given iClassNumber.
+	// However using client's class can cause max ammo calculate to be incorrect,
+	// we want to set iClassNumber to whatever class would normaly use weapon from iAmmoIndex.
+	// Also update ammotype since we may have moved it somewhere else
+	if (Ammo_GetDefaultType(iClient, iAmmoType, nClass))
 	{
-		//Metal works differently, engineer have max metal 200 while others have 100
-		DHookSetParam(hParams, 2, TFClass_Engineer);
+		DHookSetParam(hParams, 1, iAmmoType);
+		DHookSetParam(hParams, 2, nClass);
 		return MRES_ChangedHandled;
 	}
 	
-	//By default iClassNumber returns -1, which would get client's class instead of given iClassNumber.
-	//However using client's class can cause max ammo calculate to be incorrect,
-	//We want to set iClassNumber to whatever class would normaly use weapon from iAmmoIndex.
-	//TODO check shortstop's max ammo
-	int iWeapon = TF2_GetItemFromAmmoType(iClient, iAmmoType);
-	if (iWeapon <= MaxClients)
-		return MRES_Ignored;
-	
-	TFClassType nDefaultClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
-	DHookSetParam(hParams, 2, nDefaultClass);
-	return MRES_ChangedHandled;
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_TauntPre(int iClient, Handle hParams)
