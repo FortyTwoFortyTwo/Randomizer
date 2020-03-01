@@ -1,13 +1,3 @@
-stock void AddEffectFlags(int iEntity, int iEffects)
-{
-    SetEntProp(iEntity, Prop_Send, "m_fEffects", iEffects | GetEntProp(iEntity, Prop_Send, "m_fEffects"));
-}
-
-stock void RemoveEffectFlags(int iEntity, int iEffects)
-{
-    SetEntProp(iEntity, Prop_Send, "m_fEffects", ~iEffects & GetEntProp(iEntity, Prop_Send, "m_fEffects"));
-}
-
 stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 {
 	char sClassname[256];
@@ -185,33 +175,6 @@ stock void TF2_RemoveItemInSlot(int iClient, int iSlot)
 		TF2_RemoveWearable(iClient, iWearable);
 }
 
-stock int TF2_GetAmmo(int iWeapon)
-{
-	if (!HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType")) return -1;
-
-	int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-	if (iAmmoType == -1) return -1;
-	
-	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity"); 
-	return GetEntProp(iClient, Prop_Send, "m_iAmmo", _, iAmmoType);
-}
-
-stock void TF2_SetAmmo(int iWeapon, int iAmmo)
-{
-	if (!HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType")) return;
-
-	int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-	if (iAmmoType == -1) return;
-	
-	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity"); 
-	SetEntProp(iClient, Prop_Send, "m_iAmmo", iAmmo, _, iAmmoType);
-}
-
-stock void TF2_SetMetal(int iClient, int iMetal)
-{
-	SetEntProp(iClient, Prop_Send, "m_iAmmo", iMetal, _, TF_AMMO_METAL);
-}
-
 stock int TF2_GetItemFromAmmoType(int iClient, int iAmmoType)
 {
 	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
@@ -225,11 +188,4 @@ stock int TF2_GetItemFromAmmoType(int iClient, int iAmmoType)
 	}
 	
 	return -1;
-}
-
-stock void StringToLower(char[] sString)
-{
-	int iLength = strlen(sString);
-	for(int i = 0; i < iLength; i++)
-		sString[i] = CharToLower(sString[i]);
 }
