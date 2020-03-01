@@ -111,7 +111,7 @@ void DHook_HookGamerules()
 public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
 {
 	int iAmmoType = DHookGetParam(hParams, 1);
-	TFClassType nClass = DHookGetParam(hParams, 2);
+	TFClassType nClass;
 	
 	//By default iClassNumber returns -1, which would get client's class instead of given iClassNumber.
 	// However using client's class can cause max ammo calculate to be incorrect,
@@ -250,6 +250,9 @@ public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hPa
 
 public MRESReturn DHook_GetEntityForLoadoutSlotPre(int iClient, Handle hReturn, Handle hParams)
 {
+	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
+		return MRES_Ignored;
+	
 	int iSlot = DHookGetParam(hParams, 1);
 	if (iSlot < 0 || iSlot > WeaponSlot_BuilderEngie)
 		return MRES_Ignored;

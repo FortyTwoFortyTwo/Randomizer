@@ -8,8 +8,6 @@ void Ammo_Init()
 public Action Ammo_OnEntitySpawned(int iWeapon)
 {
 	int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-	PrintToChatAll("weapon %d have ammotype %d", iWeapon, iAmmoType);
-	
 	if (iAmmoType != TF_AMMO_GRENADES1 && iAmmoType != TF_AMMO_GRENADES2)
 		return;
 	
