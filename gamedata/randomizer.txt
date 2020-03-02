@@ -125,6 +125,10 @@
 				"linux"		"4"
 				"windows"	"4"
 			}
+			"DoWeHaveABetterWayOfGettingOS"
+			{
+				"linux"		"1"
+			}
 		}
 		"Functions"
 		{
