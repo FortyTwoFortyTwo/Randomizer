@@ -2,6 +2,17 @@
 {
 	"tf"
 	{
+		"Addresses"
+		{
+			"CTFPlayer::TeamFortress_CalculateMaxSpeed::BFBCheck"
+			{
+				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"windows"
+				{
+					"offset" "1519"
+				}
+			}
+		}
 		"Signatures"
 		{
 			"CTFPlayer::GetMaxAmmo"
@@ -69,6 +80,12 @@
 				"library"	"server"
 				"linux"		"@_ZN12CTFGameStats23Event_PlayerFiredWeaponEP9CTFPlayerb"
 				"windows"	"\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x56\x8B\x75\x08"
+			}
+			"CTFPlayer::TeamFortress_CalculateMaxSpeed"
+			{
+				"library"	"server"
+				"linux"		"@_ZNK9CTFPlayer30TeamFortress_CalculateMaxSpeedEb"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x18\x83\x3D\x2A\x2A\x2A\x2A\x00"
 			}
 		}
 		"Offsets"

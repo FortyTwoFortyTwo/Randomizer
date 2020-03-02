@@ -208,6 +208,23 @@ public void OnPluginStart()
 	if (!hGameData)
 		SetFailState("Could not find randomizer gamedata");
 	
+	Address bup = hGameData.GetAddress("CTFPlayer::TeamFortress_CalculateMaxSpeed::BFBCheck");
+	//PrintToServer("%X: %X", bup+13, LoadFromAddress(bup+13, NumberType_Int8));
+	
+	// STEAK STUFF HERE
+	StoreToAddress(bup-83, 0x90, NumberType_Int8); // Die
+	StoreToAddress(bup-82, 0x90, NumberType_Int8); // Die
+	StoreToAddress(bup-50, 0x2B, NumberType_Int8); // Replace the JZ location
+	StoreToAddress(bup-14, 0xA, NumberType_Int8); // Replace the JZ location
+	StoreToAddress(bup-5, 0x90, NumberType_Int8); // Die
+	StoreToAddress(bup-4, 0x90, NumberType_Int8); // Die
+	
+	// BFB STUFF HERE
+	StoreToAddress(bup, 0x90, NumberType_Int8); // Die
+	StoreToAddress(bup+1, 0x90, NumberType_Int8); // Die
+	StoreToAddress(bup+13, 0x90, NumberType_Int8); // Die
+	StoreToAddress(bup+14, 0x90, NumberType_Int8); // Die
+	
 	DHook_Init(hGameData);
 	SDKCall_Init(hGameData);
 	
