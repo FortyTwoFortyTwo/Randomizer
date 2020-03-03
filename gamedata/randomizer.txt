@@ -41,6 +41,24 @@
 				}
 			}
 		}
+		"Keys"
+		{
+			"Patch_HeavyClassCheck"
+			{
+				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
+				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
+			}
+			"Patch_SteakCondFailed"
+			{
+				"linux"		"\x0F\x84\xC2\x00\x00\x00"	// Replace 'jz' location to 0xC2 (BFB check)
+				"windows"	"\x0F\x84\x30"	// Replace 'jz' location  to 0x30 (BFB check)
+			}
+			"Patch_SteakCondPassed"
+			{
+				"linux"		"\xE9\x97\x00\x00\x00"	// Replace 'jmp' location to 0x97 (BFB check)
+				"windows"	"\xEB\x0F"	// Replace 'jbe' to 'jmp short' 0x0F (BFB check)
+			}
+		}
 		"Signatures"
 		{
 			"CTFPlayer::GetMaxAmmo"
