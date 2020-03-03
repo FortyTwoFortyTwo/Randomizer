@@ -13,7 +13,7 @@ public void DHook_Init(GameData hGameData)
 {
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
-	//DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", _, DHook_CanAirDashPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", _, DHook_CanAirDashPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
@@ -148,6 +148,9 @@ public MRESReturn DHook_TauntPost(int iClient, Handle hParams)
 
 public MRESReturn DHook_CanAirDashPost(int iClient, Handle hReturn)
 {
+	if (iClient == -1)
+		return MRES_Ignored;
+	
 	//Soda Popper and Atomizer's extra jumps does not work for non-scouts, fix that
 	if (!DHookGetReturn(hReturn))
 	{
