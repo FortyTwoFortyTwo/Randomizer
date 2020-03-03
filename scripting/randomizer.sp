@@ -187,6 +187,7 @@ int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 #include "randomizer/ammo.sp"
 #include "randomizer/commands.sp"
 #include "randomizer/dhook.sp"
+#include "randomizer/patch.sp"
 #include "randomizer/sdkcall.sp"
 #include "randomizer/stocks.sp"
 
@@ -208,6 +209,7 @@ public void OnPluginStart()
 	if (!hGameData)
 		SetFailState("Could not find randomizer gamedata");
 	
+	Patch_Init(hGameData);
 	DHook_Init(hGameData);
 	SDKCall_Init(hGameData);
 	
@@ -242,6 +244,11 @@ public void OnPluginStart()
 		if (IsClientInGame(iClient))
 			OnClientPutInServer(iClient);
 	}
+}
+
+public void OnPluginEnd()
+{
+	Patch_ResetAll();
 }
 
 public void OnMapStart()

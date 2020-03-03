@@ -2,6 +2,114 @@
 {
 	"tf"
 	{
+		"Addresses"
+		{
+			"Patch_SpeedDemomanClassCheck"
+			{
+				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"linux"
+				{
+					"offset"	"672"
+				}
+				"windows"
+				{
+					"offset"	"692"
+				}
+			}
+			"Patch_SpeedMedic1ClassCheck"
+			{
+				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"linux"
+				{
+					"offset"	"1173"
+				}
+				"windows"
+				{
+					"offset"	"979"
+				}
+			}
+			"Patch_SpeedMedic2ClassCheck"
+			{
+				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"linux"
+				{
+					"offset"	"1733"
+				}
+				"windows"
+				{
+					"offset"	"1270"
+				}
+			}
+			"Patch_SpeedHeavyClassCheck"
+			{
+				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"linux"
+				{
+					"offset"	"2141"
+				}
+				"windows"
+				{
+					"offset"	"1436"
+				}
+			}
+			"Patch_SpeedSteakCondFailed"
+			{
+				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"linux"
+				{
+					"offset"	"3393"
+				}
+				"windows"
+				{
+					"offset"	"1467"
+				}
+			}
+			"Patch_SpeedSteakCondPassed"
+			{
+				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"linux"
+				{
+					"offset"	"3437"
+				}
+				"windows"
+				{
+					"offset"	"1504"
+				}
+			}
+		}
+		"Keys"
+		{
+			"Patch_SpeedDemomanClassCheck"
+			{
+				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
+				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
+			}
+			"Patch_SpeedMedic1ClassCheck"
+			{
+				"linux"		"\x90\x90\x90\x90\x90\x90"	// Replace 'jz' (if '==' jump) to NOP (skip)
+				"windows"	"\x90\x90\x90\x90\x90\x90"	// Replace 'jz' (if '==' jump) to NOP (skip)
+			}
+			"Patch_SpeedMedic2ClassCheck"
+			{
+				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
+				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
+			}
+			"Patch_SpeedHeavyClassCheck"
+			{
+				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
+				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
+			}
+			"Patch_SpeedSteakCondFailed"
+			{
+				"linux"		"\x0F\x84\xC2\x00\x00\x00"	// Replace 'jz' location to 0xC2 (BFB check)
+				"windows"	"\x0F\x84\x30"	// Replace 'jz' location  to 0x30 (BFB check)
+			}
+			"Patch_SpeedSteakCondPassed"
+			{
+				"linux"		"\xE9\x97\x00\x00\x00"	// Replace 'jmp' location to 0x97 (BFB check)
+				"windows"	"\xEB\x0F"	// Replace 'jbe' to 'jmp short' 0x0F (BFB check)
+			}
+		}
 		"Signatures"
 		{
 			"CTFPlayer::GetMaxAmmo"
@@ -63,6 +171,18 @@
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer23GetEntityForLoadoutSlotEib"
 				"windows"	"\x55\x8B\xEC\x51\x53\x8B\x5D\x08\x57\x8B\xF9\x89\x7D\xFC\x83\xFB\x07"
+			}
+			"CTFPlayer::TeamFortress_CalculateMaxSpeed"
+			{
+				"library"	"server"
+				"linux"		"@_ZNK9CTFPlayer30TeamFortress_CalculateMaxSpeedEb"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x18\x83\x3D\x2A\x2A\x2A\x2A\x00"
+			}
+			"CTFPlayerShared::InCond"
+			{
+				"library"	"server"
+				"linux"		"@_ZNK15CTFPlayerShared6InCondE7ETFCond"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x56\x57\x8B\x7D\x08\x8B\xF1\x83\xFF\x20"
 			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{
@@ -215,6 +335,34 @@
 					"bool"
 					{
 						"type"	"bool"
+					}
+				}
+			}
+			"CTFPlayer::TeamFortress_CalculateMaxSpeed"
+			{
+				"signature"	"CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"callconv"	"thiscall"
+				"return"	"float"
+				"this"		"entity"
+				"arguments"
+				{
+					"ignoreCharging"
+					{
+						"type"	"bool"
+					}
+				}
+			}
+			"CTFPlayerShared::InCond"
+			{
+				"signature"	"CTFPlayerShared::InCond"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"address"
+				"arguments"
+				{
+					"nCond"
+					{
+						"type"	"int"
 					}
 				}
 			}
