@@ -62,24 +62,36 @@ enum struct Patch
 	}
 }
 
-Patch g_patchHeavyClassCheck;
-Patch g_patchSteakCondFailed;
-Patch g_patchSteakCondPassed;
+static Patch g_patchSpeedDemomanClassCheck;
+static Patch g_patchSpeedMedic1ClassCheck;
+static Patch g_patchSpeedMedic2ClassCheck;
+static Patch g_patchSpeedHeavyClassCheck;
+static Patch g_patchSpeedSteakCondFailed;
+static Patch g_patchSpeedSteakCondPassed;
 
 void Patch_Init(GameData hGameData)
 {
-	g_patchHeavyClassCheck.Load(hGameData, "Patch_HeavyClassCheck");
-	g_patchSteakCondFailed.Load(hGameData, "Patch_SteakCondFailed");
-	g_patchSteakCondPassed.Load(hGameData, "Patch_SteakCondPassed");
+	g_patchSpeedDemomanClassCheck.Load(hGameData, "Patch_SpeedDemomanClassCheck");
+	g_patchSpeedMedic1ClassCheck.Load(hGameData, "Patch_SpeedMedic1ClassCheck");
+	g_patchSpeedMedic2ClassCheck.Load(hGameData, "Patch_SpeedMedic2ClassCheck");
+	g_patchSpeedHeavyClassCheck.Load(hGameData, "Patch_SpeedHeavyClassCheck");
+	g_patchSpeedSteakCondFailed.Load(hGameData, "Patch_SpeedSteakCondFailed");
+	g_patchSpeedSteakCondPassed.Load(hGameData, "Patch_SpeedSteakCondPassed");
 	
-	g_patchHeavyClassCheck.Enable();
-	g_patchSteakCondFailed.Enable();
-	g_patchSteakCondPassed.Enable();
+	g_patchSpeedDemomanClassCheck.Enable();
+	g_patchSpeedMedic1ClassCheck.Enable();
+	g_patchSpeedMedic2ClassCheck.Enable();
+	g_patchSpeedHeavyClassCheck.Enable();
+	g_patchSpeedSteakCondFailed.Enable();
+	g_patchSpeedSteakCondPassed.Enable();
 }
 
 void Patch_ResetAll()
 {
-	g_patchHeavyClassCheck.Disable();
-	g_patchSteakCondFailed.Disable();
-	g_patchSteakCondPassed.Disable();
+	g_patchSpeedDemomanClassCheck.Disable();
+	g_patchSpeedMedic1ClassCheck.Disable();
+	g_patchSpeedMedic2ClassCheck.Disable();
+	g_patchSpeedHeavyClassCheck.Disable();
+	g_patchSpeedSteakCondFailed.Disable();
+	g_patchSpeedSteakCondPassed.Disable();
 }
