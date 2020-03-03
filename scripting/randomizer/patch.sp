@@ -50,34 +50,56 @@ void Patch_Init(GameData hGameData)
 	
 	if (bLinux)
 	{
-		// Nothing here
+		//Replace 'jz' (if '==' jump) to 'jmp' (always jump)
+		Patch.PushArray({0, 0x0F, 0x90});
+		Patch.PushArray({1, 0x84, 0xE9});
+		
+		g_Patches.SetValue("Patch_HeavyClassCheck", Patch.Clone());
+		Patch.Clear();
+		
+		//Replace 'jmp' at steak cond failed to BFB weapon check
+		Patch.PushArray({0, 0x0F, 0x0F});
+		Patch.PushArray({1, 0x84, 0x84});
+		Patch.PushArray({2, 0x25, 0xC2});
+		Patch.PushArray({3, 0xFB, 0x00});
+		Patch.PushArray({4, 0xFF, 0x00});
+		Patch.PushArray({5, 0xFF, 0x00});
+		
+		g_Patches.SetValue("Patch_SteakCondFailed", Patch.Clone());
+		Patch.Clear();
+		
+		//Replace 'jmp' at steak speed applied to BFB weapon check
+		Patch.PushArray({0, 0xE9, 0xE9});
+		Patch.PushArray({1, 0xFA, 0x97});
+		Patch.PushArray({2, 0xFA, 0x00});
+		Patch.PushArray({3, 0xFF, 0x00});
+		Patch.PushArray({4, 0xFF, 0x00});
+		
+		g_Patches.SetValue("Patch_SteakCondPassed", Patch.Clone());
+		Patch.Clear();
 	}
 	else
 	{
 		// Replace jnz short loc_104C0E8C with NOP because we don't need it if
 		// we want to check for bfb speed bonus after the condition check
-		Patch.PushArray({-83, 0x75, 0x90}); // 0x104C0E3C
-		Patch.PushArray({-82, 0x4E, 0x90}); // 0x104C0E3D
+		Patch.PushArray({0, 0x75, 0x90});
+		Patch.PushArray({1, 0x4E, 0x90});
+		
+		g_Patches.SetValue("Patch_HeavyClassCheck", Patch.Clone());
+		Patch.Clear();
 		
 		// Replace jz loc_104C0EE2 to jz 0x2B so that we jump to the bfb
 		// check if player has no steak/crit-a-cola condition
-		Patch.PushArray({-50, 0x81, 0x2B}); // 0x104C0E5D
+		Patch.PushArray({2, 0x81, 0x30}); // 0x104C0E5D
 		
-		// Same as above
-		Patch.PushArray({-14, 0x60, 0xA}); // 0x104C0E81
+		g_Patches.SetValue("Patch_SteakCondFailed", Patch.Clone());
+		Patch.Clear();
 		
-		// Replace a jump with NOP for a bfb check
-		Patch.PushArray({-5, 0xEB, 0x90}); // 0x104C0E8A
-		Patch.PushArray({-4, 0x51, 0x90}); // 0x104C0E8B
+		// Replace 'jbe' to 'jmp short' and always go to BFB
+		Patch.PushArray({0, 0x76, 0xEB}); // 0x104C0E81
+		Patch.PushArray({1, 0x60, 0x0F}); // 0x104C0E81
 		
-		// Basically replace bunch of jumps that are related
-		// to the scout class check with NOP
-		Patch.PushArray({0,  0x75, 0x90}); // 0x104C0E8F
-		Patch.PushArray({1,  0x51, 0x90}); // 0x104C0E90
-		Patch.PushArray({13, 0x74, 0x90}); // 0x104C0E9C
-		Patch.PushArray({14, 0x44, 0x90}); // 0x104C0E9D
-		
-		g_Patches.SetValue("CTFPlayer::TeamFortress_CalculateMaxSpeed::BFBCheck", Patch.Clone());
+		g_Patches.SetValue("Patch_SteakCondPassed", Patch.Clone());
 		Patch.Clear();
 	}
 	

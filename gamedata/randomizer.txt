@@ -4,12 +4,40 @@
 	{
 		"Addresses"
 		{
-			"CTFPlayer::TeamFortress_CalculateMaxSpeed::BFBCheck"
+			"Patch_HeavyClassCheck"
 			{
 				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"linux"
+				{
+					"offset"	"2141"
+				}
 				"windows"
 				{
-					"offset" "1519"
+					"offset"	"1436"
+				}
+			}
+			"Patch_SteakCondFailed"
+			{
+				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"linux"
+				{
+					"offset"	"3393"
+				}
+				"windows"
+				{
+					"offset"	"1467"
+				}
+			}
+			"Patch_SteakCondPassed"
+			{
+				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"linux"
+				{
+					"offset"	"3437"
+				}
+				"windows"
+				{
+					"offset"	"1504"
 				}
 			}
 		}
@@ -124,10 +152,6 @@
 			{
 				"linux"		"4"
 				"windows"	"4"
-			}
-			"DoWeHaveABetterWayOfGettingOS"
-			{
-				"linux"		"1"
 			}
 		}
 		"Functions"
