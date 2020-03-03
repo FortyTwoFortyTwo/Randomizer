@@ -28,7 +28,7 @@
 					"offset"	"979"
 				}
 			}
-			"Patch_Speedmedic2ClassCheck"
+			"Patch_SpeedMedic2ClassCheck"
 			{
 				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
 				"linux"
@@ -172,17 +172,23 @@
 				"linux"		"@_ZN9CTFPlayer23GetEntityForLoadoutSlotEib"
 				"windows"	"\x55\x8B\xEC\x51\x53\x8B\x5D\x08\x57\x8B\xF9\x89\x7D\xFC\x83\xFB\x07"
 			}
-			"CTFGameStats::Event_PlayerFiredWeapon"
-			{
-				"library"	"server"
-				"linux"		"@_ZN12CTFGameStats23Event_PlayerFiredWeaponEP9CTFPlayerb"
-				"windows"	"\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x56\x8B\x75\x08"
-			}
 			"CTFPlayer::TeamFortress_CalculateMaxSpeed"
 			{
 				"library"	"server"
 				"linux"		"@_ZNK9CTFPlayer30TeamFortress_CalculateMaxSpeedEb"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x18\x83\x3D\x2A\x2A\x2A\x2A\x00"
+			}
+			"CTFPlayerShared::InCond"
+			{
+				"library"	"server"
+				"linux"		"@_ZNK15CTFPlayerShared6InCondE7ETFCond"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x56\x57\x8B\x7D\x08\x8B\xF1\x83\xFF\x20"
+			}
+			"CTFGameStats::Event_PlayerFiredWeapon"
+			{
+				"library"	"server"
+				"linux"		"@_ZN12CTFGameStats23Event_PlayerFiredWeaponEP9CTFPlayerb"
+				"windows"	"\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x56\x8B\x75\x08"
 			}
 		}
 		"Offsets"
@@ -329,6 +335,34 @@
 					"bool"
 					{
 						"type"	"bool"
+					}
+				}
+			}
+			"CTFPlayer::TeamFortress_CalculateMaxSpeed"
+			{
+				"signature"	"CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"callconv"	"thiscall"
+				"return"	"float"
+				"this"		"entity"
+				"arguments"
+				{
+					"ignoreCharging"
+					{
+						"type"	"bool"
+					}
+				}
+			}
+			"CTFPlayerShared::InCond"
+			{
+				"signature"	"CTFPlayerShared::InCond"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"address"
+				"arguments"
+				{
+					"nCond"
+					{
+						"type"	"int"
 					}
 				}
 			}

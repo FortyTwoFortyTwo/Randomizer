@@ -187,9 +187,9 @@ int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 #include "randomizer/ammo.sp"
 #include "randomizer/commands.sp"
 #include "randomizer/dhook.sp"
+#include "randomizer/patch.sp"
 #include "randomizer/sdkcall.sp"
 #include "randomizer/stocks.sp"
-#include "randomizer/patch.sp"
 
 public Plugin myinfo =
 {
