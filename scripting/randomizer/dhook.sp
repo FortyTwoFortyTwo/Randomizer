@@ -1,4 +1,5 @@
 static Handle g_hDHookSecondaryAttack;
+static Handle g_hDHookOnDecapitation;
 static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookGiveNamedItem;
 static Handle g_hDHookFrameUpdatePostEntityThink;
@@ -25,6 +26,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
 	
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
+	g_hDHookOnDecapitation = DHook_CreateVirtual(hGameData, "CTFDecapitationMeleeWeaponBase::OnDecapitation");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	g_hDHookFrameUpdatePostEntityThink = DHook_CreateVirtual(hGameData, "CGameRules::FrameUpdatePostEntityThink");
@@ -97,6 +99,12 @@ void DHook_HookWeapon(int iWeapon)
 	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
 	
 	SDKHook(iWeapon, SDKHook_Reload, Hook_ReloadPre);
+}
+
+void DHook_HookSword(int iSword)
+{
+	DHookEntity(g_hDHookOnDecapitation, false, iSword, _, DHook_OnDecapitationPre);
+	DHookEntity(g_hDHookOnDecapitation, true, iSword, _, DHook_OnDecapitationPost);
 }
 
 void DHook_HookObject(int iObject)
@@ -357,6 +365,19 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 	}
 	
 	g_bDoClassSpecialSkill[iClient] = false;
+}
+
+public MRESReturn DHook_OnDecapitationPre(int iSword, Handle hParams)
+{
+	//Has class check
+	int iClient = GetEntPropEnt(iSword, Prop_Send, "m_hOwnerEntity");
+	TF2_SetPlayerClass(iClient, TF2_GetDefaultClassFromItem(iClient, iSword));
+}
+
+public MRESReturn DHook_OnDecapitationPost(int iSword, Handle hParams)
+{
+	int iClient = GetEntPropEnt(iSword, Prop_Send, "m_hOwnerEntity");
+	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
 public MRESReturn DHook_CanBeUpgradedPre(int iObject, Handle hReturn, Handle hParams)

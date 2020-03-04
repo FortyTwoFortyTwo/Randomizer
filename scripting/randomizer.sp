@@ -310,14 +310,13 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 		SDKHook(iEntity, SDKHook_SpawnPost, Ammo_OnEntitySpawned);
 		DHook_HookWeapon(iEntity);
 	}
+	
+	if (StrEqual(sClassname, "tf_weapon_sword"))
+		DHook_HookSword(iEntity);
 	else if (StrContains(sClassname, "obj_") == 0)
-	{
 		DHook_HookObject(iEntity);
-	}
 	else if (StrEqual(sClassname, "tf_dropped_weapon"))
-	{
 		RemoveEntity(iEntity);
-	}
 }
 
 public void GenerateRandomWeapon(int iClient)

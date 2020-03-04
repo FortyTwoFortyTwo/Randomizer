@@ -203,6 +203,11 @@
 				"linux"		"426"
 				"windows"	"419"
 			}
+			"CTFDecapitationMeleeWeaponBase::OnDecapitation"
+			{
+				"linux"		"482"
+				"windows"	"475"
+			}
 			"CBaseObject::CanBeUpgraded"
 			{
 				"linux"		"376"
@@ -390,6 +395,20 @@
 				"hooktype"	"entity"
 				"return"	"void"
 				"this"		"entity"
+			}
+			"CTFDecapitationMeleeWeaponBase::OnDecapitation"
+			{
+				"offset"	"CTFDecapitationMeleeWeaponBase::OnDecapitation"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"	"cbaseentity"
+					}
+				}
 			}
 			"CBaseObject::CanBeUpgraded"
 			{
