@@ -20,6 +20,7 @@ enum struct HudInfo
 	int iElement;		//If netprop is array, element postition to get
 	HudEntity nEntity;	//Entity to target from netprop
 	HudType nType;		//How is netprop value stored
+	float flAdd;		//Add netprop value to display
 	float flMultiply;	//Multiply netprop value to display
 	bool bMin;			//Is there netprop min value?
 	float flMin;		//Netprop min value inorder to display
@@ -42,6 +43,7 @@ enum struct HudInfo
 	{
 		iVal = GetEntProp(iEntity, Prop_Send, this.sNetprop, _, this.iElement);
 		iVal = RoundToNearest(float(iVal) * this.flMultiply);
+		iVal = RoundToNearest(float(iVal) * this.flAdd);
 		
 		if (this.bMin && float(iVal) <= this.flMin)
 			return false;
@@ -60,6 +62,7 @@ enum struct HudInfo
 			flVal -= GetGameTime();
 		
 		flVal *= this.flMultiply;
+		flVal += this.flAdd;
 		
 		if (this.bMin && flVal <= this.flMin)
 			return false;
@@ -122,6 +125,7 @@ void Huds_Refresh()
 			HudInfo hudInfo;
 			kv.GetSectionName(hudInfo.sNetprop, sizeof(hudInfo.sNetprop));
 			hudInfo.iElement = kv.GetNum("element", 0);
+			hudInfo.flAdd = kv.GetFloat("add", 0.0);
 			hudInfo.flMultiply = kv.GetFloat("multiply", 1.0);
 			
 			kv.GetString("entity", sBuffer, sizeof(sBuffer));
