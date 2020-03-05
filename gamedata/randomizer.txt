@@ -136,6 +136,12 @@
 				"linux"		"@_ZN9CTFPlayer15ValidateWeaponsEP19TFPlayerClassData_tb"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x38\x81\x65\xE4\xFF\xFF\x0F\xFF"
 			}
+			"CTFPlayer::ManageBuilderWeapons"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer20ManageBuilderWeaponsEP19TFPlayerClassData_t"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x28\x53\x56\x8B\xF1\xC7\x45\xF0\x30\x00\x00\x00"
+			}
 			"CTFPlayer::AddObject"
 			{
 				"library"	"server"
@@ -166,6 +172,12 @@
 				"linux"		"@_ZNK9CTFPlayer13IsPlayerClassEi"
 				"windows"	"\x55\x8B\xEC\x8D\x81\xFC\x20\x00\x00"
 			}
+			"CTFPlayer::GetLoadoutItem"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer14GetLoadoutItemEiib"
+				"windows"	"\x55\x8B\xEC\x51\x53\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x57\x89\x75\xFC"
+			}
 			"CTFPlayer::GetEntityForLoadoutSlot"
 			{
 				"library"	"server"
@@ -183,6 +195,12 @@
 				"library"	"server"
 				"linux"		"@_ZNK15CTFPlayerShared6InCondE7ETFCond"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x56\x57\x8B\x7D\x08\x8B\xF1\x83\xFF\x20"
+			}
+			"CTFPlayerClassShared::CanBuildObject"
+			{
+				"library"	"server"
+				"linux"		"@_ZN20CTFPlayerClassShared14CanBuildObjectEi"
+				"windows"	"\x55\x8B\xEC\x53\x56\xFF\x71\x04"
 			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{
@@ -297,6 +315,20 @@
 					}
 				}
 			}
+			"CTFPlayer::ManageBuilderWeapons"
+			{
+				"signature"	"CTFPlayer::ManageBuilderWeapons"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"pData"
+					{
+						"type"	"objectptr"
+					}
+				}
+			}
 			"CTFPlayer::DoClassSpecialSkill"
 			{
 				"signature"	"CTFPlayer::DoClassSpecialSkill"
@@ -366,6 +398,20 @@
 				"arguments"
 				{
 					"nCond"
+					{
+						"type"	"int"
+					}
+				}
+			}
+			"CTFPlayerClassShared::CanBuildObject"
+			{
+				"signature"	"CTFPlayerClassShared::CanBuildObject"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"address"
+				"arguments"
+				{
+					"iObjectType"
 					{
 						"type"	"int"
 					}

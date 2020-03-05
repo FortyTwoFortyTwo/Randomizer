@@ -14,8 +14,21 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 		}
 	}
 	
-	int iWeapon = CreateEntityByName(sClassname);
+	bool bSapper;
+	if (StrEqual(sClassname, "tf_weapon_builder") || StrEqual(sClassname, "tf_weapon_sapper"))
+	{
+		//Toolbox is nasty to create, use different method
+		if (iSlot == WeaponSlot_BuilderEngie)
+			return TF2_CreateAndEquipBuilder(iClient);
+		
+		//Otherwise assume this weapon is for sappers
+		bSapper = true;
+		
+		//tf_weapon_sapper is bad and give client crashes
+		sClassname = "tf_weapon_builder";
+	}
 	
+	int iWeapon = CreateEntityByName(sClassname);
 	if (IsValidEntity(iWeapon))
 	{
 		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", iIndex);
@@ -23,6 +36,12 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 		
 		SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", 6);
 		SetEntProp(iWeapon, Prop_Send, "m_iEntityLevel", 1);
+		
+		if (bSapper)
+		{
+			SetEntProp(iWeapon, Prop_Send, "m_iObjectType", 3);
+			SetEntProp(iWeapon, Prop_Data, "m_iSubType", 3);
+		}
 		
 		DispatchSpawn(iWeapon);
 		SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
@@ -56,6 +75,30 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 	}
 	
 	return iWeapon;
+}
+
+stock int TF2_CreateAndEquipBuilder(int iClient)
+{
+	Address pItem = SDKCall_GetLoadoutItem(iClient, TFClass_Engineer, 4);	//Uses econ slot, 4 for toolbox
+	if (pItem)
+	{
+		g_bGiveNamedItem = true;
+		int iWeapon = SDKCall_GiveNamedItem(iClient, "tf_weapon_builder", 0, pItem);
+		g_bGiveNamedItem = false;
+		
+		if (iWeapon > MaxClients)
+		{
+			SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Dispenser));
+			SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Teleporter));
+			SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Sentry));
+			SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", false, _, view_as<int>(TFObject_Sapper));
+			
+			EquipPlayerWeapon(iClient, iWeapon);
+			return iWeapon;
+		}
+	}
+	
+	return -1;
 }
 
 stock bool TF2_WeaponFindAttribute(int iWeapon, int iAttrib, float &flVal)

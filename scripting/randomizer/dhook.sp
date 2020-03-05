@@ -17,14 +17,16 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", _, DHook_CanAirDashPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::ManageBuilderWeapons", DHook_ManageBuilderWeaponsPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::IsPlayerClass", DHook_IsPlayerClassPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetEntityForLoadoutSlot", DHook_GetEntityForLoadoutSlotPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::TeamFortress_CalculateMaxSpeed", DHook_CalculateMaxSpeedPre, DHook_CalculateMaxSpeedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::InCond", _, DHook_InCondPost);
+	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
-	
+		
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookOnDecapitation = DHook_CreateVirtual(hGameData, "CTFDecapitationMeleeWeaponBase::OnDecapitation");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
@@ -176,7 +178,7 @@ public MRESReturn DHook_CanAirDashPost(int iClient, Handle hReturn)
 		
 		float flVal;
 		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-		if (TF2_WeaponFindAttribute(iWeapon, ATTRIB_AIR_DASH_COUNT, flVal) && iAirDash < RoundToNearest(flVal))
+		if (iWeapon > MaxClients && TF2_WeaponFindAttribute(iWeapon, ATTRIB_AIR_DASH_COUNT, flVal) && iAirDash < RoundToNearest(flVal))
 		{
 			SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
 			DHookSetReturn(hReturn, true);
@@ -198,6 +200,12 @@ public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
 			SDKCall_WeaponReset(iWeapon);
 	}
 	
+	return MRES_Supercede;
+}
+
+public MRESReturn DHook_ManageBuilderWeaponsPre(int iClient, Handle hParams)
+{
+	//Don't do anything, we'll handle it
 	return MRES_Supercede;
 }
 
@@ -322,6 +330,13 @@ public MRESReturn DHook_InCondPost(Address pPlayerShared, Handle hReturn, Handle
 	}
 	
 	return MRES_Ignored;
+}
+
+public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, Handle hReturn, Handle hParams)
+{
+	//Always return true no matter what
+	DHookSetReturn(hReturn, true);
+	return MRES_Supercede;
 }
 
 public void Hook_PreThink(int iClient)

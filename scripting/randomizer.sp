@@ -175,6 +175,7 @@ enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 }
 
 bool g_bTF2Items;
+bool g_bGiveNamedItem;
 
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
@@ -465,11 +466,14 @@ public Action TF2Items_OnGiveNamedItem(int iClient, char[] sClassname, int iInde
 
 public Action GiveNamedItem(int iClient, const char[] sClassname, int iIndex)
 {
-	//Only allow cosmetics and tf_weapon_builder, otherwise dont generate player's TF2 loadout
+	if (g_bGiveNamedItem)
+		return Plugin_Continue;
+	
+	//Only allow cosmetics, otherwise dont generate player's TF2 loadout
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
 		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (0 <= iSlot < WeaponSlot_BuilderEngie)
+		if (0 <= iSlot <= WeaponSlot_BuilderEngie)
 			return Plugin_Handled;
 	}
 	
