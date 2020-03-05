@@ -43,7 +43,7 @@ enum struct HudInfo
 	{
 		iVal = GetEntProp(iEntity, Prop_Send, this.sNetprop, _, this.iElement);
 		iVal = RoundToNearest(float(iVal) * this.flMultiply);
-		iVal = RoundToNearest(float(iVal) * this.flAdd);
+		iVal += RoundToNearest(this.flAdd);
 		
 		if (this.bMin && float(iVal) <= this.flMin)
 			return false;

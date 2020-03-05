@@ -4,6 +4,18 @@
 	{
 		"Addresses"
 		{
+			"Patch_HealthDemomanClassCheck"
+			{
+				"signature" "CTFPlayer::GetMaxHealthForBuffing"
+				"linux"
+				{
+					"offset"	"386"
+				}
+				"windows"
+				{
+					"offset"	"81"
+				}
+			}
 			"Patch_SpeedDemomanClassCheck"
 			{
 				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
@@ -79,6 +91,11 @@
 		}
 		"Keys"
 		{
+			"Patch_HealthDemomanClassCheck"
+			{
+				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
+				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
+			}
 			"Patch_SpeedDemomanClassCheck"
 			{
 				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
@@ -183,6 +200,12 @@
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer23GetEntityForLoadoutSlotEib"
 				"windows"	"\x55\x8B\xEC\x51\x53\x8B\x5D\x08\x57\x8B\xF9\x89\x7D\xFC\x83\xFB\x07"
+			}
+			"CTFPlayer::GetMaxHealthForBuffing"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer22GetMaxHealthForBuffingEv"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x53\x56\x57\x8B\xF9\xFF\xB7\x00\x21\x00\x00"
 			}
 			"CTFPlayer::TeamFortress_CalculateMaxSpeed"
 			{

@@ -62,6 +62,7 @@ enum struct Patch
 	}
 }
 
+static Patch g_patchHealthDemomanClassCheck;
 static Patch g_patchSpeedDemomanClassCheck;
 static Patch g_patchSpeedMedic1ClassCheck;
 static Patch g_patchSpeedMedic2ClassCheck;
@@ -71,6 +72,7 @@ static Patch g_patchSpeedSteakCondPassed;
 
 void Patch_Init(GameData hGameData)
 {
+	g_patchHealthDemomanClassCheck.Load(hGameData, "Patch_HealthDemomanClassCheck");
 	g_patchSpeedDemomanClassCheck.Load(hGameData, "Patch_SpeedDemomanClassCheck");
 	g_patchSpeedMedic1ClassCheck.Load(hGameData, "Patch_SpeedMedic1ClassCheck");
 	g_patchSpeedMedic2ClassCheck.Load(hGameData, "Patch_SpeedMedic2ClassCheck");
@@ -78,6 +80,7 @@ void Patch_Init(GameData hGameData)
 	g_patchSpeedSteakCondFailed.Load(hGameData, "Patch_SpeedSteakCondFailed");
 	g_patchSpeedSteakCondPassed.Load(hGameData, "Patch_SpeedSteakCondPassed");
 	
+	g_patchHealthDemomanClassCheck.Enable();
 	g_patchSpeedDemomanClassCheck.Enable();
 	g_patchSpeedMedic1ClassCheck.Enable();
 	g_patchSpeedMedic2ClassCheck.Enable();
@@ -88,6 +91,7 @@ void Patch_Init(GameData hGameData)
 
 void Patch_ResetAll()
 {
+	g_patchHealthDemomanClassCheck.Disable();
 	g_patchSpeedDemomanClassCheck.Disable();
 	g_patchSpeedMedic1ClassCheck.Disable();
 	g_patchSpeedMedic2ClassCheck.Disable();

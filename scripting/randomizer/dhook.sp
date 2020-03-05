@@ -336,17 +336,6 @@ public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, Handle hRe
 	return MRES_Supercede;
 }
 
-public void Hook_PreThink(int iClient)
-{
-	//PreThink have way too many IsPlayerClass check, always return true during it
-	g_iAllowPlayerClass[iClient]++;
-}
-
-public void Hook_PreThinkPost(int iClient)
-{
-	g_iAllowPlayerClass[iClient]--;
-}
-
 public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 {
 	//Not all weapons remove disguise
@@ -357,6 +346,17 @@ public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 	
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
 		TF2_RemoveCondition(iClient, TFCond_Disguised);
+}
+
+public void Hook_PreThink(int iClient)
+{
+	//PreThink have way too many IsPlayerClass check, always return true during it
+	g_iAllowPlayerClass[iClient]++;
+}
+
+public void Hook_PreThinkPost(int iClient)
+{
+	g_iAllowPlayerClass[iClient]--;
 }
 
 public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
