@@ -248,12 +248,12 @@ public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, Handle hReturn)
 public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, Handle hReturn)
 {
 	//Has medic class check for getting uber types
-	g_iAllowPlayerClass[iClient]++;
+	TF2_SetPlayerClass(iClient, TFClass_Medic);
 }
 
 public MRESReturn DHook_GetChargeEffectBeingProvidedPost(int iClient, Handle hReturn)
 {
-	g_iAllowPlayerClass[iClient]--;
+	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
 public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hParams)
