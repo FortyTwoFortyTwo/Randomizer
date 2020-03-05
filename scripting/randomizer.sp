@@ -25,6 +25,9 @@
 
 #define ATTRIB_AIR_DASH_COUNT	250
 
+#define PARTICLE_BEAM_BLU	"medicgun_beam_blue"
+#define PARTICLE_BEAM_RED	"medicgun_beam_red"
+
 enum
 {
 	WeaponSlot_Primary = 0,
@@ -180,6 +183,7 @@ int g_iOffsetItemDefinitionIndex = -1;
 
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
+int g_iMedigunBeamRef[TF_MAXPLAYERS+1] = {INVALID_ENT_REFERENCE, ...};
 
 #include "randomizer/controls.sp"
 #include "randomizer/huds.sp"
@@ -256,6 +260,9 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
+	PrecacheParticleSystem(PARTICLE_BEAM_RED);
+	PrecacheParticleSystem(PARTICLE_BEAM_BLU);
+	
 	DHook_HookGamerules();
 }
 
@@ -287,6 +294,7 @@ public void OnLibraryRemoved(const char[] sName)
 public void OnClientPutInServer(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Huds_ClientDisplay);
+	SDKHook(iClient, SDKHook_PostThinkPost, Client_ThinkPost);
 	
 	DHook_HookGiveNamedItem(iClient);
 	DHook_HookClient(iClient);
@@ -480,4 +488,56 @@ public Action GiveNamedItem(int iClient, const char[] sClassname, int iIndex)
 	}
 	
 	return Plugin_Continue;
+}
+
+public void Client_ThinkPost(int iClient)
+{
+	// Medigun beams doesnt show if player is not medic, and we can't fix that in SDK because it all in clientside
+	if (TF2_GetPlayerClass(iClient) == TFClass_Medic)
+		return;
+	
+	static char sParticle[][] = {
+		"",
+		"",
+		PARTICLE_BEAM_RED,
+		PARTICLE_BEAM_BLU,
+	};
+	
+	int iMedigun = TF2_GetItemInSlot(iClient, WeaponSlot_Secondary);
+	if (iMedigun < MaxClients)
+		return;
+	
+	char sClassname[256];
+	GetEntityClassname(iMedigun, sClassname, sizeof(sClassname));
+	if (!StrEqual(sClassname, "tf_weapon_medigun"))
+		return;
+	
+	if (!IsValidEntity(g_iMedigunBeamRef[iClient]))
+		g_iMedigunBeamRef[iClient] = TF2_SpawnParticle(sParticle[TF2_GetClientTeam(iClient)], iMedigun);
+	
+	int iPatient = GetEntPropEnt(iMedigun, Prop_Send, "m_hHealingTarget");
+	int iControlPoint = GetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", 0);
+	
+	if (iPatient > 0 && iPatient != iControlPoint)
+	{
+		//We just started healing someone
+		int iWeapon = GetEntPropEnt(iPatient, Prop_Send, "m_hActiveWeapon");
+		if (iWeapon > MaxClients)
+		{
+			SetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", iWeapon, 0);
+			SetEntProp(g_iMedigunBeamRef[iClient], Prop_Send, "m_iControlPointParents", iWeapon, _, 0);
+			
+			ActivateEntity(g_iMedigunBeamRef[iClient]);
+			AcceptEntityInput(g_iMedigunBeamRef[iClient], "Start");
+		}
+	}
+	
+	if (iPatient <= 0 && iControlPoint > 0)
+	{
+		//We just stopped healing someone
+		SetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", -1, 0);
+		SetEntProp(g_iMedigunBeamRef[iClient], Prop_Send, "m_iControlPointParents", -1, _, 0);
+		
+		AcceptEntityInput(g_iMedigunBeamRef[iClient], "Stop");
+	}
 }

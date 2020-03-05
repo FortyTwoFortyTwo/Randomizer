@@ -243,3 +243,58 @@ stock int TF2_GetItemFromAmmoType(int iClient, int iAmmoType)
 	
 	return -1;
 }
+
+stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
+{
+	int iParticle = CreateEntityByName("info_particle_system");
+	DispatchKeyValue(iParticle, "effect_name", sParticle);
+	DispatchSpawn(iParticle);
+	
+	float vecOrigin[3];
+	GetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", vecOrigin);
+	TeleportEntity(iParticle, vecOrigin, NULL_VECTOR, NULL_VECTOR);
+	
+	SetVariantString("!activator");
+	AcceptEntityInput(iParticle, "SetParent", iEntity);
+	
+	SetVariantString("weapon_bone_L");
+	AcceptEntityInput(iParticle, "SetParentAttachment");
+	
+	//Return ref of entity
+	return EntIndexToEntRef(iParticle);
+}
+
+stock int PrecacheParticleSystem(const char[] sParticle)
+{
+	static int iParticleEffectNames = INVALID_STRING_TABLE;
+	if (iParticleEffectNames == INVALID_STRING_TABLE)
+		if ((iParticleEffectNames = FindStringTable("ParticleEffectNames")) == INVALID_STRING_TABLE)
+			return INVALID_STRING_INDEX;
+	
+	int iIndex = FindStringIndex2(iParticleEffectNames, sParticle);
+	if (iIndex == INVALID_STRING_INDEX)
+	{
+		int iNumStrings = GetStringTableNumStrings(iParticleEffectNames);
+		if (iNumStrings >= GetStringTableMaxStrings(iParticleEffectNames))
+			return INVALID_STRING_INDEX;
+		
+		AddToStringTable(iParticleEffectNames, sParticle);
+		iIndex = iNumStrings;
+	}
+
+	return iIndex;
+}
+
+stock int FindStringIndex2(int iTableId, const char[] sParticle)
+{
+	char sBuffer[1024];
+	int iNumStrings = GetStringTableNumStrings(iTableId);
+	for (int i = 0; i < iNumStrings; i++)
+	{
+		ReadStringTable(iTableId, i, sBuffer, sizeof(sBuffer));
+		if (StrEqual(sBuffer, sParticle))
+			return i;
+	}
+
+	return INVALID_STRING_INDEX;
+}
