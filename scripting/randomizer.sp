@@ -175,7 +175,8 @@ enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 }
 
 bool g_bTF2Items;
-bool g_bGiveNamedItem;
+bool g_bAllowGiveNamedItem;
+int g_iOffsetItemDefinitionIndex = -1;
 
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
@@ -213,6 +214,7 @@ public void OnPluginStart()
 	Patch_Init(hGameData);
 	DHook_Init(hGameData);
 	SDKCall_Init(hGameData);
+	g_iOffsetItemDefinitionIndex = hGameData.GetOffset("CEconItemView::m_iItemDefinitionIndex");
 	
 	delete hGameData;
 	
@@ -466,7 +468,7 @@ public Action TF2Items_OnGiveNamedItem(int iClient, char[] sClassname, int iInde
 
 public Action GiveNamedItem(int iClient, const char[] sClassname, int iIndex)
 {
-	if (g_bGiveNamedItem)
+	if (g_bAllowGiveNamedItem)
 		return Plugin_Continue;
 	
 	//Only allow cosmetics, otherwise dont generate player's TF2 loadout

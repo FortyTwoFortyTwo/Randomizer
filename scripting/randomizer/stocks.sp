@@ -39,8 +39,8 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 		
 		if (bSapper)
 		{
-			SetEntProp(iWeapon, Prop_Send, "m_iObjectType", 3);
-			SetEntProp(iWeapon, Prop_Data, "m_iSubType", 3);
+			SetEntProp(iWeapon, Prop_Send, "m_iObjectType", TFObject_Sapper);
+			SetEntProp(iWeapon, Prop_Data, "m_iSubType", TFObject_Sapper);
 		}
 		
 		DispatchSpawn(iWeapon);
@@ -80,11 +80,11 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 stock int TF2_CreateAndEquipBuilder(int iClient)
 {
 	Address pItem = SDKCall_GetLoadoutItem(iClient, TFClass_Engineer, 4);	//Uses econ slot, 4 for toolbox
-	if (pItem)
+	if (TF2_IsValidEconItemView(pItem))
 	{
-		g_bGiveNamedItem = true;
+		g_bAllowGiveNamedItem = true;
 		int iWeapon = SDKCall_GiveNamedItem(iClient, "tf_weapon_builder", 0, pItem);
-		g_bGiveNamedItem = false;
+		g_bAllowGiveNamedItem = false;
 		
 		if (iWeapon > MaxClients)
 		{
@@ -99,6 +99,17 @@ stock int TF2_CreateAndEquipBuilder(int iClient)
 	}
 	
 	return -1;
+}
+
+stock bool TF2_IsValidEconItemView(Address pEconItemView)
+{
+	if (!pEconItemView)
+		return false;
+	
+	int iIndex = LoadFromAddress(pEconItemView + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
+	
+	// 65535 is basically unsigned -1 in int16
+	return 0 <= iIndex < 65535;
 }
 
 stock bool TF2_WeaponFindAttribute(int iWeapon, int iAttrib, float &flVal)

@@ -4,7 +4,6 @@ static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookGiveNamedItem;
 static Handle g_hDHookFrameUpdatePostEntityThink;
 
-static int g_iOffsetItemDefinitionIndex = -1;
 static int g_iClientCalculateMaxSpeed;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
@@ -26,14 +25,12 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::InCond", _, DHook_InCondPost);
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
-		
+	
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookOnDecapitation = DHook_CreateVirtual(hGameData, "CTFDecapitationMeleeWeaponBase::OnDecapitation");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	g_hDHookFrameUpdatePostEntityThink = DHook_CreateVirtual(hGameData, "CGameRules::FrameUpdatePostEntityThink");
-	
-	g_iOffsetItemDefinitionIndex = hGameData.GetOffset("CEconItemView::m_iItemDefinitionIndex");
 }
 
 static void DHook_CreateDetour(GameData hGameData, const char[] sName, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION)
