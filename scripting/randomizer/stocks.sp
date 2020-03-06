@@ -82,10 +82,7 @@ stock int TF2_CreateAndEquipBuilder(int iClient)
 	Address pItem = SDKCall_GetLoadoutItem(iClient, TFClass_Engineer, 4);	//Uses econ slot, 4 for toolbox
 	if (TF2_IsValidEconItemView(pItem))
 	{
-		g_bAllowGiveNamedItem = true;
 		int iWeapon = SDKCall_GiveNamedItem(iClient, "tf_weapon_builder", 0, pItem);
-		g_bAllowGiveNamedItem = false;
-		
 		if (iWeapon > MaxClients)
 		{
 			SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Dispenser));
@@ -262,6 +259,24 @@ stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 	
 	//Return ref of entity
 	return EntIndexToEntRef(iParticle);
+}
+
+stock int CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
+{
+	//Allow keep grappling hook and passtime gun
+	if (StrEqual(sClassname, "tf_weapon_grapplinghook") || StrEqual(sClassname, "tf_weapon_passtime_gun"))
+		return true;
+	
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	{
+		//Allow keep if randomizer weapon has same index, otherwise disallow
+		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+		if (0 <= iSlot <= WeaponSlot_BuilderEngie)
+			return g_iClientWeaponIndex[iClient][iSlot] == iIndex;
+	}
+	
+	//Allow keep cosmetics
+	return true;
 }
 
 stock int PrecacheParticleSystem(const char[] sParticle)

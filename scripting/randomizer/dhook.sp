@@ -417,14 +417,11 @@ public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hPa
 	DHookGetParamString(hParams, 1, sClassname, sizeof(sClassname));
 	int iIndex = DHookGetParamObjectPtrVar(hParams, 3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
 	
-	Action action = GiveNamedItem(iClient, sClassname, iIndex);
-	if (action >= Plugin_Handled)
-	{
-		DHookSetReturn(hReturn, 0);
-		return MRES_Override;
-	}
+	if (CanKeepWeapon(iClient, sClassname, iIndex))
+		return MRES_Ignored;
 	
-	return MRES_Ignored;
+	DHookSetReturn(hReturn, 0);
+	return MRES_Override;
 }
 
 public void DHook_GiveNamedItemRemoved(int iHookId)

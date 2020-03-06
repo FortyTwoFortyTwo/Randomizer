@@ -178,7 +178,6 @@ enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 }
 
 bool g_bTF2Items;
-bool g_bAllowGiveNamedItem;
 int g_iOffsetItemDefinitionIndex = -1;
 
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
@@ -384,13 +383,18 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	{
 		//Allow player keep weapon if same index
 		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-		if (iWeapon > MaxClients && GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex") == g_iClientWeaponIndex[iClient][iSlot])
-			continue;
-		
-		TF2_RemoveItemInSlot(iClient, iSlot);
+		int iIndex = -1;
+		if (iWeapon > MaxClients)
+		{
+			char sClassname[256];
+			GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+			iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+			if (!CanKeepWeapon(iClient, sClassname, iIndex))
+				TF2_RemoveItemInSlot(iClient, iSlot);
+		}
 		
 		//Create weapon
-		if (g_iClientWeaponIndex[iClient][iSlot] >= 0)
+		if (g_iClientWeaponIndex[iClient][iSlot] >= 0 && g_iClientWeaponIndex[iClient][iSlot] != iIndex)
 		{
 			TF2_CreateAndEquipWeapon(iClient, g_iClientWeaponIndex[iClient][iSlot], iSlot);
 			
@@ -471,23 +475,10 @@ KeyValues LoadConfig(const char[] sFilepath, const char[] sName)
 
 public Action TF2Items_OnGiveNamedItem(int iClient, char[] sClassname, int iIndex, Handle &hItem)
 {
-	return GiveNamedItem(iClient, sClassname, iIndex);
-}
-
-public Action GiveNamedItem(int iClient, const char[] sClassname, int iIndex)
-{
-	if (g_bAllowGiveNamedItem)
+	if (CanKeepWeapon(iClient, sClassname, iIndex))
 		return Plugin_Continue;
 	
-	//Only allow cosmetics, otherwise dont generate player's TF2 loadout
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-	{
-		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (0 <= iSlot <= WeaponSlot_BuilderEngie)
-			return Plugin_Handled;
-	}
-	
-	return Plugin_Continue;
+	return Plugin_Handled;
 }
 
 public void Client_ThinkPost(int iClient)
