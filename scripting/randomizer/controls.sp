@@ -89,34 +89,34 @@ void Controls_RefreshClient(int iClient)
 	{
 		g_flControlsCooldown[iClient][iSlot] = 0.0;
 		
-		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-		if (iWeapon > MaxClients)
-		{
-			int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-			
-			for (Button nButton; nButton < Button_MAX; nButton++)
-				g_bControlsButton[iClient][iSlot][nButton] = g_controlsInfo[nButton].weaponWhitelist.IsIndexAllowed(iIndex);
-		}
-		else
-		{
-			for (Button nButton; nButton < Button_MAX; nButton++)
-				g_bControlsButton[iClient][iSlot][nButton] = false;
-		}
+		for (Button nButton; nButton < Button_MAX; nButton++)
+			g_bControlsButton[iClient][iSlot][nButton] = false;
+	}
+	
+	int iWeapon;
+	int iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		int iSlot = TF2_GetSlot(iWeapon);
+		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+		
+		for (Button nButton; nButton < Button_MAX; nButton++)
+			if (g_controlsInfo[nButton].weaponWhitelist.IsIndexAllowed(iIndex))
+				g_bControlsButton[iClient][iSlot][nButton] = true;
 	}
 }
 
-Button Controls_GetPassiveButton(int iClient, int iSlot, bool &bAllowAttack2)
+Button Controls_GetPassiveButton(int iClient, int iWeapon, bool &bAllowAttack2)
 {
 	ControlsPassive controlsPassive;
-	if (!Controls_GetPassiveFromSlot(iClient, iSlot, controlsPassive))
+	if (!Controls_GetPassive(iWeapon, controlsPassive))
 		return Button_Invalid;
 	
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon <= MaxClients)
 		return Button_Invalid;
 	
-	int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-	int iActiveSlot = TF2_GetSlotFromItem(iClient, iActiveWeapon);
+	int iActiveSlot = TF2_GetSlot(iActiveWeapon);
 	
 	if (iWeapon == iActiveWeapon && bAllowAttack2)
 	{
@@ -142,22 +142,22 @@ Button Controls_GetPassiveButton(int iClient, int iSlot, bool &bAllowAttack2)
 	}
 }
 
-int Controls_GetPassiveButtonBit(int iClient, int iSlot, bool &bAllowAttack2)
+int Controls_GetPassiveButtonBit(int iClient, int iWeapon, bool &bAllowAttack2)
 {
-	Button nButton = Controls_GetPassiveButton(iClient, iSlot, bAllowAttack2);
+	Button nButton = Controls_GetPassiveButton(iClient, iWeapon, bAllowAttack2);
 	if (nButton == Button_Invalid)
 		return 0;
 	
 	return g_controlsInfo[nButton].iButton;
 }
 
-bool Controls_GetPassiveInfo(int iClient, int iSlot, bool &bAllowAttack2, char[] sBuffer, int iLength)
+bool Controls_GetPassiveInfo(int iClient, int iWeapon, bool &bAllowAttack2, char[] sBuffer, int iLength)
 {
 	ControlsPassive controlsPassive;
-	if (!Controls_GetPassiveFromSlot(iClient, iSlot, controlsPassive))
+	if (!Controls_GetPassive(iWeapon, controlsPassive))
 		return false;
 	
-	Button nButton = Controls_GetPassiveButton(iClient, iSlot, bAllowAttack2);
+	Button nButton = Controls_GetPassiveButton(iClient, iWeapon, bAllowAttack2);
 	
 	if (nButton == Button_Invalid)
 		Format(sBuffer, iLength, "unable to %s", controlsPassive.sText);
@@ -167,24 +167,24 @@ bool Controls_GetPassiveInfo(int iClient, int iSlot, bool &bAllowAttack2, char[]
 	return true;
 }
 
-void Controls_OnPassiveUse(int iClient, int iSlot)
+void Controls_OnPassiveUse(int iClient, int iWeapon)
 {
 	ControlsPassive controlsPassive;
-	if (Controls_GetPassiveFromSlot(iClient, iSlot, controlsPassive))
+	if (Controls_GetPassive(iWeapon, controlsPassive))
+	{
+		int iSlot = TF2_GetSlot(iWeapon);
 		g_flControlsCooldown[iClient][iSlot] = GetGameTime() + controlsPassive.flCooldown;
+	}
 }
 
-bool Controls_IsPassiveInCooldown(int iClient, int iSlot)
+bool Controls_IsPassiveInCooldown(int iClient, int iWeapon)
 {
+	int iSlot = TF2_GetSlot(iWeapon);
 	return g_flControlsCooldown[iClient][iSlot] > GetGameTime();
 }
 
-bool Controls_GetPassiveFromSlot(int iClient, int iSlot, ControlsPassive controlsPassive)
+bool Controls_GetPassive(int iWeapon, ControlsPassive controlsPassive)
 {
-	int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-	if (iWeapon <= MaxClients)
-		return false;
-	
 	char sClassname[CONFIG_MAXCHAR];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
 	return g_mControlsPassive.GetArray(sClassname, controlsPassive, sizeof(controlsPassive));

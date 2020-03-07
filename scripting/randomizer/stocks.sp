@@ -82,7 +82,10 @@ stock int TF2_CreateAndEquipBuilder(int iClient)
 	Address pItem = SDKCall_GetLoadoutItem(iClient, TFClass_Engineer, 4);	//Uses econ slot, 4 for toolbox
 	if (TF2_IsValidEconItemView(pItem))
 	{
+		g_bAllowGiveNamedItem = true;
 		int iWeapon = SDKCall_GiveNamedItem(iClient, "tf_weapon_builder", 0, pItem);
+		g_bAllowGiveNamedItem = false;
+		
 		if (iWeapon > MaxClients)
 		{
 			SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Dispenser));
@@ -126,45 +129,74 @@ stock bool TF2_WeaponFindAttribute(int iWeapon, int iAttrib, float &flVal)
 	return false;
 }
 
-stock int TF2_GetItemInSlot(int iClient, int iSlot)
+stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos)
 {
-	int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
+	static int iMaxWeapons;
+	if (!iMaxWeapons)
+		iMaxWeapons = GetEntPropArraySize(iClient, Prop_Send, "m_hMyWeapons");
 	
-	//If weapon not found in slot, check if it a wearable
-	if (!IsValidEntity(iWeapon))
-		return TF2_GetWearableInSlot(iClient, iSlot);
-	
-	return iWeapon;
-}
-
-stock int TF2_GetWearableInSlot(int iClient, int iSlot)
-{
-	//SDK call for get wearable doesnt work if different class use different wearable
-	//Still a problem with weapons useable with more than 1 slots... may be able to get away with it if checking GetPlayerWeaponSlot first
-	
-	int iWearable = MaxClients+1;
-	while ((iWearable = FindEntityByClassname(iWearable, "tf_wearable*")) > MaxClients)
+	while (iPos < iMaxWeapons)
 	{
-		if (GetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity") == iClient || GetEntPropEnt(iWearable, Prop_Send, "moveparent") == iClient)
+		iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iPos);
+		iPos++;
+		
+		if (iWeapon > MaxClients)
+			return true;
+		
+		if (iPos == iMaxWeapons)
+			iWeapon = MaxClients+1;
+	}
+	
+	while ((iWeapon = FindEntityByClassname(iWeapon, "tf_wearable*")) > MaxClients)
+	{
+		if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") == iClient || GetEntPropEnt(iWeapon, Prop_Send, "moveparent") == iClient)
 		{
-			int iIndex = GetEntProp(iWearable, Prop_Send, "m_iItemDefinitionIndex");
+			int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
 			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 			{
-				int iWearableSlot = TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass));
-				if (iWearableSlot == iSlot)
-					return iWearable;
+				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+				if (0 <= iSlot <= WeaponSlot_BuilderEngie)
+					return true;
 			}
 		}
+	}
+	
+	return false;
+}
+
+stock int TF2_GetItemFromClassname(int iClient, const char[] sClassname)
+{
+	int iWeapon;
+	int iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		char sBuffer[256];
+		GetEntityClassname(iWeapon, sBuffer, sizeof(sBuffer));
+		if (StrEqual(sBuffer, sClassname))
+			return iWeapon;
 	}
 	
 	return -1;
 }
 
-stock int TF2_GetSlotFromItem(int iClient, int iWeapon)
+stock int TF2_GetSlot(int iWeapon)
 {
-	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-		if (iWeapon == TF2_GetItemInSlot(iClient, iSlot))
-			return iSlot;
+	char sClassname[256];
+	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	if (StrContains(sClassname, "tf_wearable") == 0)
+	{
+		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+		{
+			int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+			if (0 <= iSlot <= WeaponSlot_BuilderEngie)
+				return iSlot;
+		}
+	}
+	else
+	{
+		return SDKCall_GetSlot(iWeapon);
+	}
 	
 	return -1;
 }
@@ -205,7 +237,7 @@ stock int TF2_GetSlotFromIndex(int iIndex, TFClassType nClass = TFClass_Unknown)
 stock TFClassType TF2_GetDefaultClassFromItem(int iClient, int iWeapon)
 {
 	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-	int iSlot = TF2_GetSlotFromItem(iClient, iWeapon);
+	int iSlot = TF2_GetSlot(iWeapon);
 	
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
@@ -217,24 +249,36 @@ stock TFClassType TF2_GetDefaultClassFromItem(int iClient, int iWeapon)
 	return TFClass_Unknown;
 }
 
-stock void TF2_RemoveItemInSlot(int iClient, int iSlot)
+stock void TF2_RemoveItem(int iClient, int iWeapon)
 {
-	TF2_RemoveWeaponSlot(iClient, iSlot);
-
-	int iWearable = TF2_GetWearableInSlot(iClient, iSlot);
-	if (iWearable > MaxClients)
-		TF2_RemoveWearable(iClient, iWearable);
+	char sClassname[256];
+	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	if (StrContains(sClassname, "tf_wearable") == 0)
+	{
+		//If wearable, just simply use TF2_RemoveWearable
+		TF2_RemoveWearable(iClient, iWeapon);
+		return;
+	}
+	
+	int iExtraWearable = GetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearable");
+	if (iExtraWearable != -1)
+		TF2_RemoveWearable(iClient, iExtraWearable);
+	
+	iExtraWearable = GetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearableViewModel");
+	if (iExtraWearable != -1)
+		TF2_RemoveWearable(iClient, iExtraWearable);
+	
+	RemovePlayerItem(iClient, iWeapon);
+	RemoveEntity(iWeapon);
 }
 
 stock int TF2_GetItemFromAmmoType(int iClient, int iAmmoType)
 {
-	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
+	int iWeapon;
+	int iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
-		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-		if (iWeapon <= MaxClients || !HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
-			continue;
-		
-		if (GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
+		if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") && GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
 			return iWeapon;
 	}
 	
@@ -264,7 +308,7 @@ stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 stock int CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 {
 	//Allow keep grappling hook and passtime gun
-	if (StrEqual(sClassname, "tf_weapon_grapplinghook") || StrEqual(sClassname, "tf_weapon_passtime_gun"))
+	if (g_bAllowGiveNamedItem || StrEqual(sClassname, "tf_weapon_grapplinghook") || StrEqual(sClassname, "tf_weapon_passtime_gun"))
 		return true;
 	
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
@@ -272,7 +316,7 @@ stock int CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 		//Allow keep if randomizer weapon has same index, otherwise disallow
 		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
 		if (0 <= iSlot <= WeaponSlot_BuilderEngie)
-			return g_iClientWeaponIndex[iClient][iSlot] == iIndex;
+			return false;
 	}
 	
 	//Allow keep cosmetics

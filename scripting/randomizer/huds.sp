@@ -216,43 +216,46 @@ void Huds_RefreshClient(int iClient)
 	{
 		delete g_hudWeapon[iClient][iSlot].aHudInfo;
 		
-		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-		if (iWeapon > MaxClients)
+		HudWeapon nothing;
+		g_hudWeapon[iClient][iSlot] = nothing;
+	}
+	
+	int iWeapon;
+	int iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		int iSlot = TF2_GetSlot(iWeapon);
+		if (iSlot < 0 || iSlot >= sizeof(g_hudWeapon[]))
+			continue;
+		
+		HudWeapon hudWeapon;
+		hudWeapon.iRef = EntIndexToEntRef(iWeapon);
+		
+		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+		if (!Weapons_GetName(iIndex, hudWeapon.sName, sizeof(hudWeapon.sName)))
+			continue;	//This weapon is probably a special one and not from randomizer, ignore
+		
+		//Go through every HudInfo to see whenever which weapon can use
+		int iLength = g_aHuds.Length;
+		for (int i = 0; i < iLength; i++)
 		{
-			HudWeapon hudWeapon;
-			hudWeapon.iRef = EntIndexToEntRef(iWeapon);
+			HudInfo hudInfo;
+			g_aHuds.GetArray(i, hudInfo);
 			
-			int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-			if (!Weapons_GetName(iIndex, hudWeapon.sName, sizeof(hudWeapon.sName)))
-				hudWeapon.sName = "Unknown Name";
+			int iEntity = hudInfo.GetEntity(iClient, iWeapon);
+			if (!HasEntProp(iEntity, Prop_Send, hudInfo.sNetprop))
+				continue;
 			
-			//Go through every HudInfo to see whenever which weapon can use
-			int iLength = g_aHuds.Length;
-			for (int i = 0; i < iLength; i++)
-			{
-				HudInfo hudInfo;
-				g_aHuds.GetArray(i, hudInfo);
-				
-				int iEntity = hudInfo.GetEntity(iClient, iWeapon);
-				if (!HasEntProp(iEntity, Prop_Send, hudInfo.sNetprop))
-					continue;
-				
-				if (!hudInfo.weaponWhitelist.IsEmpty() && !hudInfo.weaponWhitelist.IsIndexAllowed(iIndex))
-					continue;
-				
-				if (!hudWeapon.aHudInfo)
-					hudWeapon.aHudInfo = new ArrayList(sizeof(HudInfo));
-				
-				hudWeapon.aHudInfo.PushArray(hudInfo);
-			}
+			if (!hudInfo.weaponWhitelist.IsEmpty() && !hudInfo.weaponWhitelist.IsIndexAllowed(iIndex))
+				continue;
 			
-			g_hudWeapon[iClient][iSlot] = hudWeapon;
+			if (!hudWeapon.aHudInfo)
+				hudWeapon.aHudInfo = new ArrayList(sizeof(HudInfo));
+			
+			hudWeapon.aHudInfo.PushArray(hudInfo);
 		}
-		else
-		{
-			HudWeapon nothing;
-			g_hudWeapon[iClient][iSlot] = nothing;
-		}
+		
+		g_hudWeapon[iClient][iSlot] = hudWeapon;
 	}
 }
 
@@ -311,7 +314,7 @@ public void Huds_ClientDisplay(int iClient)
 			}
 			
 			char sBuffer[64];
-			if (Controls_GetPassiveInfo(iClient, iSlot, bAllowAttack2, sBuffer, sizeof(sBuffer)))
+			if (Controls_GetPassiveInfo(iClient, iWeapon, bAllowAttack2, sBuffer, sizeof(sBuffer)))
 				Format(sDisplay, sizeof(sDisplay), "%s (%s)", sDisplay, sBuffer);
 		}
 	}

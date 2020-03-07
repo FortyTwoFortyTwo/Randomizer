@@ -190,12 +190,10 @@ public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
 {
 	//Dont validate any weapons, TF2 attempting to remove randomizer weapon for player's TF2 loadout,
 	// however need to manually call WeaponReset virtual so randomizer weapons get restored back to what it was
-	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-	{
-		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-		if (iWeapon > MaxClients)
-			SDKCall_WeaponReset(iWeapon);
-	}
+	int iWeapon;
+	int iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+		SDKCall_WeaponReset(iWeapon);
 	
 	return MRES_Supercede;
 }
@@ -221,16 +219,18 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 	int iButtons = GetClientButtons(iClient);
 	bool bAllowAttack2 = true;
 	
-	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
+	int iWeapon;
+	int iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
-		if (Controls_IsPassiveInCooldown(iClient, iSlot))
+		if (Controls_IsPassiveInCooldown(iClient, iWeapon))
 			continue;
 		
-		int iButton = Controls_GetPassiveButtonBit(iClient, iSlot, bAllowAttack2);
+		int iButton = Controls_GetPassiveButtonBit(iClient, iWeapon, bAllowAttack2);
 		if (iButton > 0 && iButtons & iButton)
 		{
-			Controls_OnPassiveUse(iClient, iSlot);
-			TF2_SetPlayerClass(iClient, TF2_GetDefaultClassFromItem(iClient, TF2_GetItemInSlot(iClient, iSlot)));
+			Controls_OnPassiveUse(iClient, iWeapon);
+			TF2_SetPlayerClass(iClient, TF2_GetDefaultClassFromItem(iClient, iWeapon));
 			return MRES_Ignored;
 		}
 	}
@@ -277,14 +277,18 @@ public MRESReturn DHook_GetEntityForLoadoutSlotPre(int iClient, Handle hReturn, 
 		return MRES_Ignored;
 	
 	//This function sucks as it have default class check, lets do this ourself
-	int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-	if (iWeapon <= MaxClients)
+	int iWeapon;
+	int iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
-		DHookSetReturn(hReturn, 0);
-		return MRES_Supercede;
+		if (TF2_GetSlot(iWeapon) == iSlot)
+		{
+			DHookSetReturn(hReturn, iWeapon);
+			return MRES_Supercede;
+		}
 	}
 	
-	DHookSetReturn(hReturn, iWeapon);
+	DHookSetReturn(hReturn, 0);
 	return MRES_Supercede;
 }
 
@@ -313,16 +317,10 @@ public MRESReturn DHook_InCondPost(Address pPlayerShared, Handle hReturn, Handle
 	{
 		//We are in CritCola cond while wanting to return true to gain extra speed, however
 		// this is only for steak and not crit-a-cola, only return true if weapon is steak
-		int iSecondary = TF2_GetItemInSlot(g_iClientCalculateMaxSpeed, WeaponSlot_Secondary);
-		if (iSecondary > MaxClients)
+		if (TF2_GetItemFromClassname(g_iClientCalculateMaxSpeed, "tf_weapon_lunchbox") <= MaxClients)
 		{
-			char sClassname[256];
-			GetEntityClassname(iSecondary, sClassname, sizeof(sClassname));
-			if (!StrEqual(sClassname, "tf_weapon_lunchbox"))
-			{
-				DHookSetReturn(hReturn, false);
-				return MRES_Supercede;
-			}
+			DHookSetReturn(hReturn, false);
+			return MRES_Supercede;
 		}
 	}
 	

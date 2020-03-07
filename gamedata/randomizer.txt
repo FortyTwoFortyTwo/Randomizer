@@ -239,6 +239,11 @@
 				"linux"		"286"
 				"windows"	"280"
 			}
+			"CBaseCombatWeapon::GetSlot"
+			{
+				"linux"		"332"
+				"windows"	"326"
+			}
 			"CTFWeaponBase::WeaponReset"
 			{
 				"linux"		"426"

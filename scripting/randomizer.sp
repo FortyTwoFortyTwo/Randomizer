@@ -178,6 +178,7 @@ enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 }
 
 bool g_bTF2Items;
+bool g_bAllowGiveNamedItem;
 int g_iOffsetItemDefinitionIndex = -1;
 
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
@@ -379,27 +380,29 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
 	
+	bool bKeepWeapon[WeaponSlot_BuilderEngie+1];
+	
+	int iWeapon;
+	int iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		char sClassname[256];
+		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+		int iSlot = TF2_GetSlot(iWeapon);
+		
+		if (g_iClientWeaponIndex[iClient][iSlot] == iIndex)
+			bKeepWeapon[iSlot] = true;
+		else if (!CanKeepWeapon(iClient, sClassname, iIndex))
+			TF2_RemoveItem(iClient, iWeapon);
+	}
+	
 	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 	{
-		//Allow player keep weapon if same index
-		int iWeapon = TF2_GetItemInSlot(iClient, iSlot);
-		int iIndex = -1;
-		if (iWeapon > MaxClients)
-		{
-			char sClassname[256];
-			GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-			iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-			if (!CanKeepWeapon(iClient, sClassname, iIndex))
-				TF2_RemoveItemInSlot(iClient, iSlot);
-		}
-		
 		//Create weapon
-		if (g_iClientWeaponIndex[iClient][iSlot] >= 0 && g_iClientWeaponIndex[iClient][iSlot] != iIndex)
+		if (g_iClientWeaponIndex[iClient][iSlot] >= 0 && !bKeepWeapon[iSlot])
 		{
-			TF2_CreateAndEquipWeapon(iClient, g_iClientWeaponIndex[iClient][iSlot], iSlot);
-			
-			//Check if weapon actually generated and equipped
-			iWeapon = TF2_GetItemInSlot(iClient, iSlot);
+			iWeapon = TF2_CreateAndEquipWeapon(iClient, g_iClientWeaponIndex[iClient][iSlot], iSlot);
 			if (iWeapon <= MaxClients)
 			{
 				PrintToChat(iClient, "Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
@@ -412,7 +415,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		}
 	}
 	
-	if (TF2_GetItemInSlot(iClient, WeaponSlot_BuilderEngie) > MaxClients)
+	if (TF2_GetItemFromClassname(iClient, "tf_weapon_builder") > MaxClients)
 	{
 		//Find any toolbox thay may have been detached from client, reattach it
 		int iBuilding = MaxClients+1;
@@ -426,7 +429,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	{
 		for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
 		{
-			int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);	//Dont want wearable
+			iWeapon = GetPlayerWeaponSlot(iClient, iSlot);	//Dont want wearable
 			if (iWeapon > MaxClients)
 			{
 				SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
@@ -494,13 +497,8 @@ public void Client_ThinkPost(int iClient)
 		PARTICLE_BEAM_BLU,
 	};
 	
-	int iMedigun = TF2_GetItemInSlot(iClient, WeaponSlot_Secondary);
+	int iMedigun = TF2_GetItemFromClassname(iClient, "tf_weapon_medigun");
 	if (iMedigun < MaxClients)
-		return;
-	
-	char sClassname[256];
-	GetEntityClassname(iMedigun, sClassname, sizeof(sClassname));
-	if (!StrEqual(sClassname, "tf_weapon_medigun"))
 		return;
 	
 	if (!IsValidEntity(g_iMedigunBeamRef[iClient]))

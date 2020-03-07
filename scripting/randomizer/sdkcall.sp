@@ -1,26 +1,14 @@
-static Handle g_hSDKEquipWearable;
-static Handle g_hSDKWeaponReset;
 static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKGetLoadoutItem;
+static Handle g_hSDKGetSlot;
+static Handle g_hSDKEquipWearable;
+static Handle g_hSDKWeaponReset;
 static Handle g_hSDKGiveNamedItem;
 
 public void SDKCall_Init(GameData hGameData)
 {
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKEquipWearable = EndPrepSDKCall();
-	if (!g_hSDKEquipWearable)
-		LogError("Failed to create call: CBasePlayer::EquipWearable");
-	
-	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CTFWeaponBase::WeaponReset");
-	g_hSDKWeaponReset = EndPrepSDKCall();
-	if (!g_hSDKWeaponReset)
-		LogError("Failed to create call: CTFWeaponBase::WeaponReset");
-	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::AddObject");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
@@ -52,6 +40,26 @@ public void SDKCall_Init(GameData hGameData)
 	if (!g_hSDKGetLoadoutItem)
 		SetFailState("Failed to create call: CTFPlayer::GetLoadoutItem");
 	
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseCombatWeapon::GetSlot");
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
+	g_hSDKGetSlot = EndPrepSDKCall();
+	if (!g_hSDKGetSlot)
+		LogError("Failed to create call: CBaseCombatWeapon::GetSlot");
+	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	g_hSDKEquipWearable = EndPrepSDKCall();
+	if (!g_hSDKEquipWearable)
+		LogError("Failed to create call: CBasePlayer::EquipWearable");
+	
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CTFWeaponBase::WeaponReset");
+	g_hSDKWeaponReset = EndPrepSDKCall();
+	if (!g_hSDKWeaponReset)
+		LogError("Failed to create call: CTFWeaponBase::WeaponReset");
+	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CTFPlayer::GiveNamedItem");
 	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
@@ -62,16 +70,6 @@ public void SDKCall_Init(GameData hGameData)
 	g_hSDKGiveNamedItem = EndPrepSDKCall();
 	if (!g_hSDKGiveNamedItem)
 		SetFailState("Failed to create call: CTFPlayer::GiveNamedItem");
-}
-
-void SDKCall_EquipWearable(int iClient, int iWearable)
-{
-	SDKCall(g_hSDKEquipWearable, iClient, iWearable);
-}
-
-void SDKCall_WeaponReset(int iWeapon)
-{
-	SDKCall(g_hSDKWeaponReset, iWeapon);
 }
 
 void SDKCall_AddObject(int iClient, int iObject)
@@ -92,6 +90,21 @@ bool SDKCall_DoClassSpecialSkill(int iClient)
 Address SDKCall_GetLoadoutItem(int iClient, TFClassType nClass, int iSlot, bool b = false)
 {
 	return SDKCall(g_hSDKGetLoadoutItem, iClient, nClass, iSlot, b);
+}
+
+int SDKCall_GetSlot(int iWeapon)
+{
+	return SDKCall(g_hSDKGetSlot, iWeapon);
+}
+
+void SDKCall_EquipWearable(int iClient, int iWearable)
+{
+	SDKCall(g_hSDKEquipWearable, iClient, iWearable);
+}
+
+void SDKCall_WeaponReset(int iWeapon)
+{
+	SDKCall(g_hSDKWeaponReset, iWeapon);
 }
 
 int SDKCall_GiveNamedItem(int iClient, const char[] sClassname, int iSubType, Address pItem, bool b = false)
