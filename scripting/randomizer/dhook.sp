@@ -15,6 +15,7 @@ static Handle g_hDHookGiveNamedItem;
 static Handle g_hDHookFrameUpdatePostEntityThink;
 
 static int g_iClientCalculateMaxSpeed;
+static int g_iClientGetChargeEffectBeingProvided;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
@@ -295,11 +296,16 @@ public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, Handle hRet
 {
 	//Has medic class check for getting uber types
 	TF2_SetPlayerClass(iClient, TFClass_Medic);
+	g_iClientGetChargeEffectBeingProvided = iClient;
 }
 
 public MRESReturn DHook_GetChargeEffectBeingProvidedPost(int iClient, Handle hReturn)
 {
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+	// iClient is a lie in this detour
+	if (g_iClientGetChargeEffectBeingProvided)
+		TF2_SetPlayerClass(g_iClientGetChargeEffectBeingProvided, g_iClientClass[g_iClientGetChargeEffectBeingProvided]);
+	
+	g_iClientGetChargeEffectBeingProvided = 0;
 }
 
 public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hParams)
