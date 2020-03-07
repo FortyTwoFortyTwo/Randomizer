@@ -259,7 +259,8 @@ public void OnPluginStart()
 
 public void OnPluginEnd()
 {
-	Patch_Disable();
+	if (g_bEnabled)
+		DisableRandomizer();
 }
 
 public void OnMapStart()
@@ -593,12 +594,13 @@ public void Hook_PreThink(int iClient)
 	int iPatient = GetEntPropEnt(iMedigun, Prop_Send, "m_hHealingTarget");
 	int iControlPoint = GetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", 0);
 	
-	if (iPatient > 0 && iPatient != iControlPoint)
+	if (0 < iPatient <= MaxClients)
 	{
-		//We just started healing someone
+		//Using active weapon so beam connects to nice spot
 		int iWeapon = GetEntPropEnt(iPatient, Prop_Send, "m_hActiveWeapon");
-		if (iWeapon > MaxClients)
+		if (iWeapon != iControlPoint)
 		{
+			//We just started healing someone
 			SetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", iWeapon, 0);
 			SetEntProp(g_iMedigunBeamRef[iClient], Prop_Send, "m_iControlPointParents", iWeapon, _, 0);
 			
