@@ -177,12 +177,14 @@ enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 	}
 }
 
+bool g_bEnabled;
 bool g_bTF2Items;
 bool g_bAllowGiveNamedItem;
 int g_iOffsetItemDefinitionIndex = -1;
 
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
+int g_iAllowPlayerClass[TF_MAXPLAYERS+1];
 int g_iMedigunBeamRef[TF_MAXPLAYERS+1] = {INVALID_ENT_REFERENCE, ...};
 
 #include "randomizer/controls.sp"
@@ -234,8 +236,6 @@ public void OnPluginStart()
 	ViewModels_Refresh();
 	Weapons_Refresh();
 	
-	CreateConVar("randomizer_version", PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION, "Randomizer plugin version", FCVAR_SPONLY|FCVAR_NOTIFY|FCVAR_DONTRECORD);
-	
 	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
 	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
@@ -247,15 +247,19 @@ public void OnPluginStart()
 		
 		for (int iSlot = 0; iSlot < sizeof(g_iClientWeaponIndex[]); iSlot++)
 			g_iClientWeaponIndex[iClient][iSlot] = -1;
-		
-		if (IsClientInGame(iClient))
-			OnClientPutInServer(iClient);
 	}
+	
+	CreateConVar("randomizer_version", PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION, "Randomizer plugin version", FCVAR_SPONLY|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	
+	ConVar convar = CreateConVar("randomizer_enabled", "1", "Enable Randomizer?", _, true, 0.0, true, 1.0);
+	convar.AddChangeHook(ConVar_EnableChanged);
+	if (convar.BoolValue)
+		EnableRandomizer();
 }
 
 public void OnPluginEnd()
 {
-	Patch_ResetAll();
+	Patch_Disable();
 }
 
 public void OnMapStart()
@@ -263,7 +267,8 @@ public void OnMapStart()
 	PrecacheParticleSystem(PARTICLE_BEAM_RED);
 	PrecacheParticleSystem(PARTICLE_BEAM_BLU);
 	
-	DHook_HookGamerules();
+	if (g_bEnabled)
+		DHook_HookGamerules();
 }
 
 public void OnLibraryAdded(const char[] sName)
@@ -284,6 +289,9 @@ public void OnLibraryRemoved(const char[] sName)
 	{
 		g_bTF2Items = false;
 		
+		if (!g_bEnabled)
+			return;
+		
 		//TF2Items unloaded with GiveNamedItem unhooked, we can now safely hook GiveNamedItem ourself
 		for (int iClient = 1; iClient <= MaxClients; iClient++)
 			if (IsClientInGame(iClient))
@@ -293,22 +301,30 @@ public void OnLibraryRemoved(const char[] sName)
 
 public void OnClientPutInServer(int iClient)
 {
-	SDKHook(iClient, SDKHook_PreThink, Huds_ClientDisplay);
-	SDKHook(iClient, SDKHook_PostThinkPost, Client_ThinkPost);
+	if (!g_bEnabled)
+		return;
+	
+	SDKHook(iClient, SDKHook_PreThink, Hook_PreThink);
+	SDKHook(iClient, SDKHook_PreThinkPost, Hook_PreThinkPost);
 	
 	DHook_HookGiveNamedItem(iClient);
-	DHook_HookClient(iClient);
 	
 	GenerateRandomWeapon(iClient);
 }
 
 public void OnClientDisconnect(int iClient)
 {
+	if (!g_bEnabled)
+		return;
+	
 	DHook_UnhookGiveNamedItem(iClient);
 }
 
 public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const float vecVel[3], const float vecAngles[3], int iWeapon, int iSubtype, int iCmdNum, int iTickCount, int iSeed, const int iMouse[2]) 
 {
+	if (!g_bEnabled)
+		return;
+	
 	//Call DoClassSpecialSkill for detour to manage with any weapons replaced from attack2 to attack3 or reload
 	if (iButtons & IN_ATTACK3 || iButtons & IN_RELOAD)
 		SDKCall_DoClassSpecialSkill(iClient);
@@ -316,6 +332,9 @@ public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const fl
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)
 {
+	if (!g_bEnabled)
+		return;
+	
 	if (StrContains(sClassname, "tf_weapon_") == 0)
 	{
 		SDKHook(iEntity, SDKHook_SpawnPost, Ammo_OnEntitySpawned);
@@ -328,6 +347,55 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 		DHook_HookObject(iEntity);
 	else if (StrEqual(sClassname, "tf_dropped_weapon"))
 		RemoveEntity(iEntity);
+}
+
+public void ConVar_EnableChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	if (!!StringToInt(newValue))
+		EnableRandomizer();
+	else
+		DisableRandomizer();
+}
+
+void EnableRandomizer()
+{
+	g_bEnabled = true;
+	Patch_Enable();
+	
+	DHook_EnableDetour();
+	DHook_HookGamerules();
+	
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+		if (IsClientInGame(iClient))
+			OnClientPutInServer(iClient);
+}
+
+void DisableRandomizer()
+{
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+	{
+		if (IsClientInGame(iClient))
+		{
+			OnClientDisconnect(iClient);
+			
+			SDKUnhook(iClient, SDKHook_PreThink, Hook_PreThink);
+			SDKUnhook(iClient, SDKHook_PreThinkPost, Hook_PreThinkPost);
+		}
+	}
+	
+	DHook_DisableDetour();
+	DHook_UnhookGamerules();
+	
+	Patch_Disable();
+	g_bEnabled = false;
+	
+	int iBuilding = MaxClients+1;
+	while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
+		RemoveEntity(iBuilding);
+	
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+		if (IsClientInGame(iClient) && IsPlayerAlive(iClient))
+			TF2_RegeneratePlayer(iClient);
 }
 
 public void GenerateRandomWeapon(int iClient)
@@ -352,6 +420,9 @@ public void GenerateRandomWeapon(int iClient)
 
 public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
 {
+	if (!g_bEnabled)
+		return;
+	
 	//New round, generate new weapons for everyone
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 		if (IsClientInGame(iClient))
@@ -360,6 +431,9 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 
 public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadcast)
 {
+	if (!g_bEnabled)
+		return;
+	
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
@@ -376,6 +450,9 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 
 public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
 {
+	if (!g_bEnabled)
+		return;
+	
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
@@ -444,6 +521,9 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 
 public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroadcast)
 {
+	if (!g_bEnabled)
+		return;
+	
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
 	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
 	bool bDeadRinger = (event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER) != 0;
@@ -478,14 +558,20 @@ KeyValues LoadConfig(const char[] sFilepath, const char[] sName)
 
 public Action TF2Items_OnGiveNamedItem(int iClient, char[] sClassname, int iIndex, Handle &hItem)
 {
+	if (!g_bEnabled)
+		return Plugin_Continue;
+	
 	if (CanKeepWeapon(iClient, sClassname, iIndex))
 		return Plugin_Continue;
 	
 	return Plugin_Handled;
 }
 
-public void Client_ThinkPost(int iClient)
+public void Hook_PreThink(int iClient)
 {
+	//PreThink have way too many IsPlayerClass check, always return true during it
+	g_iAllowPlayerClass[iClient]++;
+	
 	// Medigun beams doesnt show if player is not medic, and we can't fix that in SDK because it all in clientside
 	if (TF2_GetPlayerClass(iClient) == TFClass_Medic)
 		return;
@@ -529,4 +615,10 @@ public void Client_ThinkPost(int iClient)
 		
 		AcceptEntityInput(g_iMedigunBeamRef[iClient], "Stop");
 	}
+}
+
+public void Hook_PreThinkPost(int iClient)
+{
+	g_iAllowPlayerClass[iClient]--;
+	Huds_ClientDisplay(iClient);
 }

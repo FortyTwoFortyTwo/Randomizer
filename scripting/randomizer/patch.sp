@@ -79,7 +79,10 @@ void Patch_Init(GameData hGameData)
 	g_patchSpeedHeavyClassCheck.Load(hGameData, "Patch_SpeedHeavyClassCheck");
 	g_patchSpeedSteakCondFailed.Load(hGameData, "Patch_SpeedSteakCondFailed");
 	g_patchSpeedSteakCondPassed.Load(hGameData, "Patch_SpeedSteakCondPassed");
-	
+}
+
+void Patch_Enable()
+{
 	g_patchHealthDemomanClassCheck.Enable();
 	g_patchSpeedDemomanClassCheck.Enable();
 	g_patchSpeedMedic1ClassCheck.Enable();
@@ -89,7 +92,7 @@ void Patch_Init(GameData hGameData)
 	g_patchSpeedSteakCondPassed.Enable();
 }
 
-void Patch_ResetAll()
+void Patch_Disable()
 {
 	g_patchHealthDemomanClassCheck.Disable();
 	g_patchSpeedDemomanClassCheck.Disable();

@@ -9,6 +9,9 @@ void Commands_Init()
 
 public Action Command_CantSee(int iClient, int iArgs)
 {
+	if (!g_bEnabled)
+		return Plugin_Continue;
+	
 	if (iClient == 0)
 		return Plugin_Handled;
 	
@@ -26,6 +29,9 @@ public Action Command_CantSee(int iClient, int iArgs)
 
 public Action Command_Class(int iClient, int iArgs)
 {
+	if (!g_bEnabled)
+		return Plugin_Continue;
+	
 	if (iClient == 0 || iArgs <= 0)
 		return Plugin_Handled;
 	
@@ -46,6 +52,9 @@ public Action Command_Class(int iClient, int iArgs)
 
 public Action Command_Weapon(int iClient, int iArgs)
 {
+	if (!g_bEnabled)
+		return Plugin_Continue;
+	
 	if (iClient == 0 || iArgs <= 1)
 		return Plugin_Handled;
 	
@@ -60,6 +69,9 @@ public Action Command_Weapon(int iClient, int iArgs)
 
 public Action Command_Generate(int iClient, int iArgs)
 {
+	if (!g_bEnabled)
+		return Plugin_Continue;
+	
 	if (iClient == 0)
 		return Plugin_Handled;
 	

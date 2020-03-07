@@ -1,3 +1,13 @@
+enum struct Detour
+{
+	char sName[64];
+	Handle hDetour;
+	DHookCallback callbackPre;
+	DHookCallback callbackPost;
+}
+
+static ArrayList g_aDHookDetours;
+
 static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookOnDecapitation;
 static Handle g_hDHookCanBeUpgraded;
@@ -8,10 +18,14 @@ static int g_iClientCalculateMaxSpeed;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
-static int g_iAllowPlayerClass[TF_MAXPLAYERS+1];
+
+static int g_iDHookGamerulesPre;
+static int g_iDHookGamerulesPost;
 
 public void DHook_Init(GameData hGameData)
 {
+	g_aDHookDetours = new ArrayList(sizeof(Detour));
+	
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", _, DHook_CanAirDashPost);
@@ -33,24 +47,20 @@ public void DHook_Init(GameData hGameData)
 	g_hDHookFrameUpdatePostEntityThink = DHook_CreateVirtual(hGameData, "CGameRules::FrameUpdatePostEntityThink");
 }
 
-static void DHook_CreateDetour(GameData hGameData, const char[] sName, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION)
+static void DHook_CreateDetour(GameData hGameData, const char[] sName, DHookCallback callbackPre = INVALID_FUNCTION, DHookCallback callbackPost = INVALID_FUNCTION)
 {
-	Handle hDetour = DHookCreateFromConf(hGameData, sName);
-	if (!hDetour)
+	Detour detour;
+	detour.hDetour = DHookCreateFromConf(hGameData, sName);
+	if (!detour.hDetour)
 	{
 		LogError("Failed to create detour: %s", sName);
 	}
 	else
 	{
-		if (preCallback != INVALID_FUNCTION)
-			if (!DHookEnableDetour(hDetour, false, preCallback))
-				LogError("Failed to enable pre detour: %s", sName);
-		
-		if (postCallback != INVALID_FUNCTION)
-			if (!DHookEnableDetour(hDetour, true, postCallback))
-				LogError("Failed to enable post detour: %s", sName);
-		
-		delete hDetour;
+		strcopy(detour.sName, sizeof(detour.sName), sName);
+		detour.callbackPre = callbackPre;
+		detour.callbackPost = callbackPost;
+		g_aDHookDetours.PushArray(detour);
 	}
 }
 
@@ -61,6 +71,42 @@ static Handle DHook_CreateVirtual(GameData hGameData, const char[] sName)
 		LogError("Failed to create hook: %s", sName);
 	
 	return hHook;
+}
+
+void DHook_EnableDetour()
+{
+	int iLength = g_aDHookDetours.Length;
+	for (int i = 0; i < iLength; i++)
+	{
+		Detour detour;
+		g_aDHookDetours.GetArray(i, detour);
+		
+		if (detour.callbackPre != INVALID_FUNCTION)
+			if (!DHookEnableDetour(detour.hDetour, false, detour.callbackPre))
+				LogError("Failed to enable pre detour: %s", detour.sName);
+		
+		if (detour.callbackPost != INVALID_FUNCTION)
+			if (!DHookEnableDetour(detour.hDetour, true, detour.callbackPost))
+				LogError("Failed to enable post detour: %s", detour.sName);
+	}
+}
+
+void DHook_DisableDetour()
+{
+	int iLength = g_aDHookDetours.Length;
+	for (int i = 0; i < iLength; i++)
+	{
+		Detour detour;
+		g_aDHookDetours.GetArray(i, detour);
+		
+		if (detour.callbackPre != INVALID_FUNCTION)
+			if (!DHookDisableDetour(detour.hDetour, false, detour.callbackPre))
+				LogError("Failed to enable pre detour: %s", detour.sName);
+		
+		if (detour.callbackPost != INVALID_FUNCTION)
+			if (!DHookDisableDetour(detour.hDetour, true, detour.callbackPost))
+				LogError("Failed to enable post detour: %s", detour.sName);
+	}
 }
 
 void DHook_HookGiveNamedItem(int iClient)
@@ -87,12 +133,6 @@ bool DHook_IsGiveNamedItemActive()
 	return false;
 }
 
-void DHook_HookClient(int iClient)
-{
-	SDKHook(iClient, SDKHook_PreThink, Hook_PreThink);
-	SDKHook(iClient, SDKHook_PreThinkPost, Hook_PreThinkPost);
-}
-
 void DHook_HookWeapon(int iWeapon)
 {
 	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
@@ -114,8 +154,14 @@ void DHook_HookObject(int iObject)
 
 void DHook_HookGamerules()
 {
-	DHookGamerules(g_hDHookFrameUpdatePostEntityThink, false, _, DHook_FrameUpdatePostEntityThinkPre);
-	DHookGamerules(g_hDHookFrameUpdatePostEntityThink, true, _, DHook_FrameUpdatePostEntityThinkPost);
+	g_iDHookGamerulesPre = DHookGamerules(g_hDHookFrameUpdatePostEntityThink, false, _, DHook_FrameUpdatePostEntityThinkPre);
+	g_iDHookGamerulesPost = DHookGamerules(g_hDHookFrameUpdatePostEntityThink, true, _, DHook_FrameUpdatePostEntityThinkPost);
+}
+
+void DHook_UnhookGamerules()
+{
+	DHookRemoveHookID(g_iDHookGamerulesPre);
+	DHookRemoveHookID(g_iDHookGamerulesPost);
 }
 
 public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
@@ -344,17 +390,6 @@ public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 	
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
 		TF2_RemoveCondition(iClient, TFCond_Disguised);
-}
-
-public void Hook_PreThink(int iClient)
-{
-	//PreThink have way too many IsPlayerClass check, always return true during it
-	g_iAllowPlayerClass[iClient]++;
-}
-
-public void Hook_PreThinkPost(int iClient)
-{
-	g_iAllowPlayerClass[iClient]--;
 }
 
 public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
