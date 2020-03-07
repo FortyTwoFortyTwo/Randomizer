@@ -14,7 +14,6 @@ static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookGiveNamedItem;
 static Handle g_hDHookFrameUpdatePostEntityThink;
 
-static int g_iClientCalculateMaxSpeed;
 static int g_iClientGetChargeEffectBeingProvided;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
@@ -36,8 +35,6 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::IsPlayerClass", DHook_IsPlayerClassPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetEntityForLoadoutSlot", DHook_GetEntityForLoadoutSlotPre, _);
-	DHook_CreateDetour(hGameData, "CTFPlayer::TeamFortress_CalculateMaxSpeed", DHook_CalculateMaxSpeedPre, DHook_CalculateMaxSpeedPost);
-	DHook_CreateDetour(hGameData, "CTFPlayerShared::InCond", _, DHook_InCondPost);
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
 	
@@ -342,41 +339,6 @@ public MRESReturn DHook_GetEntityForLoadoutSlotPre(int iClient, Handle hReturn, 
 	
 	DHookSetReturn(hReturn, 0);
 	return MRES_Supercede;
-}
-
-public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, Handle hReturn, Handle hParams)
-{
-	if (g_iClientCalculateMaxSpeed)
-		return;
-	
-	g_iClientCalculateMaxSpeed = iClient;
-}
-
-public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, Handle hReturn, Handle hParams)
-{
-	if (g_iClientCalculateMaxSpeed != iClient)
-		return;
-	
-	g_iClientCalculateMaxSpeed = 0;
-}
-
-public MRESReturn DHook_InCondPost(Address pPlayerShared, Handle hReturn, Handle hParams)
-{
-	if (!g_iClientCalculateMaxSpeed)
-		return MRES_Ignored;
-	
-	if (DHookGetParam(hParams, 1) == TFCond_CritCola && DHookGetReturn(hReturn))
-	{
-		//We are in CritCola cond while wanting to return true to gain extra speed, however
-		// this is only for steak and not crit-a-cola, only return true if weapon is steak
-		if (TF2_GetItemFromClassname(g_iClientCalculateMaxSpeed, "tf_weapon_lunchbox") <= MaxClients)
-		{
-			DHookSetReturn(hReturn, false);
-			return MRES_Supercede;
-		}
-	}
-	
-	return MRES_Ignored;
 }
 
 public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, Handle hReturn, Handle hParams)
