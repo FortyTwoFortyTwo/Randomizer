@@ -40,7 +40,7 @@ enum struct Patch
 		
 		for (int i = 0; i < this.iPatchCount; i++)
 		{
-			PrintToServer("%X: %02X -> %02X", this.pAddress + view_as<Address>(i), this.iValueOriginal[i], this.iValueReplacement[i]);
+			//PrintToServer("%X: %02X -> %02X", this.pAddress + view_as<Address>(i), this.iValueOriginal[i], this.iValueReplacement[i]);
 			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueReplacement[i], NumberType_Int8);
 		}
 		
@@ -54,7 +54,7 @@ enum struct Patch
 		
 		for (int i = 0; i < this.iPatchCount; i++)
 		{
-			PrintToServer("%X: %02X -> %02X", this.pAddress + view_as<Address>(i), this.iValueReplacement[i], this.iValueOriginal[i]);
+			//PrintToServer("%X: %02X -> %02X", this.pAddress + view_as<Address>(i), this.iValueReplacement[i], this.iValueOriginal[i]);
 			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueOriginal[i], NumberType_Int8);
 		}
 		

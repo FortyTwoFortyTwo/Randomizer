@@ -99,11 +99,11 @@ void DHook_DisableDetour()
 		
 		if (detour.callbackPre != INVALID_FUNCTION)
 			if (!DHookDisableDetour(detour.hDetour, false, detour.callbackPre))
-				LogError("Failed to enable pre detour: %s", detour.sName);
+				LogError("Failed to disable pre detour: %s", detour.sName);
 		
 		if (detour.callbackPost != INVALID_FUNCTION)
 			if (!DHookDisableDetour(detour.hDetour, true, detour.callbackPost))
-				LogError("Failed to enable post detour: %s", detour.sName);
+				LogError("Failed to disable post detour: %s", detour.sName);
 	}
 }
 
@@ -237,7 +237,12 @@ public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
 	int iWeapon;
 	int iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
-		SDKCall_WeaponReset(iWeapon);
+	{
+		char sClassname[256];
+		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+		if (StrContains(sClassname, "tf_weapon_") == 0)
+			SDKCall_WeaponReset(iWeapon);
+	}
 	
 	return MRES_Supercede;
 }

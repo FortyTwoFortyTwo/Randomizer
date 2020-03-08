@@ -131,10 +131,13 @@ stock bool TF2_WeaponFindAttribute(int iWeapon, int iAttrib, float &flVal)
 
 stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos)
 {
+	//Could be looped through client slots, but would cause issues with >1 weapons in same slot
+	
 	static int iMaxWeapons;
 	if (!iMaxWeapons)
 		iMaxWeapons = GetEntPropArraySize(iClient, Prop_Send, "m_hMyWeapons");
 	
+	//Loop though all weapons (non-wearables)
 	while (iPos < iMaxWeapons)
 	{
 		iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iPos);
@@ -143,10 +146,12 @@ stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos)
 		if (iWeapon > MaxClients)
 			return true;
 		
+		//Reset iWeapon for wearable loop below
 		if (iPos == iMaxWeapons)
 			iWeapon = MaxClients+1;
 	}
 	
+	//Loop through all weapon wearables (don't allow cosmetics)
 	while ((iWeapon = FindEntityByClassname(iWeapon, "tf_wearable*")) > MaxClients)
 	{
 		if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") == iClient || GetEntPropEnt(iWeapon, Prop_Send, "moveparent") == iClient)
@@ -260,6 +265,8 @@ stock void TF2_RemoveItem(int iClient, int iWeapon)
 		return;
 	}
 	
+	//Below similar to TF2_RemoveWeaponSlot, but only removes 1 weapon instead of all weapons in 1 slot
+	
 	int iExtraWearable = GetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearable");
 	if (iExtraWearable != -1)
 		TF2_RemoveWearable(iClient, iExtraWearable);
@@ -307,19 +314,19 @@ stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 
 stock int CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 {
-	//Allow keep grappling hook and passtime gun
+	//Allow grappling hook and passtime gun
 	if (g_bAllowGiveNamedItem || StrEqual(sClassname, "tf_weapon_grapplinghook") || StrEqual(sClassname, "tf_weapon_passtime_gun"))
 		return true;
 	
+	//Don't allow weapons from client loadout slots
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
-		//Allow keep if randomizer weapon has same index, otherwise disallow
 		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
 		if (0 <= iSlot <= WeaponSlot_BuilderEngie)
 			return false;
 	}
 	
-	//Allow keep cosmetics
+	//Allow cosmetics
 	return true;
 }
 
