@@ -181,6 +181,7 @@ bool g_bEnabled;
 bool g_bTF2Items;
 bool g_bAllowGiveNamedItem;
 int g_iOffsetItemDefinitionIndex = -1;
+ConVar g_cvEnabled;
 
 TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
@@ -232,11 +233,6 @@ public void OnPluginStart()
 	ViewModels_Init();
 	Weapons_Init();
 	
-	Controls_Refresh();
-	Huds_Refresh();
-	ViewModels_Refresh();
-	Weapons_Refresh();
-	
 	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
 	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
@@ -252,10 +248,8 @@ public void OnPluginStart()
 	
 	CreateConVar("randomizer_version", PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION, "Randomizer plugin version", FCVAR_SPONLY|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	
-	ConVar convar = CreateConVar("randomizer_enabled", "1", "Enable Randomizer?", _, true, 0.0, true, 1.0);
-	convar.AddChangeHook(ConVar_EnableChanged);
-	if (convar.BoolValue)
-		EnableRandomizer();
+	g_cvEnabled = CreateConVar("randomizer_enabled", "1", "Enable Randomizer?", _, true, 0.0, true, 1.0);
+	g_cvEnabled.AddChangeHook(ConVar_EnableChanged);
 }
 
 public void OnPluginEnd()
@@ -269,8 +263,16 @@ public void OnMapStart()
 	PrecacheParticleSystem(PARTICLE_BEAM_RED);
 	PrecacheParticleSystem(PARTICLE_BEAM_BLU);
 	
+	Controls_Refresh();
+	Huds_Refresh();
+	ViewModels_Refresh();
+	Weapons_Refresh();
+	
 	if (g_bEnabled)
 		DHook_HookGamerules();
+	
+	if (g_cvEnabled.BoolValue && !g_bEnabled)
+		EnableRandomizer();	//Have to be in OnMapStart
 }
 
 public void OnLibraryAdded(const char[] sName)
