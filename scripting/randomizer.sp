@@ -186,6 +186,7 @@ TFClassType g_iClientClass[TF_MAXPLAYERS+1];
 int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
 int g_iAllowPlayerClass[TF_MAXPLAYERS+1];
 int g_iMedigunBeamRef[TF_MAXPLAYERS+1] = {INVALID_ENT_REFERENCE, ...};
+Handle g_hTimerClientHud[TF_MAXPLAYERS+1];
 
 #include "randomizer/controls.sp"
 #include "randomizer/huds.sp"
@@ -305,6 +306,8 @@ public void OnClientPutInServer(int iClient)
 	if (!g_bEnabled)
 		return;
 	
+	g_hTimerClientHud[iClient] = CreateTimer(0.2, Huds_ClientDisplay, iClient, TIMER_REPEAT);
+	
 	SDKHook(iClient, SDKHook_PreThink, Hook_PreThink);
 	SDKHook(iClient, SDKHook_PreThinkPost, Hook_PreThinkPost);
 	
@@ -318,6 +321,7 @@ public void OnClientDisconnect(int iClient)
 	if (!g_bEnabled)
 		return;
 	
+	g_hTimerClientHud[iClient] = null;
 	DHook_UnhookGiveNamedItem(iClient);
 }
 
@@ -622,5 +626,4 @@ public void Hook_PreThink(int iClient)
 public void Hook_PreThinkPost(int iClient)
 {
 	g_iAllowPlayerClass[iClient]--;
-	Huds_ClientDisplay(iClient);
 }

@@ -259,11 +259,14 @@ void Huds_RefreshClient(int iClient)
 	}
 }
 
-public void Huds_ClientDisplay(int iClient)
+public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 {
+	if (g_hTimerClientHud[iClient] != hTimer)
+		return Plugin_Stop;
+	
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon <= MaxClients)
-		return;
+		return Plugin_Continue;
 	
 	char sDisplay[512];
 	bool bAllowAttack2 = true;
@@ -319,6 +322,8 @@ public void Huds_ClientDisplay(int iClient)
 		}
 	}
 	
-	SetHudTextParams(0.2, 1.0, 0.20, 255, 255, 255, 255);
+	SetHudTextParams(0.2, 1.0, 0.5, 255, 255, 255, 255);
 	ShowHudText(iClient, 0, sDisplay);
+	
+	return Plugin_Continue;
 }
