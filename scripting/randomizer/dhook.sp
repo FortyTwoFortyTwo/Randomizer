@@ -330,16 +330,12 @@ public MRESReturn DHook_GetEntityForLoadoutSlotPre(int iClient, Handle hReturn, 
 	if (iSlot < 0 || iSlot > WeaponSlot_BuilderEngie)
 		return MRES_Ignored;
 	
-	//This function sucks as it have default class check, lets do this ourself
-	int iWeapon;
-	int iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
+	//This function sucks as it have default class check, lets use GetPlayerWeaponSlot instead
+	int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
+	if (iWeapon > MaxClients)
 	{
-		if (TF2_GetSlot(iWeapon) == iSlot)
-		{
-			DHookSetReturn(hReturn, iWeapon);
-			return MRES_Supercede;
-		}
+		DHookSetReturn(hReturn, iWeapon);
+		return MRES_Supercede;
 	}
 	
 	DHookSetReturn(hReturn, 0);
