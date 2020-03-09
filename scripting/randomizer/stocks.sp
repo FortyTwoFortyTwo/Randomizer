@@ -281,11 +281,11 @@ stock void TF2_RemoveItem(int iClient, int iWeapon)
 
 stock int TF2_GetItemFromAmmoType(int iClient, int iAmmoType)
 {
-	int iWeapon;
-	int iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
+	//Only primary, secondary and melee should have ammo, keep this simple for optimization
+	for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
 	{
-		if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") && GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
+		int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
+		if (iWeapon > MaxClients && GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
 			return iWeapon;
 	}
 	
