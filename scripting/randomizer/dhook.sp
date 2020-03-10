@@ -28,7 +28,7 @@ public void DHook_Init(GameData hGameData)
 	
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
-	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", _, DHook_CanAirDashPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", DHook_CanAirDashPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ManageBuilderWeapons", DHook_ManageBuilderWeaponsPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
@@ -200,31 +200,28 @@ public MRESReturn DHook_TauntPost(int iClient, Handle hParams)
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
-public MRESReturn DHook_CanAirDashPost(int iClient, Handle hReturn)
+public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
 {
-	if (iClient == -1)
+	if (TF2_GetPlayerClass(iClient) == TFClass_Scout)
 		return MRES_Ignored;
 	
 	//Soda Popper and Atomizer's extra jumps does not work for non-scouts, fix that
-	if (!DHookGetReturn(hReturn))
+	int iAirDash = GetEntProp(iClient, Prop_Send, "m_iAirDash");
+	
+	if (TF2_IsPlayerInCondition(iClient, TFCond_CritHype) && iAirDash <= 6)
 	{
-		int iAirDash = GetEntProp(iClient, Prop_Send, "m_iAirDash");
-		
-		if (TF2_IsPlayerInCondition(iClient, TFCond_CritHype) && iAirDash <= 6)
-		{
-			SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
-			DHookSetReturn(hReturn, true);
-			return MRES_Supercede;
-		}
-		
-		float flVal;
-		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-		if (iWeapon > MaxClients && TF2_WeaponFindAttribute(iWeapon, ATTRIB_AIR_DASH_COUNT, flVal) && iAirDash < RoundToNearest(flVal))
-		{
-			SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
-			DHookSetReturn(hReturn, true);
-			return MRES_Supercede;
-		}
+		SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
+		DHookSetReturn(hReturn, true);
+		return MRES_Supercede;
+	}
+	
+	float flVal;
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iWeapon > MaxClients && TF2_WeaponFindAttribute(iWeapon, ATTRIB_AIR_DASH_COUNT, flVal) && iAirDash < RoundToNearest(flVal))
+	{
+		SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
+		DHookSetReturn(hReturn, true);
+		return MRES_Supercede;
 	}
 	
 	return MRES_Ignored;
