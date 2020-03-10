@@ -1,6 +1,16 @@
 # Randomizer  [![Action Status](https://github.com/FortyTwoFortyTwo/Randomizer/workflows/Package/badge.svg)](https://github.com/FortyTwoFortyTwo/Randomizer/actions?query=workflow%3APackage+branch%3Amaster)
 
-TF2 Gamemode where everyone plays as random class with random weapons, a rewritten of many old randomizer plugins.
+TF2 Gamemode where everyone plays as random class with random weapons, a rewritten of [TF2Items randomizer](https://forums.alliedmods.net/showthread.php?p=1308831).
+
+## ConVars
+- `randomizer_version`: Plugin version number, don't touch.
+- `randomizer_enabled`: Enable/Disable randomizer, another option for load/unload plugins
+
+## Commands
+- `sm_cantsee`: Set your active weapon transparent or fully visible, for everyone
+- `sm_rndclass`: Set specified player a given class, admin only
+- `sm_rndweapon`: Set specified player a given weapon def index at given slot, admin only
+- `sm_rndgenerate`: Rerolls given player class and weapon def index
 
 ## Builds
 All builds can be found [here](https://github.com/FortyTwoFortyTwo/Randomizer/actions?query=workflow%3APackage+branch%3Amaster).
