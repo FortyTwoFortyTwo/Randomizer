@@ -20,9 +20,9 @@ public Action Command_CantSee(int iClient, int iArgs)
 		return Plugin_Handled;
 	
 	if (ViewModels_ToggleInvisible(iWeapon))
-		ReplyToCommand(iClient, "Your active weapon is now fully visible.");
-	else
 		ReplyToCommand(iClient, "Your active weapon is now transparent.");
+	else
+		ReplyToCommand(iClient, "Your active weapon is now fully visible.");
 	
 	return Plugin_Handled;
 }
