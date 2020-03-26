@@ -293,9 +293,12 @@ public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, Handle hReturn)
 
 public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, Handle hReturn)
 {
-	//Has medic class check for getting uber types
-	TF2_SetPlayerClass(iClient, TFClass_Medic);
-	g_iClientGetChargeEffectBeingProvided = iClient;
+	if (IsClientInGame(iClient))
+	{
+		//Has medic class check for getting uber types
+		TF2_SetPlayerClass(iClient, TFClass_Medic);
+		g_iClientGetChargeEffectBeingProvided = iClient;
+	}
 }
 
 public MRESReturn DHook_GetChargeEffectBeingProvidedPost(int iClient, Handle hReturn)
