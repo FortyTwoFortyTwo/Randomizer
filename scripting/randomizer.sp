@@ -576,6 +576,11 @@ public Action TF2Items_OnGiveNamedItem(int iClient, char[] sClassname, int iInde
 
 public void Hook_PreThink(int iClient)
 {
+	//Non-team colored weapons can show incorrect viewmodel skin
+	int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
+	if (iViewModel > MaxClients)
+		SetEntProp(iViewModel, Prop_Send, "m_nSkin", GetEntProp(iClient, Prop_Send, "m_nSkin"));
+	
 	//PreThink have way too many IsPlayerClass check, always return true during it
 	g_iAllowPlayerClass[iClient]++;
 	
