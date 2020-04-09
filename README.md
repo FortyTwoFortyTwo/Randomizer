@@ -24,7 +24,7 @@ To download latest build version, select latest package then "Artifacts" button 
 ## TF2 Major Updates
 Whenever valve releases a major TF2 update, this gamemode expects to:
 - Require gamedata update for several SDK call/hooks
-- Update configs for any possible weapon balance changes for HUD meter, or adding new TF2 weapons
+- Update configs and translations for any possible weapon balance changes for HUD meter, or adding new TF2 weapons
 - Not require any SP plugin update/changes (hopefully)
 
 ## Configs

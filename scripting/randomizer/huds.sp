@@ -87,7 +87,7 @@ enum struct HudInfo
 enum struct HudWeapon
 {
 	int iRef;					//Weapon ref
-	char sName[64];				//Name of weapon to display
+	char sName[64];				//Translated name of weapon to display
 	ArrayList aHudInfo;			//Arrays of HudInfo to display
 }
 
@@ -235,6 +235,9 @@ void Huds_RefreshClient(int iClient)
 		if (!Weapons_GetName(iIndex, hudWeapon.sName, sizeof(hudWeapon.sName)))
 			continue;	//This weapon is probably a special one and not from randomizer, ignore
 		
+		//Translate weapon name
+		Format(hudWeapon.sName, sizeof(hudWeapon.sName), "%T", hudWeapon.sName, iClient);
+		
 		//Go through every HudInfo to see whenever which weapon can use
 		int iLength = g_aHuds.Length;
 		for (int i = 0; i < iLength; i++)
@@ -302,16 +305,16 @@ public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 						{
 							char sText[64];
 							if (hudInfo.GetDynamicText(iVal, sText, sizeof(sText)))
-								Format(sDisplay, sizeof(sDisplay), "%s: %s", sDisplay, sText);
+								Format(sDisplay, sizeof(sDisplay), "%s: %T", sDisplay, sText, iClient);
 							else
-								Format(sDisplay, sizeof(sDisplay), "%s: %d%s", sDisplay, iVal, hudInfo.sText);
+								Format(sDisplay, sizeof(sDisplay), "%s: %T", sDisplay, hudInfo.sText, iClient, iVal);
 						}
 					}
 					case HudType_Float, HudType_Time:
 					{
 						float flVal;
 						if (hudInfo.GetEntPropFloat(iEntity, flVal))
-							Format(sDisplay, sizeof(sDisplay), "%s: %.0f%s", sDisplay, flVal, hudInfo.sText);
+							Format(sDisplay, sizeof(sDisplay), "%s: %T", sDisplay, hudInfo.sText, iClient, flVal);
 					}
 				}
 			}
