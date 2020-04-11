@@ -4,15 +4,17 @@ enum struct ControlsInfo
 {
 	int iButton;	//Bitflag button
 	char sKey[64];	//String in config to get stuffs
-	char sText[64];	//Text to display
 	WeaponWhitelist weaponWhitelist;	//List of weapons that uses this control
 }
 
 enum struct ControlsPassive
 {
-	Button nButton;
-	char sText[64];
-	float flCooldown;
+	Button nButton;		//Which button to use as alt way
+	float flCooldown;	//After passive is used, cooldown before able to use again
+	
+	char sTextMain[64];	//Text to use if button not changed
+	char sTextAlt[64];	//Text to use if button is changed to alt way
+	char sTextNone[64];	//Text to use if no buttons to use
 }
 
 static ControlsInfo g_controlsInfo[Button_MAX];
@@ -24,16 +26,12 @@ public void Controls_Init()
 {
 	g_controlsInfo[Button_Attack2].iButton = IN_ATTACK2;
 	g_controlsInfo[Button_Attack2].sKey = "attack2";
-	g_controlsInfo[Button_Attack2].sText = "right click";
 	
 	g_controlsInfo[Button_Attack3].iButton = IN_ATTACK3;
 	g_controlsInfo[Button_Attack3].sKey = "attack3";
-	g_controlsInfo[Button_Attack3].sText = "middle click";
 	
 	g_controlsInfo[Button_Reload].iButton = IN_RELOAD;
 	g_controlsInfo[Button_Reload].sKey = "reload";
-	g_controlsInfo[Button_Reload].sText = "reload";
-	
 	
 	g_mControlsPassive = new StringMap();
 }
@@ -62,7 +60,6 @@ public void Controls_Refresh()
 				char sName[CONFIG_MAXCHAR], sButton[CONFIG_MAXCHAR];
 				kv.GetSectionName(sName, sizeof(sName));
 				kv.GetString("button", sButton, sizeof(sButton));
-				kv.GetString("text", controlsPassive.sText, sizeof(controlsPassive.sText));
 				controlsPassive.flCooldown = kv.GetFloat("cooldown", 0.0);
 				
 				if (StrEqual(sButton, "attack2"))
@@ -71,6 +68,10 @@ public void Controls_Refresh()
 					controlsPassive.nButton = Button_Attack3;
 				else if (StrEqual(sButton, "reload"))
 					controlsPassive.nButton = Button_Reload;
+				
+				Controls_GetTranslation(kv, sName, "textmain", controlsPassive.sTextMain, sizeof(controlsPassive.sTextMain));
+				Controls_GetTranslation(kv, sName, "textalt", controlsPassive.sTextAlt, sizeof(controlsPassive.sTextAlt));
+				Controls_GetTranslation(kv, sName, "textnone", controlsPassive.sTextNone, sizeof(controlsPassive.sTextNone));
 				
 				g_mControlsPassive.SetArray(sName, controlsPassive, sizeof(controlsPassive));
 			}
@@ -81,6 +82,24 @@ public void Controls_Refresh()
 	kv.GoBack();
 	
 	delete kv;
+}
+
+bool Controls_GetTranslation(KeyValues kv, const char[] sName, const char[] sKey, char[] sBuffer, int iLength)
+{
+	kv.GetString(sKey, sBuffer, iLength);
+	if (sBuffer[0] == '\0')
+	{
+		LogError("Unable to find key '%s' in controls classname '%s'", sKey, sName);
+		return false;
+	}
+	
+	if (!TranslationPhraseExists(sBuffer))
+	{
+		LogError("Found controls classname '%s' but translation '%s' doesn't exist", sName, sBuffer);
+		return false;
+	}
+	
+	return true;
 }
 
 void Controls_RefreshClient(int iClient)
@@ -151,7 +170,7 @@ int Controls_GetPassiveButtonBit(int iClient, int iWeapon, bool &bAllowAttack2)
 	return g_controlsInfo[nButton].iButton;
 }
 
-bool Controls_GetPassiveInfo(int iClient, int iWeapon, bool &bAllowAttack2, char[] sBuffer, int iLength)
+bool Controls_GetPassiveInfo(int iClient, int iWeapon, bool &bAllowAttack2, char[] sText, int iLength)
 {
 	ControlsPassive controlsPassive;
 	if (!Controls_GetPassive(iWeapon, controlsPassive))
@@ -160,9 +179,11 @@ bool Controls_GetPassiveInfo(int iClient, int iWeapon, bool &bAllowAttack2, char
 	Button nButton = Controls_GetPassiveButton(iClient, iWeapon, bAllowAttack2);
 	
 	if (nButton == Button_Invalid)
-		Format(sBuffer, iLength, "unable to %s", controlsPassive.sText);
+		Format(sText, iLength, "%T", controlsPassive.sTextNone, iClient);
+	else if (nButton == Button_Attack2)
+		Format(sText, iLength, "%T", controlsPassive.sTextMain, iClient);
 	else
-		Format(sBuffer, iLength, "%s to %s", g_controlsInfo[nButton].sText, controlsPassive.sText);
+		Format(sText, iLength, "%T", controlsPassive.sTextAlt, iClient);
 	
 	return true;
 }

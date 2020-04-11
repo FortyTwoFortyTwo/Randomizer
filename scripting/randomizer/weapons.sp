@@ -66,6 +66,12 @@ void Weapons_LoadSlot(KeyValues kv, char[] sSection, int iSlot)
 					continue;
 				}
 				
+				if (!TranslationPhraseExists(sName))
+				{
+					LogError("Found weapon index '%d' but translation '%s' doesn't exist", iIndex, sName);
+					continue;
+				}
+				
 				g_aWeapons[iSlot].Push(iIndex);
 				g_mWeaponsName.SetString(sIndex, sName);
 			}

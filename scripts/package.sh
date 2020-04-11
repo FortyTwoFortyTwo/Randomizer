@@ -5,8 +5,10 @@ cd build
 mkdir -p package/addons/sourcemod/plugins
 mkdir -p package/addons/sourcemod/configs
 mkdir -p package/addons/sourcemod/gamedata
+mkdir -p package/addons/sourcemod/translations
 
 # Copy all required stuffs to package
 cp -r addons/sourcemod/plugins/randomizer.smx package/addons/sourcemod/plugins
 cp -r ../configs/randomizer package/addons/sourcemod/configs
 cp -r ../gamedata/randomizer.txt package/addons/sourcemod/gamedata
+cp -r ../translations/randomizer.txt package/addons/sourcemod/translations

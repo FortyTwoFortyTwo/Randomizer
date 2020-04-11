@@ -14,7 +14,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.0.0"
+#define PLUGIN_VERSION			"1.1.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	32
@@ -212,6 +212,8 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+	LoadTranslations("randomizer.phrases");
+	
 	//OnLibraryAdded dont always call TF2Items on plugin start
 	g_bTF2Items = LibraryExists("TF2Items");
 	
