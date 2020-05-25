@@ -41,8 +41,6 @@ public void SDKCall_Init(GameData hGameData)
 	if (!g_hSDKGetLoadoutItem)
 		SetFailState("Failed to create call: CTFPlayer::GetLoadoutItem");
 	
-	//This function is actually not a class entity, but still works like this
-	// void HandleRageGain( CTFPlayer *pPlayer, unsigned int iRequiredBuffFlags, float flDamage, float fInverseRageGainScale )
 	StartPrepSDKCall(SDKCall_Static);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "HandleRageGain");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
