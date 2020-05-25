@@ -199,6 +199,7 @@ Handle g_hTimerClientHud[TF_MAXPLAYERS+1];
 #include "randomizer/dhook.sp"
 #include "randomizer/patch.sp"
 #include "randomizer/sdkcall.sp"
+#include "randomizer/sdkhook.sp"
 #include "randomizer/stocks.sp"
 
 public Plugin myinfo =
@@ -312,10 +313,9 @@ public void OnClientPutInServer(int iClient)
 	
 	g_hTimerClientHud[iClient] = CreateTimer(0.2, Huds_ClientDisplay, iClient, TIMER_REPEAT);
 	
-	SDKHook(iClient, SDKHook_PreThink, Hook_PreThink);
-	SDKHook(iClient, SDKHook_PreThinkPost, Hook_PreThinkPost);
-	
 	DHook_HookGiveNamedItem(iClient);
+	DHook_HookClient(iClient);
+	SDKHook_HookClient(iClient);
 	
 	GenerateRandomWeapon(iClient);
 }
@@ -346,11 +346,13 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 	
 	if (StrContains(sClassname, "tf_weapon_") == 0)
 	{
-		SDKHook(iEntity, SDKHook_SpawnPost, Ammo_OnEntitySpawned);
+		SDKHook_HookWeapon(iEntity);
 		DHook_HookWeapon(iEntity);
 	}
 	
-	if (StrEqual(sClassname, "tf_weapon_sword"))
+	if (StrContains(sClassname, "item_healthkit") == 0)
+		SDKHook_HookHealthKit(iEntity);
+	else if (StrEqual(sClassname, "tf_weapon_sword"))
 		DHook_HookSword(iEntity);
 	else if (StrContains(sClassname, "obj_") == 0)
 		DHook_HookObject(iEntity);
@@ -386,9 +388,7 @@ void DisableRandomizer()
 		if (IsClientInGame(iClient))
 		{
 			OnClientDisconnect(iClient);
-			
-			SDKUnhook(iClient, SDKHook_PreThink, Hook_PreThink);
-			SDKUnhook(iClient, SDKHook_PreThinkPost, Hook_PreThinkPost);
+			SDKHook_UnhookClient(iClient);
 		}
 	}
 	
@@ -574,65 +574,4 @@ public Action TF2Items_OnGiveNamedItem(int iClient, char[] sClassname, int iInde
 		return Plugin_Continue;
 	
 	return Plugin_Handled;
-}
-
-public void Hook_PreThink(int iClient)
-{
-	//Non-team colored weapons can show incorrect viewmodel skin
-	int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
-	if (iViewModel > MaxClients)
-		SetEntProp(iViewModel, Prop_Send, "m_nSkin", GetEntProp(iClient, Prop_Send, "m_nSkin"));
-	
-	//PreThink have way too many IsPlayerClass check, always return true during it
-	g_iAllowPlayerClass[iClient]++;
-	
-	// Medigun beams doesnt show if player is not medic, and we can't fix that in SDK because it all in clientside
-	if (TF2_GetPlayerClass(iClient) == TFClass_Medic)
-		return;
-	
-	static char sParticle[][] = {
-		"",
-		"",
-		PARTICLE_BEAM_RED,
-		PARTICLE_BEAM_BLU,
-	};
-	
-	int iMedigun = TF2_GetItemFromClassname(iClient, "tf_weapon_medigun");
-	if (iMedigun < MaxClients)
-		return;
-	
-	if (!IsValidEntity(g_iMedigunBeamRef[iClient]))
-		g_iMedigunBeamRef[iClient] = TF2_SpawnParticle(sParticle[TF2_GetClientTeam(iClient)], iMedigun);
-	
-	int iPatient = GetEntPropEnt(iMedigun, Prop_Send, "m_hHealingTarget");
-	int iControlPoint = GetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", 0);
-	
-	if (0 < iPatient <= MaxClients)
-	{
-		//Using active weapon so beam connects to nice spot
-		int iWeapon = GetEntPropEnt(iPatient, Prop_Send, "m_hActiveWeapon");
-		if (iWeapon != iControlPoint)
-		{
-			//We just started healing someone
-			SetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", iWeapon, 0);
-			SetEntProp(g_iMedigunBeamRef[iClient], Prop_Send, "m_iControlPointParents", iWeapon, _, 0);
-			
-			ActivateEntity(g_iMedigunBeamRef[iClient]);
-			AcceptEntityInput(g_iMedigunBeamRef[iClient], "Start");
-		}
-	}
-	
-	if (iPatient <= 0 && iControlPoint > 0)
-	{
-		//We just stopped healing someone
-		SetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", -1, 0);
-		SetEntProp(g_iMedigunBeamRef[iClient], Prop_Send, "m_iControlPointParents", -1, _, 0);
-		
-		AcceptEntityInput(g_iMedigunBeamRef[iClient], "Stop");
-	}
-}
-
-public void Hook_PreThinkPost(int iClient)
-{
-	g_iAllowPlayerClass[iClient]--;
 }

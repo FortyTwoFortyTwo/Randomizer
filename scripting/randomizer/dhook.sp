@@ -134,8 +134,6 @@ bool DHook_IsGiveNamedItemActive()
 void DHook_HookWeapon(int iWeapon)
 {
 	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
-	
-	SDKHook(iWeapon, SDKHook_Reload, Hook_ReloadPre);
 }
 
 void DHook_HookSword(int iSword)
@@ -449,14 +447,4 @@ public MRESReturn DHook_FrameUpdatePostEntityThinkPost()
 {
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 		g_iAllowPlayerClass[iClient]--;
-}
-
-public Action Hook_ReloadPre(int iWeapon)
-{
-	//Weapon unable to be reloaded from cloak, but coded in revolver only, and only for Spy class
-	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
-	if (TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
-		return Plugin_Handled;
-	
-	return Plugin_Continue;
 }

@@ -5,7 +5,7 @@ void Ammo_Init()
 	g_mDefaultAmmoType = new StringMap();
 }
 
-public Action Ammo_OnEntitySpawned(int iWeapon)
+void Ammo_OnWeaponSpawned(int iWeapon)
 {
 	int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
 	if (iAmmoType != TF_AMMO_GRENADES1 && iAmmoType != TF_AMMO_GRENADES2)
