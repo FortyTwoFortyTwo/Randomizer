@@ -47,6 +47,13 @@ void Ammo_OnWeaponSpawned(int iWeapon)
 
 bool Ammo_GetDefaultType(int iClient, int &iAmmoType, TFClassType &nClass = TFClass_Unknown)
 {
+	if (iAmmoType == TF_AMMO_METAL)
+	{
+		//Metal works differently, engineer have max metal 200 while others have 100
+		nClass = TFClass_Engineer;
+		return true;
+	}
+	
 	if (g_iGiveAmmoSlot >= WeaponSlot_Primary)
 	{
 		int iWeapon = GetPlayerWeaponSlot(iClient, g_iGiveAmmoSlot);
