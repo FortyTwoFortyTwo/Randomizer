@@ -16,6 +16,7 @@ static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookGiveNamedItem;
 static Handle g_hDHookFrameUpdatePostEntityThink;
 
+static bool g_bSkipHandleRageGain;
 static int g_iClientGetChargeEffectBeingProvided;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
@@ -39,6 +40,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetEntityForLoadoutSlot", DHook_GetEntityForLoadoutSlotPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
+	DHook_CreateDetour(hGameData, "HandleRageGain", DHook_HandleRageGainPre, _);
 	
 	g_hDHookGiveAmmo = DHook_CreateVirtual(hGameData, "CBaseCombatCharacter::GiveAmmo");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
@@ -372,6 +374,57 @@ public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 	
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
 		TF2_RemoveCondition(iClient, TFCond_Disguised);
+}
+
+public MRESReturn DHook_HandleRageGainPre(Handle hParams)
+{
+	//Banners, Phlogistinator and Hitman Heatmaker use m_flRageMeter with class check, call this function to each weapons
+	//Must be called a frame, will crash if detour is called while inside a detour
+	//TODO somehow make multiple m_flRageMeter to seperate each ones
+	if (g_bSkipHandleRageGain ||  DHookIsNullParam(hParams, 1))
+		return MRES_Ignored;
+	
+	DataPack hPack = new DataPack();
+	hPack.WriteCell(GetClientSerial(DHookGetParam(hParams, 1)));
+	hPack.WriteCell(DHookGetParam(hParams, 2));
+	hPack.WriteFloat(DHookGetParam(hParams, 3));
+	hPack.WriteFloat(DHookGetParam(hParams, 4));
+	
+	RequestFrame(Frame_HandleRageGain, hPack);
+	return MRES_Supercede;
+}
+
+public void Frame_HandleRageGain(DataPack hPack)
+{
+	hPack.Reset();
+	int iClient = GetClientFromSerial(hPack.ReadCell());
+	int iRequiredBuffFlags = hPack.ReadCell();
+	float flDamage = hPack.ReadFloat();
+	float fInverseRageGainScale = hPack.ReadFloat();
+	delete hPack;
+	
+	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
+		return;
+	
+	bool bCalledClass[CLASS_MAX + 1];
+	g_bSkipHandleRageGain = true;
+	
+	int iWeapon;
+	int iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		TFClassType nClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
+		if (bCalledClass[nClass])	//Already called as same class, dont double value
+			continue;
+		
+		bCalledClass[nClass] = true;
+		
+		TF2_SetPlayerClass(iClient, nClass);
+		SDKCall_HandleRageGain(iClient, iRequiredBuffFlags, flDamage, fInverseRageGainScale);
+	}
+	
+	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+	g_bSkipHandleRageGain = false;
 }
 
 public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)

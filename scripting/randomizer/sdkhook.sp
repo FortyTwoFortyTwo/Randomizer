@@ -2,16 +2,12 @@ void SDKHook_HookClient(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Client_PreThink);
 	SDKHook(iClient, SDKHook_PreThinkPost, Client_PreThinkPost);
-	SDKHook(iClient, SDKHook_OnTakeDamage, Client_OnTakeDamage);
-	SDKHook(iClient, SDKHook_OnTakeDamagePost, Client_OnTakeDamagePost);
 }
 
 void SDKHook_UnhookClient(int iClient)
 {
 	SDKUnhook(iClient, SDKHook_PreThink, Client_PreThink);
 	SDKUnhook(iClient, SDKHook_PreThinkPost, Client_PreThinkPost);
-	SDKUnhook(iClient, SDKHook_OnTakeDamage, Client_OnTakeDamage);
-	SDKUnhook(iClient, SDKHook_OnTakeDamagePost, Client_OnTakeDamagePost);
 }
 
 void SDKHook_HookWeapon(int iWeapon)
@@ -24,16 +20,6 @@ void SDKHook_HookHealthKit(int iHealthKit)
 {
 	SDKHook(iHealthKit, SDKHook_Touch, HealthKit_Touch);
 	SDKHook(iHealthKit, SDKHook_TouchPost, HealthKit_TouchPost);
-}
-
-public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflicter, float &flDamage, int &iDamageType, int &iWeapon, float vecForce[3], float vecForcePos[3], int iDamageCustom)
-{
-	g_iAllowPlayerClass[iVictim]++;
-}
-
-public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflicter, float flDamage, int iDamageType, int iWeapon, const float vecForce[3], const float vecForcePos[3], int iDamageCustom)
-{
-	g_iAllowPlayerClass[iVictim]--;
 }
 
 public void Client_PreThink(int iClient)

@@ -2,6 +2,7 @@ static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKGetLoadoutItem;
+static Handle g_hSDKHandleRageGain;
 static Handle g_hSDKGetSlot;
 static Handle g_hSDKEquipWearable;
 static Handle g_hSDKWeaponReset;
@@ -39,6 +40,18 @@ public void SDKCall_Init(GameData hGameData)
 	g_hSDKGetLoadoutItem = EndPrepSDKCall();
 	if (!g_hSDKGetLoadoutItem)
 		SetFailState("Failed to create call: CTFPlayer::GetLoadoutItem");
+	
+	//This function is actually not a class entity, but still works like this
+	// void HandleRageGain( CTFPlayer *pPlayer, unsigned int iRequiredBuffFlags, float flDamage, float fInverseRageGainScale )
+	StartPrepSDKCall(SDKCall_Static);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "HandleRageGain");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);	// unsigned int
+	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
+	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
+	g_hSDKHandleRageGain = EndPrepSDKCall();
+	if (!g_hSDKHandleRageGain)
+		SetFailState("Failed to create call: HandleRageGain");
 	
 	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseCombatWeapon::GetSlot");
@@ -90,6 +103,11 @@ bool SDKCall_DoClassSpecialSkill(int iClient)
 Address SDKCall_GetLoadoutItem(int iClient, TFClassType nClass, int iSlot, bool b = false)
 {
 	return SDKCall(g_hSDKGetLoadoutItem, iClient, nClass, iSlot, b);
+}
+
+void SDKCall_HandleRageGain(int iClient, int iRequiredBuffFlags, float flDamage, float fInverseRageGainScale)
+{
+	SDKCall(g_hSDKHandleRageGain, iClient, iRequiredBuffFlags, flDamage, fInverseRageGainScale);
 }
 
 int SDKCall_GetSlot(int iWeapon)
