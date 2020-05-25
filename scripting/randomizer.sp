@@ -352,6 +352,8 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 	
 	if (StrContains(sClassname, "item_healthkit") == 0)
 		SDKHook_HookHealthKit(iEntity);
+	else if (StrEqual(sClassname, "tf_projectile_stun_ball") || StrEqual(sClassname, "tf_projectile_ball_ornament"))
+		DHook_HookStunBall(iEntity);
 	else if (StrEqual(sClassname, "tf_weapon_sword"))
 		DHook_HookSword(iEntity);
 	else if (StrContains(sClassname, "obj_") == 0)

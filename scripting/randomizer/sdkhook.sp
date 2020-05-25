@@ -117,12 +117,18 @@ public Action HealthKit_Touch(int iHealthKit)
 	//Has heavy class check for lunchbox, and ensure GiveAmmo is done to secondary slot
 	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
+	{
 		g_iAllowPlayerClass[iClient]++;
+		Ammo_SetGiveAmmoSlot(WeaponSlot_Secondary);
+	}
 }
 
 public void HealthKit_TouchPost(int iHealthKit)
 {
 	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
+	{
 		g_iAllowPlayerClass[iClient]--;
+		Ammo_SetGiveAmmoSlot(-1);
+	}
 }

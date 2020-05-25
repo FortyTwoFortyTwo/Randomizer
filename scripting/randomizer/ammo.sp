@@ -1,4 +1,5 @@
 static StringMap g_mDefaultAmmoType;
+static int g_iGiveAmmoSlot = -1;
 
 void Ammo_Init()
 {
@@ -14,7 +15,7 @@ void Ammo_OnWeaponSpawned(int iWeapon)
 	//Its possible that client can have 2 weapons with same ammotype (TF_AMMO_GRENADES).
 	// To prevent this, secondary weapons always use TF_AMMO_GRENADES2 slot, and melee
 	// weapon at TF_AMMO_GRENADES1
-	int iNewAmmoType;
+	int iNewAmmoType = TF_AMMO_DUMMY;
 	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
 	
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
@@ -32,7 +33,7 @@ void Ammo_OnWeaponSpawned(int iWeapon)
 		}
 	}
 	
-	if (iAmmoType != TF_AMMO_GRENADES1 && iAmmoType != TF_AMMO_GRENADES2)
+	if (iNewAmmoType == TF_AMMO_DUMMY || iAmmoType == iNewAmmoType)
 		return;
 	
 	//Store old ammotype using classname
@@ -44,26 +45,46 @@ void Ammo_OnWeaponSpawned(int iWeapon)
 	SetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType", iNewAmmoType);
 }
 
-bool Ammo_GetDefaultType(int iClient, int &iAmmoType, TFClassType &nClass)
+bool Ammo_GetDefaultType(int iClient, int &iAmmoType, TFClassType &nClass = TFClass_Unknown)
 {
-	if (iAmmoType == TF_AMMO_METAL)
+	if (g_iGiveAmmoSlot >= WeaponSlot_Primary)
 	{
-		//Metal works differently, engineer have max metal 200 while others have 100
-		nClass = TFClass_Engineer;
-		return true;
+		int iWeapon = GetPlayerWeaponSlot(iClient, g_iGiveAmmoSlot);
+		if (iWeapon > MaxClients)
+		{
+			Ammo_GetDefaultTypeFromWeapon(iClient, iWeapon, iAmmoType, nClass);
+			return true;
+		}
+		
+		return false;
 	}
 	
 	int iWeapon = TF2_GetItemFromAmmoType(iClient, iAmmoType);
-	if (iWeapon <= MaxClients)
-		return false;
+	if (iWeapon > MaxClients)
+	{
+		Ammo_GetDefaultTypeFromWeapon(iClient, iWeapon, iAmmoType, nClass);
+		return true;
+	}
 	
-	//Check if weapon uses moved ammotype location, and use
-	// old location for GetMaxAmmo to get correct value
+	return false;
+}
+
+void Ammo_GetDefaultTypeFromWeapon(int iClient, int iWeapon, int &iAmmoType, TFClassType &nClass = TFClass_Unknown)
+{
 	char sClassname[256];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
 	g_mDefaultAmmoType.GetValue(sClassname, iAmmoType);
 	
-	//Get default class for GetMaxAmmo to get correct value
+	//Get new ammotype and default class
 	nClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
-	return true;
+}
+
+void Ammo_SetGiveAmmoSlot(int iSlot)
+{
+	g_iGiveAmmoSlot = iSlot;
+}
+
+int Ammo_GetGiveAmmoSlot()
+{
+	return g_iGiveAmmoSlot;
 }

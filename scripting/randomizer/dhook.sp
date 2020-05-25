@@ -8,7 +8,9 @@ enum struct Detour
 
 static ArrayList g_aDHookDetours;
 
+static Handle g_hDHookGiveAmmo;
 static Handle g_hDHookSecondaryAttack;
+static Handle g_hDHookPipebombTouch;
 static Handle g_hDHookOnDecapitation;
 static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookGiveNamedItem;
@@ -38,7 +40,9 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
 	
+	g_hDHookGiveAmmo = DHook_CreateVirtual(hGameData, "CBaseCombatCharacter::GiveAmmo");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
+	g_hDHookPipebombTouch = DHook_CreateVirtual(hGameData, "CTFGrenadePipebombProjectile::PipebombTouch");
 	g_hDHookOnDecapitation = DHook_CreateVirtual(hGameData, "CTFDecapitationMeleeWeaponBase::OnDecapitation");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
@@ -131,9 +135,20 @@ bool DHook_IsGiveNamedItemActive()
 	return false;
 }
 
+void DHook_HookClient(int iClient)
+{
+	DHookEntity(g_hDHookGiveAmmo, false, iClient, _, DHook_GiveAmmoPre);
+}
+
 void DHook_HookWeapon(int iWeapon)
 {
 	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
+}
+
+void DHook_HookStunBall(int iStunBall)
+{
+	DHookEntity(g_hDHookPipebombTouch, false, iStunBall, _, DHook_PipebombTouchPre);
+	DHookEntity(g_hDHookPipebombTouch, true, iStunBall, _, DHook_PipebombTouchPost);
 }
 
 void DHook_HookSword(int iSword)
@@ -359,6 +374,23 @@ public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 		TF2_RemoveCondition(iClient, TFCond_Disguised);
 }
 
+public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
+{
+	int iSlot = Ammo_GetGiveAmmoSlot();
+	Ammo_SetGiveAmmoSlot(-1);	//Entity may be destroyed, unable to set back to -1 in post hook
+	if (iSlot >= WeaponSlot_Primary)
+	{
+		int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
+		if (iWeapon > MaxClients)
+		{
+			DHookSetParam(hParams, 2, GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"));
+			return MRES_ChangedHandled;
+		}
+	}
+	
+	return MRES_Ignored;
+}
+
 public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 {
 	//Why is this function getting called from tf_viewmodel angery
@@ -377,6 +409,27 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 	}
 	
 	g_bDoClassSpecialSkill[iClient] = false;
+}
+
+public MRESReturn DHook_PipebombTouchPre(int iStunBall, Handle hParams)
+{
+	//Has scout class check, and make sure GiveAmmo is given to melee weapon
+	int iClient = GetEntPropEnt(iStunBall, Prop_Send, "m_hOwnerEntity");
+	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
+	{
+		g_iAllowPlayerClass[iClient]++;
+		Ammo_SetGiveAmmoSlot(WeaponSlot_Melee);
+	}
+}
+
+public MRESReturn DHook_PipebombTouchPost(int iStunBall, Handle hParams)
+{
+	int iClient = GetEntPropEnt(iStunBall, Prop_Send, "m_hOwnerEntity");
+	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
+	{
+		g_iAllowPlayerClass[iClient]--;
+		Ammo_SetGiveAmmoSlot(-1);
+	}
 }
 
 public MRESReturn DHook_OnDecapitationPre(int iSword, Handle hParams)

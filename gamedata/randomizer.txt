@@ -211,6 +211,11 @@
 		}
 		"Offsets"
 		{
+			"CBaseCombatCharacter::GiveAmmo"
+			{
+				"linux"		"256"
+				"windows"	"255"
+			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"linux"		"286"
@@ -225,6 +230,11 @@
 			{
 				"linux"		"426"
 				"windows"	"419"
+			}
+			"CTFGrenadePipebombProjectile::PipebombTouch"
+			{
+				"linux"		"254"
+				"windows"	"253"
 			}
 			"CTFDecapitationMeleeWeaponBase::OnDecapitation"
 			{
@@ -412,12 +422,48 @@
 					}
 				}
 			}
+			"CBaseCombatCharacter::GiveAmmo"
+			{
+				"offset"	"CBaseCombatCharacter::GiveAmmo"
+				"hooktype"	"entity"
+				"return"	"int"
+				"this"		"entity"
+				"arguments"
+				{
+					"iCount"
+					{
+						"type"	"int"
+					}
+					"iAmmoIndex"
+					{
+						"type"	"int"
+					}
+					"bSuppressSound"
+					{
+						"type"	"bool"
+					}
+				}
+			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"offset"	"CBaseCombatWeapon::SecondaryAttack"
 				"hooktype"	"entity"
 				"return"	"void"
 				"this"		"entity"
+			}
+			"CTFGrenadePipebombProjectile::PipebombTouch"
+			{
+				"offset"	"CTFGrenadePipebombProjectile::PipebombTouch"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"pOther"
+					{
+						"type"	"cbaseentity"
+					}
+				}
 			}
 			"CTFDecapitationMeleeWeaponBase::OnDecapitation"
 			{
