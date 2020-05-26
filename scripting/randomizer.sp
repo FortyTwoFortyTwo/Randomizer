@@ -313,7 +313,6 @@ public void OnClientPutInServer(int iClient)
 	
 	g_hTimerClientHud[iClient] = CreateTimer(0.2, Huds_ClientDisplay, iClient, TIMER_REPEAT);
 	
-	DHook_HookGiveNamedItem(iClient);
 	DHook_HookClient(iClient);
 	SDKHook_HookClient(iClient);
 	
@@ -326,7 +325,7 @@ public void OnClientDisconnect(int iClient)
 		return;
 	
 	g_hTimerClientHud[iClient] = null;
-	DHook_UnhookGiveNamedItem(iClient);
+	DHook_ClientDisconnect(iClient);
 }
 
 public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const float vecVel[3], const float vecAngles[3], int iWeapon, int iSubtype, int iCmdNum, int iTickCount, int iSeed, const int iMouse[2]) 
@@ -345,21 +344,13 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 		return;
 	
 	if (StrContains(sClassname, "tf_weapon_") == 0)
-	{
 		SDKHook_HookWeapon(iEntity);
-		DHook_HookWeapon(iEntity);
-	}
-	
-	if (StrContains(sClassname, "item_healthkit") == 0)
+	else if (StrContains(sClassname, "item_healthkit") == 0)
 		SDKHook_HookHealthKit(iEntity);
-	else if (StrEqual(sClassname, "tf_projectile_stun_ball") || StrEqual(sClassname, "tf_projectile_ball_ornament"))
-		DHook_HookStunBall(iEntity);
-	else if (StrEqual(sClassname, "tf_weapon_sword"))
-		DHook_HookSword(iEntity);
-	else if (StrContains(sClassname, "obj_") == 0)
-		DHook_HookObject(iEntity);
 	else if (StrEqual(sClassname, "tf_dropped_weapon"))
 		RemoveEntity(iEntity);
+	
+	DHook_HookEntity(iEntity, sClassname);
 }
 
 public void ConVar_EnableChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -395,7 +386,7 @@ void DisableRandomizer()
 	}
 	
 	DHook_DisableDetour();
-	DHook_UnhookGamerules();
+	DHook_UnhookVirtualAll();
 	
 	Patch_Disable();
 	g_bEnabled = false;
