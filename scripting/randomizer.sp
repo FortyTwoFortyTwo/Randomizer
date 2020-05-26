@@ -17,7 +17,7 @@
 #define PLUGIN_VERSION			"1.1.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
-#define TF_MAXPLAYERS	32
+#define TF_MAXPLAYERS	34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
 #define CONFIG_MAXCHAR	64
 
 #define CLASS_MIN	1	//First valid TFClassType, Scout
@@ -183,11 +183,11 @@ bool g_bAllowGiveNamedItem;
 int g_iOffsetItemDefinitionIndex = -1;
 ConVar g_cvEnabled;
 
-TFClassType g_iClientClass[TF_MAXPLAYERS+1];
-int g_iClientWeaponIndex[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
-int g_iAllowPlayerClass[TF_MAXPLAYERS+1];
-int g_iMedigunBeamRef[TF_MAXPLAYERS+1] = {INVALID_ENT_REFERENCE, ...};
-Handle g_hTimerClientHud[TF_MAXPLAYERS+1];
+TFClassType g_iClientClass[TF_MAXPLAYERS];
+int g_iClientWeaponIndex[TF_MAXPLAYERS][WeaponSlot_BuilderEngie+1];
+int g_iAllowPlayerClass[TF_MAXPLAYERS];
+int g_iMedigunBeamRef[TF_MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
+Handle g_hTimerClientHud[TF_MAXPLAYERS];
 
 #include "randomizer/controls.sp"
 #include "randomizer/huds.sp"

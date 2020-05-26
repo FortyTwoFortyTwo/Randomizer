@@ -20,8 +20,8 @@ static Handle g_hDHookFrameUpdatePostEntityThink;
 static bool g_bSkipHandleRageGain;
 static int g_iClientGetChargeEffectBeingProvided;
 
-static bool g_bHookGiveNamedItem[TF_MAXPLAYERS+1];
-static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
+static bool g_bHookGiveNamedItem[TF_MAXPLAYERS];
+static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS];
 
 public void DHook_Init(GameData hGameData)
 {

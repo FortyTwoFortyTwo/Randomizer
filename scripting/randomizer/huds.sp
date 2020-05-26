@@ -92,7 +92,7 @@ enum struct HudWeapon
 }
 
 static ArrayList g_aHuds;	//Arrays of HudInfo
-static HudWeapon g_hudWeapon[TF_MAXPLAYERS+1][WeaponSlot_InvisWatch+1];	//What to display for each weapons
+static HudWeapon g_hudWeapon[TF_MAXPLAYERS][WeaponSlot_InvisWatch+1];	//What to display for each weapons
 
 void Huds_Init()
 {

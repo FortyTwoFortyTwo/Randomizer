@@ -19,8 +19,8 @@ enum struct ControlsPassive
 
 static ControlsInfo g_controlsInfo[Button_MAX];
 static StringMap g_mControlsPassive;
-static bool g_bControlsButton[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1][view_as<int>(Button_MAX)];
-static float g_flControlsCooldown[TF_MAXPLAYERS+1][WeaponSlot_BuilderEngie+1];
+static bool g_bControlsButton[TF_MAXPLAYERS][WeaponSlot_BuilderEngie+1][view_as<int>(Button_MAX)];
+static float g_flControlsCooldown[TF_MAXPLAYERS][WeaponSlot_BuilderEngie+1];
 
 public void Controls_Init()
 {
