@@ -530,7 +530,7 @@ public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hPa
 	if (DHookIsNullParam(hParams, 1) || DHookIsNullParam(hParams, 3))
 	{
 		DHookSetReturn(hReturn, 0);
-		return MRES_Override;
+		return MRES_Supercede;
 	}
 	
 	char sClassname[256];
@@ -541,7 +541,7 @@ public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hPa
 		return MRES_Ignored;
 	
 	DHookSetReturn(hReturn, 0);
-	return MRES_Override;
+	return MRES_Supercede;
 }
 
 public MRESReturn DHook_FrameUpdatePostEntityThinkPre()
