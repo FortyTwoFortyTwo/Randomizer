@@ -7,7 +7,6 @@ enum struct Detour
 }
 
 static ArrayList g_aDHookDetours;
-static ArrayList g_aDHookVirtuals;
 
 static Handle g_hDHookGiveAmmo;
 static Handle g_hDHookSecondaryAttack;
@@ -20,13 +19,16 @@ static Handle g_hDHookFrameUpdatePostEntityThink;
 static bool g_bSkipHandleRageGain;
 static int g_iClientGetChargeEffectBeingProvided;
 
-static bool g_bHookGiveNamedItem[TF_MAXPLAYERS];
-static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS];
+static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
+static int g_iHookIdGiveAmmo[TF_MAXPLAYERS+1];
+static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
+
+static int g_iDHookGamerulesPre;
+static int g_iDHookGamerulesPost;
 
 public void DHook_Init(GameData hGameData)
 {
 	g_aDHookDetours = new ArrayList(sizeof(Detour));
-	g_aDHookVirtuals = new ArrayList();
 	
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
@@ -112,83 +114,77 @@ void DHook_DisableDetour()
 	}
 }
 
-void DHook_HookClient(int iClient)
-{
-	DHook_HookVirtualEntity(g_hDHookGiveAmmo, iClient, DHook_GiveAmmoPre, _);
-	DHook_HookGiveNamedItem(iClient);
-}
-
 void DHook_HookGiveNamedItem(int iClient)
 {
 	if (g_hDHookGiveNamedItem && !g_bTF2Items)
+		g_iHookIdGiveNamedItem[iClient] = DHookEntity(g_hDHookGiveNamedItem, false, iClient, DHook_GiveNamedItemRemoved, DHook_GiveNamedItemPre);
+}
+
+void DHook_UnhookGiveNamedItem(int iClient)
+{
+	if (g_iHookIdGiveNamedItem[iClient])
 	{
-		DHook_HookVirtualEntity(g_hDHookGiveNamedItem, iClient, DHook_GiveNamedItemPre, _);
-		g_bHookGiveNamedItem[iClient] = true;
+		DHookRemoveHookID(g_iHookIdGiveNamedItem[iClient]);
+		g_iHookIdGiveNamedItem[iClient] = 0;	
 	}
 }
 
 bool DHook_IsGiveNamedItemActive()
 {
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
-		if (g_bHookGiveNamedItem[iClient])
+		if (g_iHookIdGiveNamedItem[iClient])
 			return true;
 	
 	return false;
 }
 
-void DHook_ClientDisconnect(int iClient)
+void DHook_HookClient(int iClient)
 {
-	g_bHookGiveNamedItem[iClient] = false;
+	g_iHookIdGiveAmmo[iClient] = DHookEntity(g_hDHookGiveAmmo, false, iClient, _, DHook_GiveAmmoPre);
 }
 
-void DHook_HookEntity(int iEntity, const char[] sClassname)
+void DHook_UnhookClient(int iClient)
 {
-	if (StrContains(sClassname, "tf_weapon_") == 0)
-		DHook_HookVirtualEntity(g_hDHookSecondaryAttack, iEntity, _, DHook_SecondaryWeaponPost);
-	
-	if (StrEqual(sClassname, "tf_projectile_stun_ball") || StrEqual(sClassname, "tf_projectile_ball_ornament"))
-		DHook_HookVirtualEntity(g_hDHookPipebombTouch, iEntity, DHook_PipebombTouchPre, DHook_PipebombTouchPost);
-	else if (StrEqual(sClassname, "tf_weapon_sword"))
-		DHook_HookVirtualEntity(g_hDHookOnDecapitation, iEntity, DHook_OnDecapitationPre, DHook_OnDecapitationPost);
-	else if (StrContains(sClassname, "obj_") == 0)
-		DHook_HookVirtualEntity(g_hDHookCanBeUpgraded, iEntity, DHook_CanBeUpgradedPre, DHook_CanBeUpgradedPost);
+	if (g_iHookIdGiveAmmo[iClient])
+	{
+		DHookRemoveHookID(g_iHookIdGiveAmmo[iClient]);
+		g_iHookIdGiveAmmo[iClient] = 0;	
+	}
+}
+
+void DHook_HookWeapon(int iWeapon)
+{
+	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
+}
+
+void DHook_HookStunBall(int iStunBall)
+{
+	DHookEntity(g_hDHookPipebombTouch, false, iStunBall, _, DHook_PipebombTouchPre);
+	DHookEntity(g_hDHookPipebombTouch, true, iStunBall, _, DHook_PipebombTouchPost);
+}
+
+void DHook_HookSword(int iSword)
+{
+	DHookEntity(g_hDHookOnDecapitation, false, iSword, _, DHook_OnDecapitationPre);
+	DHookEntity(g_hDHookOnDecapitation, true, iSword, _, DHook_OnDecapitationPost);
+}
+
+void DHook_HookObject(int iObject)
+{
+	DHookEntity(g_hDHookCanBeUpgraded, false, iObject, _, DHook_CanBeUpgradedPre);
+	DHookEntity(g_hDHookCanBeUpgraded, true, iObject, _, DHook_CanBeUpgradedPost);
 }
 
 void DHook_HookGamerules()
 {
-	DHook_HookVirtualGamerules(g_hDHookFrameUpdatePostEntityThink, DHook_FrameUpdatePostEntityThinkPre, DHook_FrameUpdatePostEntityThinkPost);
+	g_iDHookGamerulesPre = DHookGamerules(g_hDHookFrameUpdatePostEntityThink, false, _, DHook_FrameUpdatePostEntityThinkPre);
+	g_iDHookGamerulesPost = DHookGamerules(g_hDHookFrameUpdatePostEntityThink, true, _, DHook_FrameUpdatePostEntityThinkPost);
 }
 
-void DHook_HookVirtualEntity(Handle hVirtual, int iEntity, DHookCallback callbackPre = INVALID_FUNCTION, DHookCallback callbackPost = INVALID_FUNCTION)
+void DHook_UnhookGamerules()
 {
-	if (callbackPre != INVALID_FUNCTION)
-		g_aDHookVirtuals.Push(DHookEntity(hVirtual, false, iEntity, DHook_UnhookVirtual, callbackPre));
-	
-	if (callbackPost != INVALID_FUNCTION)
-		g_aDHookVirtuals.Push(DHookEntity(hVirtual, true, iEntity, DHook_UnhookVirtual, callbackPost));
-}
-
-void DHook_HookVirtualGamerules(Handle hVirtual, DHookCallback callbackPre = INVALID_FUNCTION, DHookCallback callbackPost = INVALID_FUNCTION)
-{
-	if (callbackPre != INVALID_FUNCTION)
-		g_aDHookVirtuals.Push(DHookGamerules(hVirtual, false, DHook_UnhookVirtual, callbackPre));
-	
-	if (callbackPost != INVALID_FUNCTION)
-		g_aDHookVirtuals.Push(DHookGamerules(hVirtual, true, DHook_UnhookVirtual, callbackPost));
-}
-
-public void DHook_UnhookVirtual(int iHookId)
-{
-	int iPos = g_aDHookVirtuals.FindValue(iHookId);
-	if (iPos >= 0)
-		g_aDHookVirtuals.Erase(iPos);
-}
-
-void DHook_UnhookVirtualAll()
-{
-	int iLength = g_aDHookVirtuals.Length;
-	for (int i = iLength - 1; i >= 0; i--)
-		DHookRemoveHookID(g_aDHookVirtuals.Get(i));
+	DHookRemoveHookID(g_iDHookGamerulesPre);
+	DHookRemoveHookID(g_iDHookGamerulesPost);
 }
 
 public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
@@ -542,6 +538,18 @@ public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hPa
 	
 	DHookSetReturn(hReturn, 0);
 	return MRES_Supercede;
+}
+
+public void DHook_GiveNamedItemRemoved(int iHookId)
+{
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+	{
+		if (g_iHookIdGiveNamedItem[iClient] == iHookId)
+		{
+			g_iHookIdGiveNamedItem[iClient] = 0;
+			return;
+		}
+	}
 }
 
 public MRESReturn DHook_FrameUpdatePostEntityThinkPre()
