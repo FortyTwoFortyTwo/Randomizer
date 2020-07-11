@@ -13,6 +13,7 @@ static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookPipebombTouch;
 static Handle g_hDHookOnDecapitation;
 static Handle g_hDHookCanBeUpgraded;
+static Handle g_hDHookEquipWearable;
 static Handle g_hDHookGiveNamedItem;
 static Handle g_hDHookFrameUpdatePostEntityThink;
 
@@ -21,6 +22,7 @@ static int g_iClientGetChargeEffectBeingProvided;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static int g_iHookIdGiveAmmo[TF_MAXPLAYERS+1];
+static int g_iHookIdEquipWearable[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
 
 static int g_iDHookGamerulesPre;
@@ -48,6 +50,7 @@ public void DHook_Init(GameData hGameData)
 	g_hDHookPipebombTouch = DHook_CreateVirtual(hGameData, "CTFGrenadePipebombProjectile::PipebombTouch");
 	g_hDHookOnDecapitation = DHook_CreateVirtual(hGameData, "CTFDecapitationMeleeWeaponBase::OnDecapitation");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
+	g_hDHookEquipWearable = DHook_CreateVirtual(hGameData, "CBasePlayer::EquipWearable");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	g_hDHookFrameUpdatePostEntityThink = DHook_CreateVirtual(hGameData, "CGameRules::FrameUpdatePostEntityThink");
 }
@@ -141,6 +144,7 @@ bool DHook_IsGiveNamedItemActive()
 void DHook_HookClient(int iClient)
 {
 	g_iHookIdGiveAmmo[iClient] = DHookEntity(g_hDHookGiveAmmo, false, iClient, _, DHook_GiveAmmoPre);
+	g_iHookIdEquipWearable[iClient] = DHookEntity(g_hDHookEquipWearable, true, iClient, _, DHook_EquipWearablePost);
 }
 
 void DHook_UnhookClient(int iClient)
@@ -149,6 +153,12 @@ void DHook_UnhookClient(int iClient)
 	{
 		DHookRemoveHookID(g_iHookIdGiveAmmo[iClient]);
 		g_iHookIdGiveAmmo[iClient] = 0;	
+	}
+	
+	if (g_iHookIdEquipWearable[iClient])
+	{
+		DHookRemoveHookID(g_iHookIdEquipWearable[iClient]);
+		g_iHookIdEquipWearable[iClient] = 0;	
 	}
 }
 
@@ -254,6 +264,9 @@ public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
 
 public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
 {
+	if (!g_cvRandomWeapons.BoolValue)
+		return MRES_Ignored;
+	
 	//Dont validate any weapons, TF2 attempting to remove randomizer weapon for player's TF2 loadout,
 	// however need to manually call WeaponReset virtual so randomizer weapons get restored back to what it was
 	int iWeapon;
@@ -519,6 +532,15 @@ public MRESReturn DHook_CanBeUpgradedPost(int iObject, Handle hReturn, Handle hP
 {
 	int iClient = DHookGetParam(hParams, 1);
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+}
+
+public MRESReturn DHook_EquipWearablePost(int iClient, Handle hParams)
+{
+	PrintToServer("DHook_EquipWearablePost %N", iClient);
+	
+	//New wearable is given from somewhere, refresh controls and huds
+	Controls_RefreshClient(iClient);
+	Huds_RefreshClient(iClient);
 }
 
 public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hParams)

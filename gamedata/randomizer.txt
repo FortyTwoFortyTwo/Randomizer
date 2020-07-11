@@ -525,6 +525,20 @@
 					}
 				}
 			}
+			"CBasePlayer::EquipWearable"
+			{
+				"offset"	"CBasePlayer::EquipWearable"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"pItem"
+					{
+						"type"	"cbaseentity"
+					}
+				}
+			}
 			"CTFPlayer::GiveNamedItem"
 			{
 				"offset"	"CTFPlayer::GiveNamedItem"

@@ -220,6 +220,9 @@ void Huds_RefreshClient(int iClient)
 		g_hudWeapon[iClient][iSlot] = nothing;
 	}
 	
+	if (!g_cvHuds.BoolValue)	//ConVar dont want us to do anything
+		return;
+	
 	int iWeapon;
 	int iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
@@ -266,6 +269,9 @@ public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 {
 	if (g_hTimerClientHud[iClient] != hTimer)
 		return Plugin_Stop;
+	
+	if (!g_cvHuds.BoolValue)	//ConVar dont want us to do anything
+		return Plugin_Continue;
 	
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon <= MaxClients)

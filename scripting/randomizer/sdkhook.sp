@@ -2,12 +2,14 @@ void SDKHook_HookClient(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Client_PreThink);
 	SDKHook(iClient, SDKHook_PreThinkPost, Client_PreThinkPost);
+	SDKHook(iClient, SDKHook_WeaponEquipPost, Client_WeaponEquipPost);
 }
 
 void SDKHook_UnhookClient(int iClient)
 {
 	SDKUnhook(iClient, SDKHook_PreThink, Client_PreThink);
 	SDKUnhook(iClient, SDKHook_PreThinkPost, Client_PreThinkPost);
+	SDKUnhook(iClient, SDKHook_WeaponEquipPost, Client_WeaponEquipPost);
 }
 
 void SDKHook_HookWeapon(int iWeapon)
@@ -81,6 +83,15 @@ public void Client_PreThink(int iClient)
 public void Client_PreThinkPost(int iClient)
 {
 	g_iAllowPlayerClass[iClient]--;
+}
+
+public void Client_WeaponEquipPost(int iClient, int iWeapon)
+{
+	PrintToServer("Client_WeaponEquipPost %N", iClient);
+	
+	//New weapon is given from somewhere, refresh controls and huds
+	Controls_RefreshClient(iClient);
+	Huds_RefreshClient(iClient);
 }
 
 public void Weapon_SpawnPost(int iWeapon)
