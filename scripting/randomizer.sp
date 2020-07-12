@@ -421,6 +421,11 @@ void DisableRandomizer()
 
 public void GenerateRandomWeapon(int iClient)
 {
+	if (g_cvRandomClass.BoolValue)
+		g_iClientClass[iClient] = view_as<TFClassType>(GetRandomInt(CLASS_MIN, CLASS_MAX));
+	else
+		g_iClientClass[iClient] = TF2_GetPlayerClass(iClient);
+	
 	if (g_cvRandomWeapons.BoolValue)
 	{
 		//Detach client's object so it doesnt get destroyed on losing toolbox
@@ -439,17 +444,8 @@ public void GenerateRandomWeapon(int iClient)
 			g_iClientWeaponIndex[iClient][iSlot] = -1;
 	}
 	
-	if (g_cvRandomClass.BoolValue)
-	{
-		g_iClientClass[iClient] = view_as<TFClassType>(GetRandomInt(CLASS_MIN, CLASS_MAX));
-		
-		if (IsPlayerAlive(iClient))
-			TF2_RespawnPlayer(iClient);
-	}
-	else
-	{
-		g_iClientClass[iClient] = TF2_GetPlayerClass(iClient);
-	}
+	if (g_cvRandomClass.BoolValue && IsPlayerAlive(iClient))
+		TF2_RespawnPlayer(iClient);
 }
 
 public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
