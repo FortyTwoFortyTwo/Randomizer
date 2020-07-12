@@ -314,6 +314,9 @@ stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 
 stock int CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 {
+	if (!g_cvRandomWeapons.BoolValue)
+		return true;
+	
 	//Allow grappling hook and passtime gun
 	if (g_bAllowGiveNamedItem || StrEqual(sClassname, "tf_weapon_grapplinghook") || StrEqual(sClassname, "tf_weapon_passtime_gun"))
 		return true;
