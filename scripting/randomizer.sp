@@ -14,7 +14,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.2.0"
+#define PLUGIN_VERSION			"1.3.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
@@ -485,7 +485,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
 		int iSlot = TF2_GetSlot(iWeapon);
 		
-		if (g_iClientWeaponIndex[iClient][iSlot] == iIndex)
+		if (g_iClientWeaponIndex[iClient][iSlot] == Weapons_GetReskinIndex(iIndex))
 			bKeepWeapon[iSlot] = true;
 		else if (!CanKeepWeapon(iClient, sClassname, iIndex))
 			TF2_RemoveItem(iClient, iWeapon);
@@ -496,13 +496,21 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		//Create weapon
 		if (g_iClientWeaponIndex[iClient][iSlot] >= 0 && !bKeepWeapon[iSlot])
 		{
-			iWeapon = TF2_CreateAndEquipWeapon(iClient, g_iClientWeaponIndex[iClient][iSlot], iSlot);
+			Address pItem = TF2_FindReskinItem(iClient, g_iClientWeaponIndex[iClient][iSlot]);
+			if (pItem)
+				iWeapon = TF2_GiveNamedItem(iClient, pItem, iSlot);
+			else
+				iWeapon = TF2_CreateAndEquipWeapon(iClient, g_iClientWeaponIndex[iClient][iSlot], iSlot);
+			
 			if (iWeapon <= MaxClients)
 			{
 				PrintToChat(iClient, "Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
 				LogError("Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
 			}
-			else if (ViewModels_ShouldBeInvisible(iWeapon, g_iClientClass[iClient]))
+			
+			TF2_EquipWeapon(iClient, iWeapon);
+			
+			if (ViewModels_ShouldBeInvisible(iWeapon, g_iClientClass[iClient]))
 			{
 				ViewModels_EnableInvisible(iWeapon);
 			}

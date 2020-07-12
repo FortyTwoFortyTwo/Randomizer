@@ -17,11 +17,6 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 	bool bSapper;
 	if (StrEqual(sClassname, "tf_weapon_builder") || StrEqual(sClassname, "tf_weapon_sapper"))
 	{
-		//Toolbox is nasty to create, use different method
-		if (iSlot == WeaponSlot_BuilderEngie)
-			return TF2_CreateAndEquipBuilder(iClient);
-		
-		//Otherwise assume this weapon is for sappers
 		bSapper = true;
 		
 		//tf_weapon_sapper is bad and give client crashes
@@ -62,11 +57,6 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 		{
 			SDKCall_EquipWearable(iClient, iWeapon);
 		}
-		else
-		{
-			RemoveEntity(iWeapon);
-			return -1;
-		}
 	}
 	else
 	{
@@ -77,36 +67,86 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 	return iWeapon;
 }
 
-stock int TF2_CreateAndEquipBuilder(int iClient)
+stock int TF2_GiveNamedItem(int iClient, Address pItem, int iSlot)
 {
-	Address pItem = SDKCall_GetLoadoutItem(iClient, TFClass_Engineer, 4);	//Uses econ slot, 4 for toolbox
-	if (TF2_IsValidEconItemView(pItem))
+	int iIndex = LoadFromAddress(pItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
+	int iSubType = 0;
+	TFClassType nClassBuilder = TFClass_Unknown;
+	
+	char sClassname[256];
+	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+	
+	//We want to translate classname to correct classname AND slot wanted
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
-		g_bAllowGiveNamedItem = true;
-		int iWeapon = SDKCall_GiveNamedItem(iClient, "tf_weapon_builder", 0, pItem);
-		g_bAllowGiveNamedItem = false;
-		
-		if (iWeapon > MaxClients)
+		int iClassSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+		if (iClassSlot == iSlot)
 		{
-			SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Dispenser));
-			SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Teleporter));
-			SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Sentry));
-			SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", false, _, view_as<int>(TFObject_Sapper));
+			TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), view_as<TFClassType>(iClass));
 			
-			EquipPlayerWeapon(iClient, iWeapon);
-			return iWeapon;
+			if (StrEqual(sClassname, "tf_weapon_builder") || StrEqual(sClassname, "tf_weapon_sapper"))
+				nClassBuilder = view_as<TFClassType>(iClass);
+			
+			break;
 		}
 	}
 	
-	return -1;
+	if (nClassBuilder == TFClass_Spy)
+		iSubType = view_as<int>(TFObject_Sapper);
+	
+	g_bAllowGiveNamedItem = true;
+	int iWeapon = SDKCall_GiveNamedItem(iClient, sClassname, iSubType, pItem, true);
+	g_bAllowGiveNamedItem = false;
+	
+	if (nClassBuilder == TFClass_Engineer)
+	{
+		SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Dispenser));
+		SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Teleporter));
+		SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Sentry));
+		SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", false, _, view_as<int>(TFObject_Sapper));
+	}
+	
+	return iWeapon;
 }
 
-stock bool TF2_IsValidEconItemView(Address pEconItemView)
+stock int TF2_EquipWeapon(int iClient, int iWeapon)
 {
-	if (!pEconItemView)
+	char sClassname[256];
+	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	if (StrContains(sClassname, "tf_weapon") == 0)
+	{
+		EquipPlayerWeapon(iClient, iWeapon);
+		
+		//Set ammo to 0, CTFPlayer::GetMaxAmmo detour will correct this, adding ammo by current
+		int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
+		if (iAmmoType > -1)
+			SetEntProp(iClient, Prop_Send, "m_iAmmo", 0, _, iAmmoType);
+	}
+	else if (StrContains(sClassname, "tf_wearable") == 0)
+	{
+		SDKCall_EquipWearable(iClient, iWeapon);
+	}
+}
+
+stock Address TF2_FindReskinItem(int iClient, int iIndex)
+{
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	{
+		int iSlot = TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass));
+		Address pItem = SDKCall_GetLoadoutItem(iClient, view_as<TFClassType>(iClass), iSlot);
+		if (TF2_IsValidEconItemView(pItem) && Weapons_GetReskinIndex(LoadFromAddress(pItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16)) == iIndex)
+			return pItem;
+	}
+	
+	return Address_Null;
+}
+
+stock bool TF2_IsValidEconItemView(Address pItem)
+{
+	if (!pItem)
 		return false;
 	
-	int iIndex = LoadFromAddress(pEconItemView + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
+	int iIndex = LoadFromAddress(pItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
 	
 	// 65535 is basically unsigned -1 in int16
 	return 0 <= iIndex < 65535;
@@ -314,11 +354,11 @@ stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 
 stock int CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 {
-	if (!g_cvRandomWeapons.BoolValue)
+	if (g_bAllowGiveNamedItem || !g_cvRandomWeapons.BoolValue)
 		return true;
 	
 	//Allow grappling hook and passtime gun
-	if (g_bAllowGiveNamedItem || StrEqual(sClassname, "tf_weapon_grapplinghook") || StrEqual(sClassname, "tf_weapon_passtime_gun"))
+	if (StrEqual(sClassname, "tf_weapon_grapplinghook") || StrEqual(sClassname, "tf_weapon_passtime_gun"))
 		return true;
 	
 	//Don't allow weapons from client loadout slots

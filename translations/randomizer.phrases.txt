@@ -334,11 +334,6 @@
 		"en"		"Phlogistinator"
 	}
 	
-	"Weapon_Rainblower"
-	{
-		"en"		"Rainblower"
-	}
-	
 	"Weapon_DragonFury"
 	{
 		"en"		"Dragon's Fury"
@@ -357,11 +352,6 @@
 	"Weapon_AliBabaWeeBooties"
 	{
 		"en"		"Ali Baba's Wee Booties"
-	}
-	
-	"Weapon_Bootlegger"
-	{
-		"en"		"Bootlegger"
 	}
 	
 	"Weapon_LooseCannon"
@@ -842,11 +832,6 @@
 	"Weapon_ThirdDegree"
 	{
 		"en"		"Third Degree"
-	}
-	
-	"Weapon_Lollichop"
-	{
-		"en"		"Lollichop"
 	}
 	
 	"Weapon_NeonAnnihilator"

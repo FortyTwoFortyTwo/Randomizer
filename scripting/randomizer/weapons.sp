@@ -1,4 +1,5 @@
 #define FILEPATH_CONFIG_WEAPONS "configs/randomizer/weapons.cfg"
+#define FILEPATH_CONFIG_RESKINS "configs/randomizer/reskins.cfg"
 
 enum
 {
@@ -15,6 +16,7 @@ enum
 
 static ArrayList g_aWeapons[ConfigWeapon_MAX];
 static StringMap g_mWeaponsName;
+static StringMap g_mWeaponsReskins;
 
 public void Weapons_Init()
 {
@@ -22,6 +24,7 @@ public void Weapons_Init()
 		g_aWeapons[i] = new ArrayList();
 	
 	g_mWeaponsName = new StringMap();
+	g_mWeaponsReskins = new StringMap();
 }
 
 public void Weapons_Refresh()
@@ -43,6 +46,39 @@ public void Weapons_Refresh()
 	Weapons_LoadSlot(kv, "Toolbox", ConfigWeapon_Toolbox);
 	Weapons_LoadSlot(kv, "DisguiseKit", ConfigWeapon_DisguiseKit);
 	Weapons_LoadSlot(kv, "InvisWatch", ConfigWeapon_InvisWatch);
+	
+	delete kv;
+	
+	kv = LoadConfig(FILEPATH_CONFIG_RESKINS, "Reskins");
+	if (!kv)
+		return;
+	
+	g_mWeaponsReskins.Clear();
+	if (kv.GotoFirstSubKey(false))
+	{
+		do
+		{
+			char sIndex[12];
+			kv.GetSectionName(sIndex, sizeof(sIndex));
+			
+			int iIndex;
+			if (!StringToIntEx(sIndex, iIndex))
+			{
+				LogError("Randomizer Reskins config have invalid integer index: %s", sIndex);
+				continue;
+			}
+			
+			char sValue[512];
+			kv.GetString(NULL_STRING, sValue, sizeof(sValue));
+			
+			char sValueExploded[64][12];
+			int iCount = ExplodeString(sValue, " ", sValueExploded, sizeof(sValueExploded), sizeof(sValueExploded[]));
+			
+			for (int i = 0; i < iCount; i++)
+				g_mWeaponsReskins.SetValue(sValueExploded[i], iIndex);
+		}
+		while (kv.GotoNextKey(false));
+	}
 	
 	delete kv;
 }
@@ -133,4 +169,12 @@ bool Weapons_GetName(int iIndex, char[] sBuffer, int iLength)
 	char sIndex[16];
 	IntToString(iIndex, sIndex, sizeof(sIndex));
 	return g_mWeaponsName.GetString(sIndex, sBuffer, iLength);
+}
+
+int Weapons_GetReskinIndex(int iIndex)
+{
+	char sIndex[12];
+	IntToString(iIndex, sIndex, sizeof(sIndex));
+	g_mWeaponsReskins.GetValue(sIndex, iIndex);
+	return iIndex;
 }

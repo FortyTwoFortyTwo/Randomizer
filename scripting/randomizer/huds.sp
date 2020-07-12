@@ -234,7 +234,7 @@ void Huds_RefreshClient(int iClient)
 		HudWeapon hudWeapon;
 		hudWeapon.iRef = EntIndexToEntRef(iWeapon);
 		
-		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+		int iIndex = Weapons_GetReskinIndex(GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"));
 		if (!Weapons_GetName(iIndex, hudWeapon.sName, sizeof(hudWeapon.sName)))
 			continue;	//This weapon is probably a special one and not from randomizer, ignore
 		

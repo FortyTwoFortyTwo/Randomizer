@@ -32,8 +32,9 @@ Whenever valve releases a major TF2 update, this gamemode expects to:
 - Not require any SP plugin update/changes (hopefully)
 
 ## Configs
-There currently 4 [configs](https://github.com/FortyTwoFortyTwo/Randomizer/tree/master/configs/randomizer) able to easily change for future TF2 updates:
+There currently 5 [configs](https://github.com/FortyTwoFortyTwo/Randomizer/tree/master/configs/randomizer) able to easily change for future TF2 updates:
 - `controls.cfg`: Manages how weapons with `attack2` passive button should be handled, should it be `attack3` or `reload` instead.
 - `huds.cfg`: Lists all of the netprop meters to display in hud for many weapons.
+- `reskins.cfg`: List of reskins for players to equip weapon from loadout instead of default weapon.
 - `viewmodels.cfg`: List of all weapons with class specified to set transparent by default, without needing to use `sm_cantsee` on weapon that covers player screen everytime.
 - `weapons.cfg`: Whitelist of weapon indexs to select from random pool, along with weapon name to display in HUD.
