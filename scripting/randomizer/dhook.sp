@@ -13,6 +13,7 @@ static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookPipebombTouch;
 static Handle g_hDHookOnDecapitation;
 static Handle g_hDHookCanBeUpgraded;
+static Handle g_hDHookForceRespawn;
 static Handle g_hDHookEquipWearable;
 static Handle g_hDHookGiveNamedItem;
 static Handle g_hDHookFrameUpdatePostEntityThink;
@@ -22,6 +23,7 @@ static int g_iClientGetChargeEffectBeingProvided;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static int g_iHookIdGiveAmmo[TF_MAXPLAYERS+1];
+static int g_iHookIdForceRespawn[TF_MAXPLAYERS+1];
 static int g_iHookIdEquipWearable[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
 
@@ -50,6 +52,7 @@ public void DHook_Init(GameData hGameData)
 	g_hDHookPipebombTouch = DHook_CreateVirtual(hGameData, "CTFGrenadePipebombProjectile::PipebombTouch");
 	g_hDHookOnDecapitation = DHook_CreateVirtual(hGameData, "CTFDecapitationMeleeWeaponBase::OnDecapitation");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
+	g_hDHookForceRespawn = DHook_CreateVirtual(hGameData, "CBasePlayer::ForceRespawn");
 	g_hDHookEquipWearable = DHook_CreateVirtual(hGameData, "CBasePlayer::EquipWearable");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	g_hDHookFrameUpdatePostEntityThink = DHook_CreateVirtual(hGameData, "CGameRules::FrameUpdatePostEntityThink");
@@ -144,6 +147,7 @@ bool DHook_IsGiveNamedItemActive()
 void DHook_HookClient(int iClient)
 {
 	g_iHookIdGiveAmmo[iClient] = DHookEntity(g_hDHookGiveAmmo, false, iClient, _, DHook_GiveAmmoPre);
+	g_iHookIdForceRespawn[iClient] = DHookEntity(g_hDHookForceRespawn, false, iClient, _, DHook_ForceRespawnPre);
 	g_iHookIdEquipWearable[iClient] = DHookEntity(g_hDHookEquipWearable, true, iClient, _, DHook_EquipWearablePost);
 }
 
@@ -153,6 +157,12 @@ void DHook_UnhookClient(int iClient)
 	{
 		DHookRemoveHookID(g_iHookIdGiveAmmo[iClient]);
 		g_iHookIdGiveAmmo[iClient] = 0;	
+	}
+	
+	if (g_iHookIdForceRespawn[iClient])
+	{
+		DHookRemoveHookID(g_iHookIdForceRespawn[iClient]);
+		g_iHookIdForceRespawn[iClient] = 0;	
 	}
 	
 	if (g_iHookIdEquipWearable[iClient])
@@ -534,10 +544,14 @@ public MRESReturn DHook_CanBeUpgradedPost(int iObject, Handle hReturn, Handle hP
 	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
+public MRESReturn DHook_ForceRespawnPre(int iClient)
+{
+	if (g_cvRandomClass.BoolValue)
+		SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(g_iClientClass[iClient]));
+}
+
 public MRESReturn DHook_EquipWearablePost(int iClient, Handle hParams)
 {
-	PrintToServer("DHook_EquipWearablePost %N", iClient);
-	
 	//New wearable is given from somewhere, refresh controls and huds
 	Controls_RefreshClient(iClient);
 	Huds_RefreshClient(iClient);

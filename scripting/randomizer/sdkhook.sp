@@ -87,8 +87,6 @@ public void Client_PreThinkPost(int iClient)
 
 public void Client_WeaponEquipPost(int iClient, int iWeapon)
 {
-	PrintToServer("Client_WeaponEquipPost %N", iClient);
-	
 	//New weapon is given from somewhere, refresh controls and huds
 	Controls_RefreshClient(iClient);
 	Huds_RefreshClient(iClient);

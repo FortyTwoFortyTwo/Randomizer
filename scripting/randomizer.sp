@@ -183,6 +183,7 @@ bool g_bAllowGiveNamedItem;
 int g_iOffsetItemDefinitionIndex = -1;
 
 ConVar g_cvEnabled;
+ConVar g_cvRandomClass;
 ConVar g_cvRandomWeapons;
 ConVar g_cvDroppedWeapons;
 ConVar g_cvHuds;
@@ -241,7 +242,6 @@ public void OnPluginStart()
 	Weapons_Init();
 	
 	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
-	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	
@@ -258,7 +258,8 @@ public void OnPluginStart()
 	g_cvEnabled = CreateConVar("randomizer_enabled", "1", "Enable Randomizer?", _, true, 0.0, true, 1.0);
 	g_cvEnabled.AddChangeHook(ConVar_EnableChanged);
 	
-	g_cvRandomWeapons = CreateConVar("randomizer_randomweapons", "1", "Randomize player class and weapons? Disabling will still preform weapon fixes.", _, true, 0.0, true, 1.0);
+	g_cvRandomClass = CreateConVar("randomizer_randomclass", "1", "Randomize player class? Disabling will allow player to change any class.", _, true, 0.0, true, 1.0);
+	g_cvRandomWeapons = CreateConVar("randomizer_randomweapons", "1", "Randomize player weapons? Disabling will still preform weapon fixes.", _, true, 0.0, true, 1.0);
 	g_cvDroppedWeapons = CreateConVar("randomizer_droppedweapons", "0", "Allow dropped weapons?", _, true, 0.0, true, 1.0);
 	g_cvHuds = CreateConVar("randomizer_huds", "1", "Enable weapon huds?", _, true, 0.0, true, 1.0);
 }
@@ -422,31 +423,33 @@ public void GenerateRandomWeapon(int iClient)
 {
 	if (g_cvRandomWeapons.BoolValue)
 	{
-		//ConVar wants us to use normal player loadout
-		g_iClientClass[iClient] = TF2_GetPlayerClass(iClient);
+		//Detach client's object so it doesnt get destroyed on losing toolbox
+		int iBuilding = MaxClients+1;
+		while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
+			if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
+				SDKCall_RemoveObject(iClient, iBuilding);
 		
+		//Random Weapon
+		for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
+			g_iClientWeaponIndex[iClient][iSlot] = Weapons_GetRandomIndex(iSlot, g_iClientClass[iClient]);
+	}
+	else
+	{
 		for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 			g_iClientWeaponIndex[iClient][iSlot] = -1;
-		
-		return;
 	}
 	
-	//Detach client's object so it doesnt get destroyed on losing toolbox
-	int iBuilding = MaxClients+1;
-	while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
-		if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
-			SDKCall_RemoveObject(iClient, iBuilding);
-	
-	//Random Class
-	g_iClientClass[iClient] = view_as<TFClassType>(GetRandomInt(CLASS_MIN, CLASS_MAX));
-	SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(g_iClientClass[iClient]));
-	
-	//Random Weapon
-	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-		g_iClientWeaponIndex[iClient][iSlot] = Weapons_GetRandomIndex(iSlot, g_iClientClass[iClient]);
-	
-	if (IsPlayerAlive(iClient))
-		TF2_RespawnPlayer(iClient);
+	if (g_cvRandomClass.BoolValue)
+	{
+		g_iClientClass[iClient] = view_as<TFClassType>(GetRandomInt(CLASS_MIN, CLASS_MAX));
+		
+		if (IsPlayerAlive(iClient))
+			TF2_RespawnPlayer(iClient);
+	}
+	else
+	{
+		g_iClientClass[iClient] = TF2_GetPlayerClass(iClient);
+	}
 }
 
 public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
@@ -460,25 +463,6 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 			GenerateRandomWeapon(iClient);
 }
 
-public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadcast)
-{
-	if (!g_bEnabled || !g_cvRandomWeapons.BoolValue)
-		return;
-	
-	int iClient = GetClientOfUserId(event.GetInt("userid"));
-	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
-		return;
-	
-	TFClassType iClass = TF2_GetPlayerClass(iClient);
-	
-	//If client is playing incorrect class, set as that class
-	if (iClass != g_iClientClass[iClient])
-	{
-		TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
-		TF2_RespawnPlayer(iClient);
-	}
-}
-
 public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!g_bEnabled)
@@ -488,12 +472,11 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
 	
-	if (!g_cvRandomWeapons.BoolValue)
-	{
-		//Just update whoever class we are and return
+	if (!g_cvRandomClass.BoolValue)
 		g_iClientClass[iClient] = TF2_GetPlayerClass(iClient);
+	
+	if (!g_cvRandomWeapons.BoolValue)
 		return;
-	}
 	
 	bool bKeepWeapon[WeaponSlot_BuilderEngie+1];
 	

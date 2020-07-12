@@ -252,6 +252,11 @@
 				"linux"		"376"
 				"windows"	"374"
 			}
+			"CBasePlayer::ForceRespawn"
+			{
+				"linux"		"330"
+				"windows"	"329"
+			}
 			"CBasePlayer::EquipWearable"
 			{
 				"linux"		"431"
@@ -524,6 +529,13 @@
 						"type"	"cbaseentity"
 					}
 				}
+			}
+			"CBasePlayer::ForceRespawn"
+			{
+				"offset"	"CBasePlayer::ForceRespawn"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
 			}
 			"CBasePlayer::EquipWearable"
 			{
