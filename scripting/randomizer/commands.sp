@@ -59,14 +59,60 @@ public Action Command_Class(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	for (int i = 0; i < iTargetCount; i++)
+	switch (g_cvRandomClass.IntValue)
 	{
-		g_iClientClass[iClient] = nClass;
-		TF2_SetPlayerClass(iClient, nClass);
-		
-		if (IsPlayerAlive(iClient))
-			TF2_RespawnPlayer(iClient);
+		case Mode_None:
+		{
+			ReplyToCommand(iClient, "randomizer_randomclass convar must be not at 0");
+			return Plugin_Handled;
+		}
+		case Mode_Normal, Mode_NormalRound:
+		{
+			for (int i = 0; i < iTargetCount; i++)
+				g_iClientClass[iClient] = nClass;
+		}
+		case Mode_Team:
+		{
+			bool bTargetTeam[TEAM_MAX+1];
+			for (int iTarget = 1; iTarget <= MaxClients; iTarget++)
+			{
+				if (IsClientInGame(iTarget))
+				{
+					if (IsClientInTargetList(iTarget, iTargetList, iTargetCount))
+					{
+						bTargetTeam[TF2_GetClientTeam(iTarget)] = true;
+					}
+					else if (bTargetTeam[TF2_GetClientTeam(iTarget)] == true)
+					{
+						ReplyToCommand(iClient, "Can only target teams with randomizer_randomclass set to 3");
+						return Plugin_Handled;
+					}
+				}
+			}
+			
+			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
+				if (bTargetTeam[iTeam])
+					g_iTeamClass[iTeam] = nClass;
+		}
+		case Mode_All:
+		{
+			for (int iTarget = 1; iTarget <= MaxClients; iTarget++)
+			{
+				if (IsClientInGame(iTarget) && !IsClientInTargetList(iTarget, iTargetList, iTargetCount))
+				{
+					ReplyToCommand(iClient, "Can only target everyone with randomizer_randomclass set to 4");
+					return Plugin_Handled;
+				}
+			}
+			
+			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
+				g_iTeamClass[iTeam] = nClass;
+		}
 	}
+	
+	for (int i = 0; i < iTargetCount; i++)
+		if (IsPlayerAlive(iTargetList[i]))
+			TF2_RespawnPlayer(iTargetList[i]);
 	
 	ReplyToCommand(iClient, "Set %s class to %s", sTargetName, sClass);
 	return Plugin_Handled;
@@ -112,8 +158,60 @@ public Action Command_Weapon(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
+	switch (g_cvRandomWeapons.IntValue)
+	{
+		case Mode_None:
+		{
+			ReplyToCommand(iClient, "randomizer_randomweapons convar must be not at 0");
+			return Plugin_Handled;
+		}
+		case Mode_Normal, Mode_NormalRound:
+		{
+			for (int i = 0; i < iTargetCount; i++)
+				g_iClientWeaponIndex[iTargetList[i]][iSlot] = iIndex;
+		}
+		case Mode_Team:
+		{
+			bool bTargetTeam[TEAM_MAX+1];
+			for (int iTarget = 1; iTarget <= MaxClients; iTarget++)
+			{
+				if (IsClientInGame(iTarget))
+				{
+					if (IsClientInTargetList(iTarget, iTargetList, iTargetCount))
+					{
+						bTargetTeam[TF2_GetClientTeam(iTarget)] = true;
+					}
+					else if (bTargetTeam[TF2_GetClientTeam(iTarget)] == true)
+					{
+						ReplyToCommand(iClient, "Can only target teams with randomizer_randomclass set to 3");
+						return Plugin_Handled;
+					}
+				}
+			}
+			
+			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
+				if (bTargetTeam[iTeam])
+					g_iTeamWeaponIndex[iTeam][iSlot] = iIndex;
+		}
+		case Mode_All:
+		{
+			for (int iTarget = 1; iTarget <= MaxClients; iTarget++)
+			{
+				if (IsClientInGame(iTarget) && !IsClientInTargetList(iTarget, iTargetList, iTargetCount))
+				{
+					ReplyToCommand(iClient, "Can only target everyone with randomizer_randomclass set to 4");
+					return Plugin_Handled;
+				}
+			}
+			
+			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
+				g_iTeamWeaponIndex[iTeam][iSlot] = iIndex;
+		}
+	}
+	
 	for (int i = 0; i < iTargetCount; i++)
-		g_iClientWeaponIndex[iTargetList[i]][iSlot] = iIndex;
+		if (IsPlayerAlive(iTargetList[i]))
+			TF2_RespawnPlayer(iTargetList[i]);
 	
 	ReplyToCommand(iClient, "Set %s weapon def index at slot '%d' to '%d'", sTargetName, iSlot, iIndex);
 	return Plugin_Handled;
@@ -144,14 +242,70 @@ public Action Command_Generate(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	for (int i = 0; i < iTargetCount; i++)
+	int iModeClass = g_cvRandomClass.IntValue;
+	int iModeWeapons = g_cvRandomWeapons.IntValue;
+	
+	if (iModeClass == Mode_None && iModeWeapons == Mode_None)
 	{
-		GenerateRandomWeapon(iTargetList[i]);
-		
-		if (TF2_GetClientTeam(iTargetList[i]) > TFTeam_Spectator)
-			TF2_RespawnPlayer(iClient);
+		ReplyToCommand(iClient, "randomizer_randomclass and randomizer_randomweapons convar must be not at 0");
+		return Plugin_Handled;
 	}
-
+	else if (iModeClass == Mode_All || iModeWeapons == Mode_All)	//Should always be true if reached here
+	{
+		for (int iTarget = 1; iTarget <= MaxClients; iTarget++)
+		{
+			if (IsClientInGame(iTarget) && !IsClientInTargetList(iTarget, iTargetList, iTargetCount))
+			{
+				ReplyToCommand(iClient, "Can only target everyone with randomizer_randomclass or randomizer_randomweapons set to 4");
+				return Plugin_Handled;
+			}
+		}
+		
+		UpdateTeamWeapon();
+	}
+	else if (iModeClass == Mode_Team || iModeWeapons == Mode_Team)
+	{
+		bool bTargetTeam[TEAM_MAX+1];
+		for (int iTarget = 1; iTarget <= MaxClients; iTarget++)
+		{
+			if (IsClientInGame(iTarget))
+			{
+				if (IsClientInTargetList(iTarget, iTargetList, iTargetCount))
+				{
+					bTargetTeam[TF2_GetClientTeam(iTarget)] = true;
+				}
+				else if (bTargetTeam[TF2_GetClientTeam(iTarget)] == true)
+				{
+					ReplyToCommand(iClient, "Can only target teams with randomizer_randomclass or randomizer_randomweapons set to 3");
+					return Plugin_Handled;
+				}
+			}
+		}
+		
+		for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
+			if (bTargetTeam[iTeam])
+				UpdateTeamWeapon(view_as<TFTeam>(iTeam));
+	}
+	
+	if (iModeClass == Mode_Normal || iModeClass == Mode_NormalRound || iModeWeapons == Mode_Normal || iModeWeapons == Mode_NormalRound)
+	{
+		for (int i = 0; i < iTargetCount; i++)
+			UpdateClientWeapon(iTargetList[i], ClientUpdate_Round);
+	}
+	
+	for (int i = 0; i < iTargetCount; i++)
+		if (IsPlayerAlive(iTargetList[i]))
+			TF2_RespawnPlayer(iTargetList[i]);
+	
 	ReplyToCommand(iClient, "Regenerated %s class and weapons", sTargetName);
 	return Plugin_Handled;
+}
+
+bool IsClientInTargetList(int iClient, const int[] iTargetList, int iTargetCount)
+{
+	for (int i = 0; i < iTargetCount; i++)
+		if (iClient == iTargetList[i])
+			return true;
+	
+	return false;
 }

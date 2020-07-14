@@ -546,7 +546,16 @@ public MRESReturn DHook_CanBeUpgradedPost(int iObject, Handle hReturn, Handle hP
 
 public MRESReturn DHook_ForceRespawnPre(int iClient)
 {
-	if (g_cvRandomClass.BoolValue)
+	//Detach client's object so it doesnt get destroyed on losing toolbox
+	int iBuilding = MaxClients+1;
+	while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
+		if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
+			SDKCall_RemoveObject(iClient, iBuilding);
+	
+	//Update client weapons incase if switching teams
+	UpdateClientWeapon(iClient, ClientUpdate_Spawn);
+	
+	if (g_cvRandomClass.IntValue != Mode_None)
 		SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(g_iClientClass[iClient]));
 }
 

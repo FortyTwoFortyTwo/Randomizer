@@ -294,6 +294,11 @@ stock TFClassType TF2_GetDefaultClassFromItem(int iClient, int iWeapon)
 	return TFClass_Unknown;
 }
 
+stock TFClassType TF2_GetRandomClass()
+{
+	return view_as<TFClassType>(GetRandomInt(CLASS_MIN, CLASS_MAX));
+}
+
 stock void TF2_RemoveItem(int iClient, int iWeapon)
 {
 	char sClassname[256];

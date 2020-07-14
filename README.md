@@ -5,10 +5,14 @@ TF2 Gamemode where everyone plays as random class with random weapons, a rewritt
 ## ConVars
 - `randomizer_version`: Plugin version number, don't touch.
 - `randomizer_enabled`: Enable/Disable entire randomizer plugin, another option for load/unload plugins.
-- `randomizer_randomclass`: Enable/Disable player class randomization, disabling will allow player to change any class.
-- `randomizer_randomweapons`: Enable/Disable player weapon randomization, disabling will allow player to keep its weapon while still preforming weapon fixes.
 - `randomizer_droppedweapons`: Enable/Disable dropped weapons.
 - `randomizer_huds`: Enable/Disable weapon huds.
+- `randomizer_randomclass`/`randomizer_randomweapons`: Modes to change player class/weapon randomization.
+  - 0: No randomizes, allowing players to freely change class/weapon themself.
+  - 1: Randomizes on death.
+  - 2: Randomizes on new round.
+  - 3: Every team get same class/weapon randomizes every round
+  - 4: Everyone get same class/weapon randomizes every round
 
 ## Commands
 - `sm_cantsee`: Set your active weapon transparent or fully visible, for everyone
