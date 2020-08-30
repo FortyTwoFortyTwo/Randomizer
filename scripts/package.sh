@@ -11,3 +11,4 @@ cp -r addons/sourcemod/plugins/randomizer.smx package/addons/sourcemod/plugins
 cp -r ../configs/randomizer package/addons/sourcemod/configs
 cp -r ../gamedata/randomizer.txt package/addons/sourcemod/gamedata
 cp -r ../translations package/addons/sourcemod
+cp -r ../LICENSE package
