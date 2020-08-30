@@ -12,4 +12,4 @@ cd addons/sourcemod/scripting
 
 # Install Dependencies
 wget "https://raw.githubusercontent.com/nosoop/SM-TFEconData/master/scripting/include/tf_econ_data.inc" -O include/tf_econ_data.inc
-wget "https://bitbucket.org/Peace_Maker/dhooks2/raw/dfe13dde99547a5c6c7815d843809726cc92c897/sourcemod/scripting/include/dhooks.inc" -O include/dhooks.inc
+wget "https://raw.githubusercontent.com/peace-maker/DHooks2/dynhooks/sourcemod/scripting/include/dhooks.inc" -O include/dhooks.inc
