@@ -250,7 +250,7 @@
 			"CBaseObject::CanBeUpgraded"
 			{
 				"linux"		"376"
-				"windows"	"374"
+				"windows"	"375"
 			}
 			"CBasePlayer::ForceRespawn"
 			{
