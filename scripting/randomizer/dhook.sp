@@ -293,7 +293,7 @@ public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
 	{
 		char sClassname[256];
 		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-		if (StrContains(sClassname, "tf_weapon_") == 0)
+		if (StrContains(sClassname, "tf_weapon_") == 0 && !StrEqual(sClassname, "tf_weapon_builder"))
 			SDKCall_WeaponReset(iWeapon);
 	}
 	
