@@ -23,7 +23,8 @@ static int g_iClientGetChargeEffectBeingProvided;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static int g_iHookIdGiveAmmo[TF_MAXPLAYERS+1];
-static int g_iHookIdForceRespawn[TF_MAXPLAYERS+1];
+static int g_iHookIdForceRespawnPre[TF_MAXPLAYERS+1];
+static int g_iHookIdForceRespawnPost[TF_MAXPLAYERS+1];
 static int g_iHookIdEquipWearable[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
 
@@ -147,7 +148,8 @@ bool DHook_IsGiveNamedItemActive()
 void DHook_HookClient(int iClient)
 {
 	g_iHookIdGiveAmmo[iClient] = DHookEntity(g_hDHookGiveAmmo, false, iClient, _, DHook_GiveAmmoPre);
-	g_iHookIdForceRespawn[iClient] = DHookEntity(g_hDHookForceRespawn, false, iClient, _, DHook_ForceRespawnPre);
+	g_iHookIdForceRespawnPre[iClient] = DHookEntity(g_hDHookForceRespawn, false, iClient, _, DHook_ForceRespawnPre);
+	g_iHookIdForceRespawnPost[iClient] = DHookEntity(g_hDHookForceRespawn, true, iClient, _, DHook_ForceRespawnPost);
 	g_iHookIdEquipWearable[iClient] = DHookEntity(g_hDHookEquipWearable, true, iClient, _, DHook_EquipWearablePost);
 }
 
@@ -159,10 +161,16 @@ void DHook_UnhookClient(int iClient)
 		g_iHookIdGiveAmmo[iClient] = 0;	
 	}
 	
-	if (g_iHookIdForceRespawn[iClient])
+	if (g_iHookIdForceRespawnPre[iClient])
 	{
-		DHookRemoveHookID(g_iHookIdForceRespawn[iClient]);
-		g_iHookIdForceRespawn[iClient] = 0;	
+		DHookRemoveHookID(g_iHookIdForceRespawnPre[iClient]);
+		g_iHookIdForceRespawnPre[iClient] = 0;	
+	}
+	
+	if (g_iHookIdForceRespawnPost[iClient])
+	{
+		DHookRemoveHookID(g_iHookIdForceRespawnPost[iClient]);
+		g_iHookIdForceRespawnPost[iClient] = 0;	
 	}
 	
 	if (g_iHookIdEquipWearable[iClient])
@@ -546,7 +554,7 @@ public MRESReturn DHook_CanBeUpgradedPost(int iObject, Handle hReturn, Handle hP
 
 public MRESReturn DHook_ForceRespawnPre(int iClient)
 {
-	//Detach client's object so it doesnt get destroyed on losing toolbox
+	//Detach client's object so it doesnt get destroyed on class change
 	int iBuilding = MaxClients+1;
 	while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
 		if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
@@ -557,6 +565,15 @@ public MRESReturn DHook_ForceRespawnPre(int iClient)
 	
 	if (g_cvRandomClass.IntValue != Mode_None)
 		SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(g_iClientClass[iClient]));
+}
+
+public MRESReturn DHook_ForceRespawnPost(int iClient)
+{
+	//Reattach client's object back
+	int iBuilding = MaxClients+1;
+	while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
+		if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
+			SDKCall_AddObject(iClient, iBuilding);
 }
 
 public MRESReturn DHook_EquipWearablePost(int iClient, Handle hParams)

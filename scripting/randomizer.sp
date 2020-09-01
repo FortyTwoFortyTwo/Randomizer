@@ -662,15 +662,6 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		}
 	}
 	
-	if (TF2_GetItemFromClassname(iClient, "tf_weapon_builder") > MaxClients)
-	{
-		//Find any toolbox thay may have been detached from client, reattach it
-		int iBuilding = MaxClients+1;
-		while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
-			if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
-				SDKCall_AddObject(iClient, iBuilding);
-	}
-	
 	//Set active weapon if dont have one
 	if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
 	{
