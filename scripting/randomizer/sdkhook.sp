@@ -12,16 +12,18 @@ void SDKHook_UnhookClient(int iClient)
 	SDKUnhook(iClient, SDKHook_WeaponEquipPost, Client_WeaponEquipPost);
 }
 
-void SDKHook_HookWeapon(int iWeapon)
+void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 {
-	SDKHook(iWeapon, SDKHook_SpawnPost, Weapon_SpawnPost);
-	SDKHook(iWeapon, SDKHook_Reload, Weapon_Reload);
-}
-
-void SDKHook_HookHealthKit(int iHealthKit)
-{
-	SDKHook(iHealthKit, SDKHook_Touch, HealthKit_Touch);
-	SDKHook(iHealthKit, SDKHook_TouchPost, HealthKit_TouchPost);
+	if (StrContains(sClassname, "tf_weapon_") == 0)
+	{
+		SDKHook(iEntity, SDKHook_SpawnPost, Weapon_SpawnPost);
+		SDKHook(iEntity, SDKHook_Reload, Weapon_Reload);
+	}
+	else if (StrContains(sClassname, "item_healthkit") == 0)
+	{
+		SDKHook(iEntity, SDKHook_Touch, HealthKit_Touch);
+		SDKHook(iEntity, SDKHook_TouchPost, HealthKit_TouchPost);
+	}
 }
 
 public void Client_PreThink(int iClient)

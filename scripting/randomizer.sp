@@ -382,21 +382,10 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 	if (!g_bEnabled)
 		return;
 	
-	if (StrContains(sClassname, "tf_weapon_") == 0)
-	{
-		SDKHook_HookWeapon(iEntity);
-		DHook_HookWeapon(iEntity);
-	}
+	DHook_OnEntityCreated(iEntity, sClassname);
+	SDKHook_OnEntityCreated(iEntity, sClassname);
 	
-	if (StrContains(sClassname, "item_healthkit") == 0)
-		SDKHook_HookHealthKit(iEntity);
-	else if (StrEqual(sClassname, "tf_projectile_stun_ball") || StrEqual(sClassname, "tf_projectile_ball_ornament"))
-		DHook_HookStunBall(iEntity);
-	else if (StrEqual(sClassname, "tf_weapon_sword"))
-		DHook_HookSword(iEntity);
-	else if (StrContains(sClassname, "obj_") == 0)
-		DHook_HookObject(iEntity);
-	else if (StrEqual(sClassname, "tf_dropped_weapon") && !g_cvDroppedWeapons.BoolValue)
+	if (StrEqual(sClassname, "tf_dropped_weapon") && !g_cvDroppedWeapons.BoolValue)
 		RemoveEntity(iEntity);
 }
 

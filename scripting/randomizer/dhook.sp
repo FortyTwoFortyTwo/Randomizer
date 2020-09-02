@@ -180,27 +180,26 @@ void DHook_UnhookClient(int iClient)
 	}
 }
 
-void DHook_HookWeapon(int iWeapon)
+void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 {
-	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
-}
-
-void DHook_HookStunBall(int iStunBall)
-{
-	DHookEntity(g_hDHookPipebombTouch, false, iStunBall, _, DHook_PipebombTouchPre);
-	DHookEntity(g_hDHookPipebombTouch, true, iStunBall, _, DHook_PipebombTouchPost);
-}
-
-void DHook_HookSword(int iSword)
-{
-	DHookEntity(g_hDHookOnDecapitation, false, iSword, _, DHook_OnDecapitationPre);
-	DHookEntity(g_hDHookOnDecapitation, true, iSword, _, DHook_OnDecapitationPost);
-}
-
-void DHook_HookObject(int iObject)
-{
-	DHookEntity(g_hDHookCanBeUpgraded, false, iObject, _, DHook_CanBeUpgradedPre);
-	DHookEntity(g_hDHookCanBeUpgraded, true, iObject, _, DHook_CanBeUpgradedPost);
+	if (StrContains(sClassname, "tf_weapon_") == 0)
+		DHookEntity(g_hDHookSecondaryAttack, true, iEntity, _, DHook_SecondaryWeaponPost);
+	
+	if (StrEqual(sClassname, "tf_projectile_stun_ball") || StrEqual(sClassname, "tf_projectile_ball_ornament"))
+	{
+		DHookEntity(g_hDHookPipebombTouch, false, iEntity, _, DHook_PipebombTouchPre);
+		DHookEntity(g_hDHookPipebombTouch, true, iEntity, _, DHook_PipebombTouchPost);
+	}
+	else if (StrEqual(sClassname, "tf_weapon_sword"))
+	{
+		DHookEntity(g_hDHookOnDecapitation, false, iEntity, _, DHook_OnDecapitationPre);
+		DHookEntity(g_hDHookOnDecapitation, true, iEntity, _, DHook_OnDecapitationPost);
+	}
+	else if (StrContains(sClassname, "obj_") == 0)
+	{
+		DHookEntity(g_hDHookCanBeUpgraded, false, iEntity, _, DHook_CanBeUpgradedPre);
+		DHookEntity(g_hDHookCanBeUpgraded, true, iEntity, _, DHook_CanBeUpgradedPost);
+	}
 }
 
 void DHook_HookGamerules()
@@ -407,7 +406,7 @@ public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, Handle hRe
 
 public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 {
-	//Not all weapons remove disguise
+	//Not all weapons remove disguise and shield charge
 	int iClient = DHookGetParam(hParams, 1);
 	
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguising))
@@ -415,6 +414,9 @@ public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 	
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
 		TF2_RemoveCondition(iClient, TFCond_Disguised);
+	
+	if (TF2_IsPlayerInCondition(iClient, TFCond_Charging))
+		TF2_RemoveCondition(iClient, TFCond_Charging);
 }
 
 public MRESReturn DHook_HandleRageGainPre(Handle hParams)
