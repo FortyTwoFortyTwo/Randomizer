@@ -884,11 +884,6 @@
 		"en"		"Persian Persuader"
 	}
 	
-	"Weapon_TheScottishHandshake"
-	{
-		"en"		"The Scottish Handshake"
-	}
-	
 	"Weapon_Fists"
 	{
 		"en"		"Fists"
