@@ -237,15 +237,21 @@ public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParam
 
 public MRESReturn DHook_TauntPre(int iClient, Handle hParams)
 {
+	//Dont allow taunting if disguised or cloaked
+	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguising) || TF2_IsPlayerInCondition(iClient, TFCond_Disguised) || TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
+		return MRES_Supercede;
+	
 	//Player wants to taunt, set class to whoever can actually taunt with active weapon
 	
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iWeapon <= MaxClients)
-		return;
+		return MRES_Ignored;
 	
 	TFClassType nClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
 	if (nClass != TFClass_Unknown)
 		TF2_SetPlayerClass(iClient, nClass);
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_TauntPost(int iClient, Handle hParams)
