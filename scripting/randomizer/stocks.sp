@@ -29,7 +29,7 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", iIndex);
 		SetEntProp(iWeapon, Prop_Send, "m_bInitialized", 1);
 		
-		SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", 6);
+		SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
 		SetEntProp(iWeapon, Prop_Send, "m_iEntityLevel", 1);
 		
 		if (bSapper)
@@ -359,7 +359,7 @@ stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 
 stock int CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 {
-	if (g_bAllowGiveNamedItem || !g_cvRandomWeapons.BoolValue)
+	if (g_bAllowGiveNamedItem || g_cvRandomWeapons.IntValue == Mode_None)
 		return true;
 	
 	//Allow grappling hook and passtime gun
@@ -370,7 +370,7 @@ stock int CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
 		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (0 <= iSlot <= WeaponSlot_BuilderEngie)
+		if (WeaponSlot_Primary <= iSlot <= WeaponSlot_BuilderEngie)
 			return false;
 	}
 	

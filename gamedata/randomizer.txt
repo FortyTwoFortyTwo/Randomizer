@@ -232,11 +232,6 @@
 				"linux"		"332"
 				"windows"	"326"
 			}
-			"CTFWeaponBase::WeaponReset"
-			{
-				"linux"		"426"
-				"windows"	"419"
-			}
 			"CTFGrenadePipebombProjectile::PipebombTouch"
 			{
 				"linux"		"254"
@@ -335,7 +330,7 @@
 					{
 						"type"	"objectptr"
 					}
-					"bRegenerate"
+					"bResetWeapons"
 					{
 						"type"	"bool"
 					}
@@ -380,6 +375,28 @@
 					"iClass"
 					{
 						"type"	"int"
+					}
+				}
+			}
+			"CTFPlayer::GetLoadoutItem"
+			{
+				"signature"	"CTFPlayer::GetLoadoutItem"
+				"callconv"	"thiscall"
+				"return"	"int"
+				"this"		"entity"
+				"arguments"
+				{
+					"iClass"
+					{
+						"type"	"int"
+					}
+					"iSlot"
+					{
+						"type"	"int"
+					}
+					"bReportWhitelistFails"
+					{
+						"type"	"bool"
 					}
 				}
 			}
