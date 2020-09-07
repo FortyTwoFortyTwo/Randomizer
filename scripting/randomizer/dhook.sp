@@ -10,6 +10,7 @@ static ArrayList g_aDHookDetours;
 
 static Handle g_hDHookGiveAmmo;
 static Handle g_hDHookSecondaryAttack;
+static Handle g_hDHookMyTouch;
 static Handle g_hDHookPipebombTouch;
 static Handle g_hDHookOnDecapitation;
 static Handle g_hDHookCanBeUpgraded;
@@ -52,6 +53,7 @@ public void DHook_Init(GameData hGameData)
 	
 	g_hDHookGiveAmmo = DHook_CreateVirtual(hGameData, "CBaseCombatCharacter::GiveAmmo");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
+	g_hDHookMyTouch = DHook_CreateVirtual(hGameData, "CItem::MyTouch");
 	g_hDHookPipebombTouch = DHook_CreateVirtual(hGameData, "CTFGrenadePipebombProjectile::PipebombTouch");
 	g_hDHookOnDecapitation = DHook_CreateVirtual(hGameData, "CTFDecapitationMeleeWeaponBase::OnDecapitation");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
@@ -187,7 +189,12 @@ void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 	if (StrContains(sClassname, "tf_weapon_") == 0)
 		DHookEntity(g_hDHookSecondaryAttack, true, iEntity, _, DHook_SecondaryWeaponPost);
 	
-	if (StrEqual(sClassname, "tf_projectile_stun_ball") || StrEqual(sClassname, "tf_projectile_ball_ornament"))
+	if (StrContains(sClassname, "item_healthkit") == 0)
+	{
+		DHookEntity(g_hDHookMyTouch, false, iEntity, _, DHook_MyTouchPre);
+		DHookEntity(g_hDHookMyTouch, true, iEntity, _, DHook_MyTouchPost);
+	}
+	else if (StrEqual(sClassname, "tf_projectile_stun_ball") || StrEqual(sClassname, "tf_projectile_ball_ornament"))
 	{
 		DHookEntity(g_hDHookPipebombTouch, false, iEntity, _, DHook_PipebombTouchPre);
 		DHookEntity(g_hDHookPipebombTouch, true, iEntity, _, DHook_PipebombTouchPost);
@@ -545,6 +552,27 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 	}
 	
 	g_bDoClassSpecialSkill[iClient] = false;
+}
+
+public MRESReturn DHook_MyTouchPre(int iHealthKit, Handle hReturn, Handle hParams)
+{
+	//Has heavy class check for lunchbox, and ensure GiveAmmo is done to secondary slot
+	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
+	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
+	{
+		g_iAllowPlayerClass[iClient]++;
+		Ammo_SetGiveAmmoSlot(WeaponSlot_Secondary);
+	}
+}
+
+public MRESReturn DHook_MyTouchPost(int iHealthKit, Handle hReturn, Handle hParams)
+{
+	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
+	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
+	{
+		g_iAllowPlayerClass[iClient]--;
+		Ammo_SetGiveAmmoSlot(-1);
+	}
 }
 
 public MRESReturn DHook_PipebombTouchPre(int iStunBall, Handle hParams)

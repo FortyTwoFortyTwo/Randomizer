@@ -232,6 +232,11 @@
 				"linux"		"332"
 				"windows"	"326"
 			}
+			"CItem::MyTouch"
+			{
+				"linux"		"222"
+				"windows"	"221"
+			}
 			"CTFGrenadePipebombProjectile::PipebombTouch"
 			{
 				"linux"		"254"
@@ -504,6 +509,20 @@
 				"hooktype"	"entity"
 				"return"	"void"
 				"this"		"entity"
+			}
+			"CItem::MyTouch"
+			{
+				"offset"	"CItem::MyTouch"
+				"hooktype"	"entity"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"	"cbaseentity"
+					}
+				}
 			}
 			"CTFGrenadePipebombProjectile::PipebombTouch"
 			{
