@@ -68,8 +68,12 @@ public Action Command_Class(int iClient, int iArgs)
 		}
 		case Mode_Normal, Mode_NormalRound:
 		{
-			for (int i = 0; i < iTargetCount; i++)
-				g_iClientClass[iClient] = nClass;
+			for (int i = 0; i < iTargetCount; i++) {
+				g_iClientClass[iTargetList[i]] = nClass;
+				//Regenerate each slot beyond 2, as we generally don't want other classes to have watches/PDAs
+				for (int iSlot = 3; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
+					g_iClientWeaponIndex[iTargetList[i]][iSlot] = Weapons_GetRandomIndex(iSlot, g_iClientClass[iTargetList[i]]);
+			}
 		}
 		case Mode_Team:
 		{
