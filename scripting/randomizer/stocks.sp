@@ -132,7 +132,7 @@ stock Address TF2_FindReskinItem(int iClient, int iIndex)
 {
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
-		int iSlot = TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass));
+		int iSlot = TF2Econ_GetItemLoadoutSlot(iIndex, view_as<TFClassType>(iClass));
 		Address pItem = SDKCall_GetLoadoutItem(iClient, view_as<TFClassType>(iClass), iSlot);
 		if (TF2_IsValidEconItemView(pItem) && Weapons_GetReskinIndex(LoadFromAddress(pItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16)) == iIndex)
 			return pItem;
@@ -248,7 +248,7 @@ stock int TF2_GetSlot(int iWeapon)
 
 stock int TF2_GetSlotFromIndex(int iIndex, TFClassType nClass = TFClass_Unknown)
 {
-	int iSlot = TF2Econ_GetItemSlot(iIndex, nClass);
+	int iSlot = TF2Econ_GetItemLoadoutSlot(iIndex, nClass);
 	if (iSlot >= 0)
 	{
 		// Econ reports wrong slots for Engineer and Spy
