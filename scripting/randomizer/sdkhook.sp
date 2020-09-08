@@ -12,16 +12,13 @@ void SDKHook_UnhookClient(int iClient)
 	SDKUnhook(iClient, SDKHook_WeaponEquipPost, Client_WeaponEquipPost);
 }
 
-void SDKHook_HookWeapon(int iWeapon)
+void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 {
-	SDKHook(iWeapon, SDKHook_SpawnPost, Weapon_SpawnPost);
-	SDKHook(iWeapon, SDKHook_Reload, Weapon_Reload);
-}
-
-void SDKHook_HookHealthKit(int iHealthKit)
-{
-	SDKHook(iHealthKit, SDKHook_Touch, HealthKit_Touch);
-	SDKHook(iHealthKit, SDKHook_TouchPost, HealthKit_TouchPost);
+	if (StrContains(sClassname, "tf_weapon_") == 0)
+	{
+		SDKHook(iEntity, SDKHook_SpawnPost, Weapon_SpawnPost);
+		SDKHook(iEntity, SDKHook_Reload, Weapon_Reload);
+	}
 }
 
 public void Client_PreThink(int iClient)
@@ -105,25 +102,4 @@ public Action Weapon_Reload(int iWeapon)
 		return Plugin_Handled;
 	
 	return Plugin_Continue;
-}
-
-public Action HealthKit_Touch(int iHealthKit)
-{
-	//Has heavy class check for lunchbox, and ensure GiveAmmo is done to secondary slot
-	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
-	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
-	{
-		g_iAllowPlayerClass[iClient]++;
-		Ammo_SetGiveAmmoSlot(WeaponSlot_Secondary);
-	}
-}
-
-public void HealthKit_TouchPost(int iHealthKit)
-{
-	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
-	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
-	{
-		g_iAllowPlayerClass[iClient]--;
-		Ammo_SetGiveAmmoSlot(-1);
-	}
 }

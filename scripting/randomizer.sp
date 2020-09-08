@@ -30,6 +30,27 @@
 #define PARTICLE_BEAM_BLU	"medicgun_beam_blue"
 #define PARTICLE_BEAM_RED	"medicgun_beam_red"
 
+enum TFQuality
+{
+	TFQual_None = -1,
+	TFQual_Normal = 0,
+	TFQual_Genuine,
+	TFQual_Rarity2,         /**< Unused */
+	TFQual_Vintage,
+	TFQual_Rarity3,         /**< Unused */
+	TFQual_Unusual,
+	TFQual_Unique,
+	TFQual_Community,
+	TFQual_Developer,       /**< Known as Valve Quality */
+	TFQual_Selfmade,
+	TFQual_Customized,      /**< Unused */
+	TFQual_Strange,
+	TFQual_Completed,       /**< Unused */
+	TFQual_Haunted,
+	TFQual_Collectors,
+	TFQual_Decorated,
+};
+
 enum
 {
 	WeaponSlot_Primary = 0,
@@ -382,21 +403,10 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 	if (!g_bEnabled)
 		return;
 	
-	if (StrContains(sClassname, "tf_weapon_") == 0)
-	{
-		SDKHook_HookWeapon(iEntity);
-		DHook_HookWeapon(iEntity);
-	}
+	DHook_OnEntityCreated(iEntity, sClassname);
+	SDKHook_OnEntityCreated(iEntity, sClassname);
 	
-	if (StrContains(sClassname, "item_healthkit") == 0)
-		SDKHook_HookHealthKit(iEntity);
-	else if (StrEqual(sClassname, "tf_projectile_stun_ball") || StrEqual(sClassname, "tf_projectile_ball_ornament"))
-		DHook_HookStunBall(iEntity);
-	else if (StrEqual(sClassname, "tf_weapon_sword"))
-		DHook_HookSword(iEntity);
-	else if (StrContains(sClassname, "obj_") == 0)
-		DHook_HookObject(iEntity);
-	else if (StrEqual(sClassname, "tf_dropped_weapon") && !g_cvDroppedWeapons.BoolValue)
+	if (StrEqual(sClassname, "tf_dropped_weapon") && !g_cvDroppedWeapons.BoolValue)
 		RemoveEntity(iEntity);
 }
 
@@ -652,6 +662,10 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 				PrintToChat(iClient, "Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
 				LogError("Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
 			}
+			
+			//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
+			if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
+				SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
 			
 			TF2_EquipWeapon(iClient, iWeapon);
 			

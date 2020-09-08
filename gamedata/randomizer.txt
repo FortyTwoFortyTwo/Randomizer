@@ -232,10 +232,10 @@
 				"linux"		"332"
 				"windows"	"326"
 			}
-			"CTFWeaponBase::WeaponReset"
+			"CItem::MyTouch"
 			{
-				"linux"		"426"
-				"windows"	"419"
+				"linux"		"222"
+				"windows"	"221"
 			}
 			"CTFGrenadePipebombProjectile::PipebombTouch"
 			{
@@ -335,7 +335,7 @@
 					{
 						"type"	"objectptr"
 					}
-					"bRegenerate"
+					"bResetWeapons"
 					{
 						"type"	"bool"
 					}
@@ -380,6 +380,28 @@
 					"iClass"
 					{
 						"type"	"int"
+					}
+				}
+			}
+			"CTFPlayer::GetLoadoutItem"
+			{
+				"signature"	"CTFPlayer::GetLoadoutItem"
+				"callconv"	"thiscall"
+				"return"	"int"
+				"this"		"entity"
+				"arguments"
+				{
+					"iClass"
+					{
+						"type"	"int"
+					}
+					"iSlot"
+					{
+						"type"	"int"
+					}
+					"bReportWhitelistFails"
+					{
+						"type"	"bool"
 					}
 				}
 			}
@@ -487,6 +509,20 @@
 				"hooktype"	"entity"
 				"return"	"void"
 				"this"		"entity"
+			}
+			"CItem::MyTouch"
+			{
+				"offset"	"CItem::MyTouch"
+				"hooktype"	"entity"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"	"cbaseentity"
+					}
+				}
 			}
 			"CTFGrenadePipebombProjectile::PipebombTouch"
 			{

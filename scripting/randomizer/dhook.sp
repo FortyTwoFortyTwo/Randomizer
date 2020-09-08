@@ -10,6 +10,7 @@ static ArrayList g_aDHookDetours;
 
 static Handle g_hDHookGiveAmmo;
 static Handle g_hDHookSecondaryAttack;
+static Handle g_hDHookMyTouch;
 static Handle g_hDHookPipebombTouch;
 static Handle g_hDHookOnDecapitation;
 static Handle g_hDHookCanBeUpgraded;
@@ -20,6 +21,7 @@ static Handle g_hDHookFrameUpdatePostEntityThink;
 
 static bool g_bSkipHandleRageGain;
 static int g_iClientGetChargeEffectBeingProvided;
+static int g_iWeaponGetLoadoutItem = -1;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static int g_iHookIdGiveAmmo[TF_MAXPLAYERS+1];
@@ -38,11 +40,12 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", DHook_CanAirDashPre, _);
-	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, DHook_ValidateWeaponsPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ManageBuilderWeapons", DHook_ManageBuilderWeaponsPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::IsPlayerClass", DHook_IsPlayerClassPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::GetLoadoutItem", DHook_GetLoadoutItemPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetEntityForLoadoutSlot", DHook_GetEntityForLoadoutSlotPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
@@ -50,6 +53,7 @@ public void DHook_Init(GameData hGameData)
 	
 	g_hDHookGiveAmmo = DHook_CreateVirtual(hGameData, "CBaseCombatCharacter::GiveAmmo");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
+	g_hDHookMyTouch = DHook_CreateVirtual(hGameData, "CItem::MyTouch");
 	g_hDHookPipebombTouch = DHook_CreateVirtual(hGameData, "CTFGrenadePipebombProjectile::PipebombTouch");
 	g_hDHookOnDecapitation = DHook_CreateVirtual(hGameData, "CTFDecapitationMeleeWeaponBase::OnDecapitation");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
@@ -180,27 +184,31 @@ void DHook_UnhookClient(int iClient)
 	}
 }
 
-void DHook_HookWeapon(int iWeapon)
+void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 {
-	DHookEntity(g_hDHookSecondaryAttack, true, iWeapon, _, DHook_SecondaryWeaponPost);
-}
-
-void DHook_HookStunBall(int iStunBall)
-{
-	DHookEntity(g_hDHookPipebombTouch, false, iStunBall, _, DHook_PipebombTouchPre);
-	DHookEntity(g_hDHookPipebombTouch, true, iStunBall, _, DHook_PipebombTouchPost);
-}
-
-void DHook_HookSword(int iSword)
-{
-	DHookEntity(g_hDHookOnDecapitation, false, iSword, _, DHook_OnDecapitationPre);
-	DHookEntity(g_hDHookOnDecapitation, true, iSword, _, DHook_OnDecapitationPost);
-}
-
-void DHook_HookObject(int iObject)
-{
-	DHookEntity(g_hDHookCanBeUpgraded, false, iObject, _, DHook_CanBeUpgradedPre);
-	DHookEntity(g_hDHookCanBeUpgraded, true, iObject, _, DHook_CanBeUpgradedPost);
+	if (StrContains(sClassname, "tf_weapon_") == 0)
+		DHookEntity(g_hDHookSecondaryAttack, true, iEntity, _, DHook_SecondaryWeaponPost);
+	
+	if (StrContains(sClassname, "item_healthkit") == 0)
+	{
+		DHookEntity(g_hDHookMyTouch, false, iEntity, _, DHook_MyTouchPre);
+		DHookEntity(g_hDHookMyTouch, true, iEntity, _, DHook_MyTouchPost);
+	}
+	else if (StrEqual(sClassname, "tf_projectile_stun_ball") || StrEqual(sClassname, "tf_projectile_ball_ornament"))
+	{
+		DHookEntity(g_hDHookPipebombTouch, false, iEntity, _, DHook_PipebombTouchPre);
+		DHookEntity(g_hDHookPipebombTouch, true, iEntity, _, DHook_PipebombTouchPost);
+	}
+	else if (StrEqual(sClassname, "tf_weapon_sword"))
+	{
+		DHookEntity(g_hDHookOnDecapitation, false, iEntity, _, DHook_OnDecapitationPre);
+		DHookEntity(g_hDHookOnDecapitation, true, iEntity, _, DHook_OnDecapitationPost);
+	}
+	else if (StrContains(sClassname, "obj_") == 0)
+	{
+		DHookEntity(g_hDHookCanBeUpgraded, false, iEntity, _, DHook_CanBeUpgradedPre);
+		DHookEntity(g_hDHookCanBeUpgraded, true, iEntity, _, DHook_CanBeUpgradedPost);
+	}
 }
 
 void DHook_HookGamerules()
@@ -236,15 +244,21 @@ public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParam
 
 public MRESReturn DHook_TauntPre(int iClient, Handle hParams)
 {
+	//Dont allow taunting if disguised or cloaked
+	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguising) || TF2_IsPlayerInCondition(iClient, TFCond_Disguised) || TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
+		return MRES_Supercede;
+	
 	//Player wants to taunt, set class to whoever can actually taunt with active weapon
 	
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iWeapon <= MaxClients)
-		return;
+		return MRES_Ignored;
 	
 	TFClassType nClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
 	if (nClass != TFClass_Unknown)
 		TF2_SetPlayerClass(iClient, nClass);
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_TauntPost(int iClient, Handle hParams)
@@ -282,22 +296,13 @@ public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
 
 public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
 {
-	if (!g_cvRandomWeapons.BoolValue)
-		return MRES_Ignored;
-	
-	//Dont validate any weapons, TF2 attempting to remove randomizer weapon for player's TF2 loadout,
-	// however need to manually call WeaponReset virtual so randomizer weapons get restored back to what it was
-	int iWeapon;
-	int iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		char sClassname[256];
-		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-		if (StrContains(sClassname, "tf_weapon_") == 0 && !StrEqual(sClassname, "tf_weapon_builder"))
-			SDKCall_WeaponReset(iWeapon);
-	}
-	
-	return MRES_Supercede;
+	g_iWeaponGetLoadoutItem = 0;
+}
+
+public MRESReturn DHook_ValidateWeaponsPost(int iClient, Handle hParams)
+{
+	g_iWeaponGetLoadoutItem = -1;
+	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);	//Reset from GetLoadoutItem hook
 }
 
 public MRESReturn DHook_ManageBuilderWeaponsPre(int iClient, Handle hParams)
@@ -377,6 +382,47 @@ public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hPa
 	return MRES_Ignored;
 }
 
+public MRESReturn DHook_GetLoadoutItemPre(int iClient, Handle hReturn, Handle hParams)
+{
+	if (g_iWeaponGetLoadoutItem == -1)	//not inside ValidateWeapons
+		return MRES_Ignored;
+	
+	int iWeapon = -1;
+	
+	//We want to return item the same as whatever client is equipped, so ValidateWeapons dont need to delete any weapons
+	do
+	{
+		iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", g_iWeaponGetLoadoutItem);
+		g_iWeaponGetLoadoutItem++;
+	}
+	while (iWeapon == -1);
+	
+	//There also class type and weapon classname checks if they should have correct classname by class type
+	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+	
+	char sWeaponClassname[256], sIndexClassname[256];
+	GetEntityClassname(iWeapon, sWeaponClassname, sizeof(sWeaponClassname));
+	TF2Econ_GetItemClassName(iIndex, sIndexClassname, sizeof(sIndexClassname));
+	
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	{
+		if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) >= WeaponSlot_Primary)
+		{
+			char sTemp[256];
+			strcopy(sTemp, sizeof(sTemp), sIndexClassname);
+			TF2Econ_TranslateWeaponEntForClass(sTemp, sizeof(sTemp), view_as<TFClassType>(iClass));
+			if (StrEqual(sWeaponClassname, sTemp))
+			{
+				TF2_SetPlayerClass(iClient, view_as<TFClassType>(iClass));
+				break;
+			}
+		}
+	}
+	
+	DHookSetReturn(hReturn, GetEntityAddress(iWeapon) + view_as<Address>(GetEntSendPropOffs(iWeapon, "m_Item", true)));
+	return MRES_Supercede;
+}
+
 public MRESReturn DHook_GetEntityForLoadoutSlotPre(int iClient, Handle hReturn, Handle hParams)
 {
 	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
@@ -407,7 +453,7 @@ public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, Handle hRe
 
 public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 {
-	//Not all weapons remove disguise
+	//Not all weapons remove disguise and shield charge
 	int iClient = DHookGetParam(hParams, 1);
 	
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguising))
@@ -415,6 +461,9 @@ public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 	
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
 		TF2_RemoveCondition(iClient, TFCond_Disguised);
+	
+	if (TF2_IsPlayerInCondition(iClient, TFCond_Charging))
+		TF2_RemoveCondition(iClient, TFCond_Charging);
 }
 
 public MRESReturn DHook_HandleRageGainPre(Handle hParams)
@@ -503,6 +552,27 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 	}
 	
 	g_bDoClassSpecialSkill[iClient] = false;
+}
+
+public MRESReturn DHook_MyTouchPre(int iHealthKit, Handle hReturn, Handle hParams)
+{
+	//Has heavy class check for lunchbox, and ensure GiveAmmo is done to secondary slot
+	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
+	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
+	{
+		g_iAllowPlayerClass[iClient]++;
+		Ammo_SetGiveAmmoSlot(WeaponSlot_Secondary);
+	}
+}
+
+public MRESReturn DHook_MyTouchPost(int iHealthKit, Handle hReturn, Handle hParams)
+{
+	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
+	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
+	{
+		g_iAllowPlayerClass[iClient]--;
+		Ammo_SetGiveAmmoSlot(-1);
+	}
 }
 
 public MRESReturn DHook_PipebombTouchPre(int iStunBall, Handle hParams)

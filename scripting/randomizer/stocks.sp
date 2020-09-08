@@ -29,7 +29,7 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", iIndex);
 		SetEntProp(iWeapon, Prop_Send, "m_bInitialized", 1);
 		
-		SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", 6);
+		SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
 		SetEntProp(iWeapon, Prop_Send, "m_iEntityLevel", 1);
 		
 		if (bSapper)
@@ -132,7 +132,7 @@ stock Address TF2_FindReskinItem(int iClient, int iIndex)
 {
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
-		int iSlot = TF2Econ_GetItemSlot(iIndex, view_as<TFClassType>(iClass));
+		int iSlot = TF2Econ_GetItemLoadoutSlot(iIndex, view_as<TFClassType>(iClass));
 		Address pItem = SDKCall_GetLoadoutItem(iClient, view_as<TFClassType>(iClass), iSlot);
 		if (TF2_IsValidEconItemView(pItem) && Weapons_GetReskinIndex(LoadFromAddress(pItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16)) == iIndex)
 			return pItem;
@@ -248,7 +248,7 @@ stock int TF2_GetSlot(int iWeapon)
 
 stock int TF2_GetSlotFromIndex(int iIndex, TFClassType nClass = TFClass_Unknown)
 {
-	int iSlot = TF2Econ_GetItemSlot(iIndex, nClass);
+	int iSlot = TF2Econ_GetItemLoadoutSlot(iIndex, nClass);
 	if (iSlot >= 0)
 	{
 		// Econ reports wrong slots for Engineer and Spy
@@ -359,7 +359,7 @@ stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 
 stock int CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 {
-	if (g_bAllowGiveNamedItem || !g_cvRandomWeapons.BoolValue)
+	if (g_bAllowGiveNamedItem || g_cvRandomWeapons.IntValue == Mode_None)
 		return true;
 	
 	//Allow grappling hook and passtime gun
@@ -370,7 +370,7 @@ stock int CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
 		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (0 <= iSlot <= WeaponSlot_BuilderEngie)
+		if (WeaponSlot_Primary <= iSlot <= WeaponSlot_BuilderEngie)
 			return false;
 	}
 	
