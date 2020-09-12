@@ -59,7 +59,7 @@ bool Ammo_GetDefaultType(int iClient, int &iAmmoType, TFClassType &nClass = TFCl
 		int iWeapon = GetPlayerWeaponSlot(iClient, g_iGiveAmmoSlot);
 		if (iWeapon > MaxClients)
 		{
-			Ammo_GetDefaultTypeFromWeapon(iClient, iWeapon, iAmmoType, nClass);
+			Ammo_GetDefaultTypeFromWeapon(iWeapon, iAmmoType, nClass);
 			return true;
 		}
 		
@@ -69,21 +69,21 @@ bool Ammo_GetDefaultType(int iClient, int &iAmmoType, TFClassType &nClass = TFCl
 	int iWeapon = TF2_GetItemFromAmmoType(iClient, iAmmoType);
 	if (iWeapon > MaxClients)
 	{
-		Ammo_GetDefaultTypeFromWeapon(iClient, iWeapon, iAmmoType, nClass);
+		Ammo_GetDefaultTypeFromWeapon(iWeapon, iAmmoType, nClass);
 		return true;
 	}
 	
 	return false;
 }
 
-void Ammo_GetDefaultTypeFromWeapon(int iClient, int iWeapon, int &iAmmoType, TFClassType &nClass = TFClass_Unknown)
+void Ammo_GetDefaultTypeFromWeapon(int iWeapon, int &iAmmoType, TFClassType &nClass = TFClass_Unknown)
 {
 	char sClassname[256];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
 	g_mDefaultAmmoType.GetValue(sClassname, iAmmoType);
 	
 	//Get new ammotype and default class
-	nClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
+	nClass = TF2_GetDefaultClassFromItem(iWeapon);
 }
 
 void Ammo_SetGiveAmmoSlot(int iSlot)

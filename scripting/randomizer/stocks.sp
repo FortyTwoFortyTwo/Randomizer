@@ -1,4 +1,4 @@
-stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
+stock int TF2_CreateWeapon(int iClient, int iIndex, int iSlot)
 {
 	char sClassname[256];
 	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
@@ -39,24 +39,9 @@ stock int TF2_CreateAndEquipWeapon(int iClient, int iIndex, int iSlot)
 		}
 		
 		DispatchSpawn(iWeapon);
-		SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
 		
 		//Reset charge meter
 		SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 0.0, iSlot);
-		
-		if (StrContains(sClassname, "tf_weapon") == 0)
-		{
-			EquipPlayerWeapon(iClient, iWeapon);
-			
-			//Set ammo to 0, CTFPlayer::GetMaxAmmo detour will correct this, adding ammo by current
-			int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-			if (iAmmoType > -1)
-				SetEntProp(iClient, Prop_Send, "m_iAmmo", 0, _, iAmmoType);
-		}
-		else if (StrContains(sClassname, "tf_wearable") == 0)
-		{
-			SDKCall_EquipWearable(iClient, iWeapon);
-		}
 	}
 	else
 	{
@@ -111,6 +96,8 @@ stock int TF2_GiveNamedItem(int iClient, Address pItem, int iSlot)
 
 stock int TF2_EquipWeapon(int iClient, int iWeapon)
 {
+	SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
+	
 	char sClassname[256];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
 	if (StrContains(sClassname, "tf_weapon") == 0)
@@ -279,7 +266,7 @@ stock int TF2_GetSlotFromIndex(int iIndex, TFClassType nClass = TFClass_Unknown)
 	return iSlot;
 }
 
-stock TFClassType TF2_GetDefaultClassFromItem(int iClient, int iWeapon)
+stock TFClassType TF2_GetDefaultClassFromItem(int iWeapon)
 {
 	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
 	int iSlot = TF2_GetSlot(iWeapon);

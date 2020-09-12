@@ -653,7 +653,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			if (pItem)
 				iWeapon = TF2_GiveNamedItem(iClient, pItem, iSlot);
 			else
-				iWeapon = TF2_CreateAndEquipWeapon(iClient, g_iClientWeaponIndex[iClient][iSlot], iSlot);
+				iWeapon = TF2_CreateWeapon(iClient, g_iClientWeaponIndex[iClient][iSlot], iSlot);
 			
 			if (iWeapon <= MaxClients)
 			{
@@ -663,7 +663,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			
 			//Change class before equipping the weapon, otherwise reload times are odd
 			//This also somehow fixes sniper with a banner
-			TFClassType nClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
+			TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
 			if (nClass != TFClass_Unknown)
 				SetClientClass(iClient, nClass);
 			

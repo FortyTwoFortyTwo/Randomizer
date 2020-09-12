@@ -254,7 +254,7 @@ public MRESReturn DHook_TauntPre(int iClient, Handle hParams)
 	if (iWeapon <= MaxClients)
 		return MRES_Ignored;
 	
-	TFClassType nClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
+	TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
 	if (nClass != TFClass_Unknown)
 		SetClientClass(iClient, nClass);
 	
@@ -337,7 +337,7 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 		if (iButton > 0 && iButtons & iButton)
 		{
 			Controls_OnPassiveUse(iClient, iWeapon);
-			SetClientClass(iClient, TF2_GetDefaultClassFromItem(iClient, iWeapon));
+			SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
 			return MRES_Ignored;
 		}
 	}
@@ -503,7 +503,7 @@ public void Frame_HandleRageGain(DataPack hPack)
 	int iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
-		TFClassType nClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
+		TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
 		if (bCalledClass[nClass])	//Already called as same class, dont double value
 			continue;
 		
@@ -600,7 +600,7 @@ public MRESReturn DHook_OnDecapitationPre(int iSword, Handle hParams)
 {
 	//Has class check
 	int iClient = GetEntPropEnt(iSword, Prop_Send, "m_hOwnerEntity");
-	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iClient, iSword));
+	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iSword));
 }
 
 public MRESReturn DHook_OnDecapitationPost(int iSword, Handle hParams)
