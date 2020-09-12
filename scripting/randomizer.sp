@@ -663,6 +663,12 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 				LogError("Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
 			}
 			
+			//Change class before equipping the weapon, otherwise reload times are odd
+			//This also somehow fixes sniper with a banner
+			TFClassType nClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
+			if (nClass != TFClass_Unknown)
+				TF2_SetPlayerClass(iClient, nClass);
+			
 			//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
 			if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
 				SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
@@ -689,6 +695,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			}
 		}
 	}
+	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 }
 
 public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroadcast)
