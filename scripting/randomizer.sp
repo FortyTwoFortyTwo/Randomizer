@@ -235,6 +235,7 @@ int g_iTeamWeaponIndex[TEAM_MAX + 1][WeaponSlot_BuilderEngie + 1];
 TFClassType g_iClientClass[TF_MAXPLAYERS];
 int g_iClientWeaponIndex[TF_MAXPLAYERS][WeaponSlot_BuilderEngie+1];
 
+TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
 int g_iAllowPlayerClass[TF_MAXPLAYERS];
 int g_iMedigunBeamRef[TF_MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
 Handle g_hTimerClientHud[TF_MAXPLAYERS];
@@ -548,7 +549,7 @@ void UpdateClientWeapon(int iClient, ClientUpdate iUpdate)
 	{
 		case Mode_None:
 		{
-			g_iClientClass[iClient] = TF2_GetPlayerClass(iClient);
+			g_iClientClass[iClient] = TFClass_Unknown;
 		}
 		case Mode_Normal:
 		{
@@ -623,9 +624,6 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
 	
-	if (!g_cvRandomClass.BoolValue)
-		g_iClientClass[iClient] = TF2_GetPlayerClass(iClient);
-	
 	if (!g_cvRandomWeapons.BoolValue)
 		return;
 	
@@ -667,7 +665,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			//This also somehow fixes sniper with a banner
 			TFClassType nClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
 			if (nClass != TFClass_Unknown)
-				TF2_SetPlayerClass(iClient, nClass);
+				SetClientClass(iClient, nClass);
 			
 			//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
 			if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
@@ -675,7 +673,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			
 			TF2_EquipWeapon(iClient, iWeapon);
 			
-			if (ViewModels_ShouldBeInvisible(iWeapon, g_iClientClass[iClient]))
+			if (ViewModels_ShouldBeInvisible(iWeapon, TF2_GetPlayerClass(iClient)))
 			{
 				ViewModels_EnableInvisible(iWeapon);
 			}
@@ -695,7 +693,8 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			}
 		}
 	}
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+	
+	RevertClientClass(iClient);
 }
 
 public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroadcast)
@@ -733,6 +732,24 @@ KeyValues LoadConfig(const char[] sFilepath, const char[] sName)
 	}
 	
 	return kv;
+}
+
+void SetClientClass(int iClient, TFClassType nClass)
+{
+	if (g_iClientCurrentClass[iClient] == TFClass_Unknown)
+	{
+		g_iClientCurrentClass[iClient] = TF2_GetPlayerClass(iClient);
+		TF2_SetPlayerClass(iClient, nClass);
+	}
+}
+
+void RevertClientClass(int iClient)
+{
+	if (g_iClientCurrentClass[iClient] != TFClass_Unknown)
+	{
+		TF2_SetPlayerClass(iClient, g_iClientCurrentClass[iClient]);
+		g_iClientCurrentClass[iClient] = TFClass_Unknown;
+	}
 }
 
 public Action TF2Items_OnGiveNamedItem(int iClient, char[] sClassname, int iIndex, Handle &hItem)

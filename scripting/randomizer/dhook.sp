@@ -256,7 +256,7 @@ public MRESReturn DHook_TauntPre(int iClient, Handle hParams)
 	
 	TFClassType nClass = TF2_GetDefaultClassFromItem(iClient, iWeapon);
 	if (nClass != TFClass_Unknown)
-		TF2_SetPlayerClass(iClient, nClass);
+		SetClientClass(iClient, nClass);
 	
 	return MRES_Ignored;
 }
@@ -264,7 +264,7 @@ public MRESReturn DHook_TauntPre(int iClient, Handle hParams)
 public MRESReturn DHook_TauntPost(int iClient, Handle hParams)
 {
 	//Set class back to what it was
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+	RevertClientClass(iClient);
 }
 
 public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
@@ -302,7 +302,7 @@ public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
 public MRESReturn DHook_ValidateWeaponsPost(int iClient, Handle hParams)
 {
 	g_iWeaponGetLoadoutItem = -1;
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);	//Reset from GetLoadoutItem hook
+	RevertClientClass(iClient);	//Reset from GetLoadoutItem hook
 }
 
 public MRESReturn DHook_ManageBuilderWeaponsPre(int iClient, Handle hParams)
@@ -337,7 +337,7 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 		if (iButton > 0 && iButtons & iButton)
 		{
 			Controls_OnPassiveUse(iClient, iWeapon);
-			TF2_SetPlayerClass(iClient, TF2_GetDefaultClassFromItem(iClient, iWeapon));
+			SetClientClass(iClient, TF2_GetDefaultClassFromItem(iClient, iWeapon));
 			return MRES_Ignored;
 		}
 	}
@@ -349,7 +349,7 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 
 public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, Handle hReturn)
 {
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+	RevertClientClass(iClient);
 }
 
 public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, Handle hReturn)
@@ -357,7 +357,7 @@ public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, Handle hRet
 	if (IsClientInGame(iClient))
 	{
 		//Has medic class check for getting uber types
-		TF2_SetPlayerClass(iClient, TFClass_Medic);
+		SetClientClass(iClient, TFClass_Medic);
 		g_iClientGetChargeEffectBeingProvided = iClient;
 	}
 }
@@ -366,7 +366,7 @@ public MRESReturn DHook_GetChargeEffectBeingProvidedPost(int iClient, Handle hRe
 {
 	// iClient is a lie in this detour
 	if (g_iClientGetChargeEffectBeingProvided)
-		TF2_SetPlayerClass(g_iClientGetChargeEffectBeingProvided, g_iClientClass[g_iClientGetChargeEffectBeingProvided]);
+		RevertClientClass(g_iClientGetChargeEffectBeingProvided);
 	
 	g_iClientGetChargeEffectBeingProvided = 0;
 }
@@ -413,7 +413,7 @@ public MRESReturn DHook_GetLoadoutItemPre(int iClient, Handle hReturn, Handle hP
 			TF2Econ_TranslateWeaponEntForClass(sTemp, sizeof(sTemp), view_as<TFClassType>(iClass));
 			if (StrEqual(sWeaponClassname, sTemp))
 			{
-				TF2_SetPlayerClass(iClient, view_as<TFClassType>(iClass));
+				SetClientClass(iClient, view_as<TFClassType>(iClass));
 				break;
 			}
 		}
@@ -509,11 +509,11 @@ public void Frame_HandleRageGain(DataPack hPack)
 		
 		bCalledClass[nClass] = true;
 		
-		TF2_SetPlayerClass(iClient, nClass);
+		SetClientClass(iClient, nClass);
 		SDKCall_HandleRageGain(iClient, iRequiredBuffFlags, flDamage, fInverseRageGainScale);
 	}
 	
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+	RevertClientClass(iClient);
 	g_bSkipHandleRageGain = false;
 }
 
@@ -600,26 +600,26 @@ public MRESReturn DHook_OnDecapitationPre(int iSword, Handle hParams)
 {
 	//Has class check
 	int iClient = GetEntPropEnt(iSword, Prop_Send, "m_hOwnerEntity");
-	TF2_SetPlayerClass(iClient, TF2_GetDefaultClassFromItem(iClient, iSword));
+	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iClient, iSword));
 }
 
 public MRESReturn DHook_OnDecapitationPost(int iSword, Handle hParams)
 {
 	int iClient = GetEntPropEnt(iSword, Prop_Send, "m_hOwnerEntity");
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+	RevertClientClass(iClient);
 }
 
 public MRESReturn DHook_CanBeUpgradedPre(int iObject, Handle hReturn, Handle hParams)
 {
 	//This function have engineer class check
 	int iClient = DHookGetParam(hParams, 1);
-	TF2_SetPlayerClass(iClient, TFClass_Engineer);
+	SetClientClass(iClient, TFClass_Engineer);
 }
 
 public MRESReturn DHook_CanBeUpgradedPost(int iObject, Handle hReturn, Handle hParams)
 {
 	int iClient = DHookGetParam(hParams, 1);
-	TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+	RevertClientClass(iClient);
 }
 
 public MRESReturn DHook_ForceRespawnPre(int iClient)
@@ -633,7 +633,7 @@ public MRESReturn DHook_ForceRespawnPre(int iClient)
 	//Update client weapons incase if switching teams
 	UpdateClientWeapon(iClient, ClientUpdate_Spawn);
 	
-	if (g_cvRandomClass.IntValue != Mode_None)
+	if (g_iClientClass[iClient] != TFClass_Unknown)
 		SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(g_iClientClass[iClient]));
 }
 
