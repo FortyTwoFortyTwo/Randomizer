@@ -739,8 +739,8 @@ void SetClientClass(int iClient, TFClassType nClass)
 	if (g_iClientCurrentClass[iClient] == TFClass_Unknown)
 	{
 		g_iClientCurrentClass[iClient] = TF2_GetPlayerClass(iClient);
-		TF2_SetPlayerClass(iClient, nClass);
 	}
+	TF2_SetPlayerClass(iClient, nClass);
 }
 
 void RevertClientClass(int iClient)
