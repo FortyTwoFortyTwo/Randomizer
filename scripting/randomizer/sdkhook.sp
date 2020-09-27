@@ -2,6 +2,7 @@ void SDKHook_HookClient(int iClient)
 {
 	SDKHook(iClient, SDKHook_PreThink, Client_PreThink);
 	SDKHook(iClient, SDKHook_PreThinkPost, Client_PreThinkPost);
+	SDKHook(iClient, SDKHook_WeaponEquip, Client_WeaponEquip);
 	SDKHook(iClient, SDKHook_WeaponEquipPost, Client_WeaponEquipPost);
 }
 
@@ -9,6 +10,7 @@ void SDKHook_UnhookClient(int iClient)
 {
 	SDKUnhook(iClient, SDKHook_PreThink, Client_PreThink);
 	SDKUnhook(iClient, SDKHook_PreThinkPost, Client_PreThinkPost);
+	SDKUnhook(iClient, SDKHook_WeaponEquip, Client_WeaponEquip);
 	SDKUnhook(iClient, SDKHook_WeaponEquipPost, Client_WeaponEquipPost);
 }
 
@@ -82,9 +84,22 @@ public void Client_PreThinkPost(int iClient)
 	g_iAllowPlayerClass[iClient]--;
 }
 
+public Action Client_WeaponEquip(int iClient, int iWeapon)
+{
+	//Change class before equipping the weapon, otherwise reload times are odd
+	//This also somehow fixes sniper with a banner
+	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
+}
+
 public void Client_WeaponEquipPost(int iClient, int iWeapon)
 {
-	//New weapon is given from somewhere, refresh controls and huds
+	RevertClientClass(iClient);
+	
+	//Give robot arm viewmodel if weapon isnt good with current viewmodel
+	if (ViewModels_ShouldUseRobotArm(iClient, iWeapon))
+		TF2Attrib_SetByName(iWeapon, "mod wrench builds minisentry", 1.0);
+	
+	//Refresh controls and huds
 	Controls_RefreshClient(iClient);
 	Huds_RefreshClient(iClient);
 }

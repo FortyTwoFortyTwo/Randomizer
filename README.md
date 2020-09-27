@@ -26,6 +26,7 @@ To download latest build version, select latest package then "Artifacts" button 
 
 ## Requirements
 - SourceMod 1.10
+- [tf2attributes](https://forums.alliedmods.net/showthread.php?t=210221)
 - [tf_econ_data](https://forums.alliedmods.net/showthread.php?t=315011)
 - [dhooks with detour support](https://forums.alliedmods.net/showpost.php?p=2588686&postcount=589)
 

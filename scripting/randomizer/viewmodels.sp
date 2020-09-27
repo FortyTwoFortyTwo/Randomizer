@@ -1,20 +1,38 @@
 #define FILEPATH_CONFIG_VIEWMODELS "configs/randomizer/viewmodels.cfg"
 
-methodmap ViewModelsInvisible < StringMap
+methodmap WeaponClassList < StringMap
 {
-	public ViewModelsInvisible()
+	public WeaponClassList()
 	{
-		return view_as<ViewModelsInvisible>(new StringMap());
+		return view_as<WeaponClassList>(new StringMap());
 	}
 	
-	public void Set(const char[] sClassname, const char[] sTF2Class)
+	public void Load(KeyValues kv, const char[] sKey)
 	{
-		TFClassType nClass = TF2_GetClass(sTF2Class);
+		this.Clear();
 		
-		bool bInvisible[10];
-		this.GetArray(sClassname, bInvisible, sizeof(bInvisible));
-		bInvisible[nClass] = true;
-		this.SetArray(sClassname, bInvisible, sizeof(bInvisible));
+		if (kv.JumpToKey(sKey))
+		{
+			if (kv.GotoFirstSubKey(false))
+			{
+				do
+				{
+					char sClassname[CONFIG_MAXCHAR], sTF2Class[CONFIG_MAXCHAR];
+					kv.GetSectionName(sClassname, sizeof(sClassname));
+					kv.GetString(NULL_STRING, sTF2Class, sizeof(sTF2Class));
+					TFClassType nClass = TF2_GetClass(sTF2Class);
+					
+					bool bInvisible[10];
+					this.GetArray(sClassname, bInvisible, sizeof(bInvisible));
+					bInvisible[nClass] = true;
+					this.SetArray(sClassname, bInvisible, sizeof(bInvisible));
+				}
+				while (kv.GotoNextKey(false));
+				kv.GoBack();
+			}
+			
+			kv.GoBack();
+		}
 	}
 	
 	public bool Exists(int iWeapon, TFClassType nClass)
@@ -28,11 +46,13 @@ methodmap ViewModelsInvisible < StringMap
 	}
 }
 
-static ViewModelsInvisible g_mViewModelsInvisible;
+static WeaponClassList g_mViewModelsInvisible;
+static WeaponClassList g_mViewModelsRobotArm;
 
 void ViewModels_Init()
 {
-	g_mViewModelsInvisible = new ViewModelsInvisible();
+	g_mViewModelsInvisible = new WeaponClassList();
+	g_mViewModelsRobotArm = new WeaponClassList();
 }
 
 void ViewModels_Refresh()
@@ -41,24 +61,10 @@ void ViewModels_Refresh()
 	if (!kv)
 		return;
 	
-	g_mViewModelsInvisible.Clear();
+	g_mViewModelsInvisible.Load(kv, "Invisible");
+	g_mViewModelsRobotArm.Load(kv, "RobotArm");
 	
-	if (kv.JumpToKey("Invisible"))
-	{
-		if (kv.GotoFirstSubKey(false))
-		{
-			do
-			{
-				char sClassname[CONFIG_MAXCHAR], sTF2Class[CONFIG_MAXCHAR];
-				kv.GetSectionName(sClassname, sizeof(sClassname));
-				kv.GetString(NULL_STRING, sTF2Class, sizeof(sTF2Class));
-				
-				g_mViewModelsInvisible.Set(sClassname, sTF2Class);
-			}
-			while (kv.GotoNextKey(false));
-			kv.GoBack();
-		}
-	}
+	delete kv;
 }
 
 bool ViewModels_ShouldBeInvisible(int iWeapon, TFClassType nClass)
@@ -90,4 +96,9 @@ void ViewModels_DisableInvisible(int iWeapon)
 {
 	SetEntityRenderMode(iWeapon, RENDER_NORMAL); 
 	SetEntityRenderColor(iWeapon, 255, 255, 255, 255);
+}
+
+bool ViewModels_ShouldUseRobotArm(int iClient, int iWeapon)
+{
+	return g_mViewModelsRobotArm.Exists(iWeapon, TF2_GetPlayerClass(iClient));
 }
