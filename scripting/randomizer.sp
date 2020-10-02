@@ -5,6 +5,7 @@
 #include <sdkhooks>
 #include <tf2>
 #include <tf2_stocks>
+#include <tf2attributes>
 #include <tf_econ_data>
 #include <dhooks>
 
@@ -14,7 +15,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.4.0"
+#define PLUGIN_VERSION			"1.5.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
@@ -661,12 +662,6 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 				LogError("Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
 			}
 			
-			//Change class before equipping the weapon, otherwise reload times are odd
-			//This also somehow fixes sniper with a banner
-			TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
-			if (nClass != TFClass_Unknown)
-				SetClientClass(iClient, nClass);
-			
 			//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
 			if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
 				SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
@@ -693,8 +688,6 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			}
 		}
 	}
-	
-	RevertClientClass(iClient);
 }
 
 public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroadcast)
