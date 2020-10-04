@@ -324,16 +324,14 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 		return MRES_Ignored;
 	
 	int iButtons = GetClientButtons(iClient);
-	bool bAllowAttack2 = true;
 	
-	int iWeapon;
-	int iPos;
+	int iWeapon, iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
 		if (Controls_IsPassiveInCooldown(iClient, iWeapon))
 			continue;
 		
-		int iButton = Controls_GetPassiveButtonBit(iClient, iWeapon, bAllowAttack2);
+		int iButton = Controls_GetPassiveButtonBit(iClient, iWeapon);
 		if (iButton > 0 && iButtons & iButton)
 		{
 			Controls_OnPassiveUse(iClient, iWeapon);

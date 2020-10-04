@@ -278,7 +278,6 @@ public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 		return Plugin_Continue;
 	
 	char sDisplay[512];
-	bool bAllowAttack2 = true;
 	
 	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
 	{
@@ -326,7 +325,7 @@ public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 			}
 			
 			char sBuffer[64];
-			if (Controls_GetPassiveInfo(iClient, iWeapon, bAllowAttack2, sBuffer, sizeof(sBuffer)))
+			if (Controls_GetPassiveInfo(iClient, iWeapon, sBuffer, sizeof(sBuffer)))
 				Format(sDisplay, sizeof(sDisplay), "%s (%s)", sDisplay, sBuffer);
 		}
 	}

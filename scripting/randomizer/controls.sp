@@ -125,7 +125,7 @@ void Controls_RefreshClient(int iClient)
 	}
 }
 
-Button Controls_GetPassiveButton(int iClient, int iWeapon, bool &bAllowAttack2)
+Button Controls_GetPassiveButton(int iClient, int iWeapon)
 {
 	ControlsPassive controlsPassive;
 	if (!Controls_GetPassive(iWeapon, controlsPassive))
@@ -135,48 +135,55 @@ Button Controls_GetPassiveButton(int iClient, int iWeapon, bool &bAllowAttack2)
 	if (iActiveWeapon <= MaxClients)
 		return Button_Invalid;
 	
-	int iActiveSlot = TF2_GetSlot(iActiveWeapon);
+	//Active weapon always use attack2
+	if (iWeapon == iActiveWeapon)
+		return Button_Attack2;
 	
-	if (iWeapon == iActiveWeapon && bAllowAttack2)
+	int iActiveSlot = TF2_GetSlot(iActiveWeapon);
+	if (g_bControlsButton[iClient][iActiveSlot][Button_Attack2])
 	{
-		bAllowAttack2 = false;
-		return Button_Attack2;
+		//Active slot use attack2, use alt button instead if possible
+		if (g_bControlsButton[iClient][iActiveSlot][controlsPassive.nButton])
+			return Button_Invalid;
+		else
+			return controlsPassive.nButton;
 	}
-	else if (iWeapon == iActiveWeapon)
+	
+	int iSlot = TF2_GetSlot(iWeapon);
+	int iWeaponTemp, iPos;
+	while (TF2_GetItem(iClient, iWeaponTemp, iPos))
 	{
-		return controlsPassive.nButton;
+		ControlsPassive buffer;
+		if (!Controls_GetPassive(iWeaponTemp, buffer))
+			continue;	//not passive
+		
+		int iSlotTemp = TF2_GetSlot(iWeaponTemp);
+		if (g_bControlsButton[iClient][iSlotTemp][Button_Attack2] && iSlotTemp < iSlot)
+		{
+			//iWeaponTemp uses attack2 and have higher priority than iWeapon, use alt
+			return controlsPassive.nButton;
+		}
 	}
-	else if (bAllowAttack2 && !g_bControlsButton[iClient][iActiveSlot][Button_Attack2])
-	{
-		bAllowAttack2 = false;
-		return Button_Attack2;
-	}
-	else if (!g_bControlsButton[iClient][iActiveSlot][controlsPassive.nButton])
-	{
-		return controlsPassive.nButton;
-	}
-	else
-	{
-		return Button_Invalid;
-	}
+	
+	return Button_Attack2;
 }
 
-int Controls_GetPassiveButtonBit(int iClient, int iWeapon, bool &bAllowAttack2)
+int Controls_GetPassiveButtonBit(int iClient, int iWeapon)
 {
-	Button nButton = Controls_GetPassiveButton(iClient, iWeapon, bAllowAttack2);
+	Button nButton = Controls_GetPassiveButton(iClient, iWeapon);
 	if (nButton == Button_Invalid)
 		return 0;
 	
 	return g_controlsInfo[nButton].iButton;
 }
 
-bool Controls_GetPassiveInfo(int iClient, int iWeapon, bool &bAllowAttack2, char[] sText, int iLength)
+bool Controls_GetPassiveInfo(int iClient, int iWeapon, char[] sText, int iLength)
 {
 	ControlsPassive controlsPassive;
 	if (!Controls_GetPassive(iWeapon, controlsPassive))
 		return false;
 	
-	Button nButton = Controls_GetPassiveButton(iClient, iWeapon, bAllowAttack2);
+	Button nButton = Controls_GetPassiveButton(iClient, iWeapon);
 	
 	if (nButton == Button_Invalid)
 		Format(sText, iLength, "%T", controlsPassive.sTextNone, iClient);
