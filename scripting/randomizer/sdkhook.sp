@@ -1,5 +1,7 @@
 void SDKHook_HookClient(int iClient)
 {
+	SDKHook(iClient, SDKHook_OnTakeDamage, Client_OnTakeDamage);
+	SDKHook(iClient, SDKHook_OnTakeDamagePost, Client_OnTakeDamagePost);
 	SDKHook(iClient, SDKHook_PreThink, Client_PreThink);
 	SDKHook(iClient, SDKHook_PreThinkPost, Client_PreThinkPost);
 	SDKHook(iClient, SDKHook_WeaponEquip, Client_WeaponEquip);
@@ -21,6 +23,16 @@ void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 		SDKHook(iEntity, SDKHook_SpawnPost, Weapon_SpawnPost);
 		SDKHook(iEntity, SDKHook_Reload, Weapon_Reload);
 	}
+}
+
+public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &flDamage, int &iDamageType, int &iWeapon, float vecDamageForce[3], float vecDamagePosition[3], int iDamageCustom)
+{
+	g_iAllowPlayerClass[iVictim]++;
+}
+
+public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, float flDamage, int iDamageType, int iWeapon, const float vecDamageForce[3], const float vecDamagePosition[3], int iDamageCustom)
+{
+	g_iAllowPlayerClass[iVictim]--;
 }
 
 public void Client_PreThink(int iClient)
