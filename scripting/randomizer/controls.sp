@@ -11,6 +11,7 @@ enum struct ControlsPassive
 {
 	Button nButton;		//Which button to use as alt way
 	float flCooldown;	//After passive is used, cooldown before able to use again
+	bool bInvis;		//Can this be used while cloaked?
 	
 	char sTextMain[64];	//Text to use if button not changed
 	char sTextAlt[64];	//Text to use if button is changed to alt way
@@ -61,6 +62,7 @@ public void Controls_Refresh()
 				kv.GetSectionName(sName, sizeof(sName));
 				kv.GetString("button", sButton, sizeof(sButton));
 				controlsPassive.flCooldown = kv.GetFloat("cooldown", 0.0);
+				controlsPassive.bInvis = !!kv.GetNum("invis", false);
 				
 				if (StrEqual(sButton, "attack2"))
 					controlsPassive.nButton = Button_Attack2;
@@ -209,6 +211,13 @@ bool Controls_IsPassiveInCooldown(int iClient, int iWeapon)
 {
 	int iSlot = TF2_GetSlot(iWeapon);
 	return g_flControlsCooldown[iClient][iSlot] > GetGameTime();
+}
+
+bool Controls_CanUseWhileInvis(int iWeapon)
+{
+	ControlsPassive controlsPassive;
+	Controls_GetPassive(iWeapon, controlsPassive);
+	return controlsPassive.bInvis;
 }
 
 bool Controls_GetPassive(int iWeapon, ControlsPassive controlsPassive)

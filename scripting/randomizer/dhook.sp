@@ -331,6 +331,9 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 		if (Controls_IsPassiveInCooldown(iClient, iWeapon))
 			continue;
 		
+		if (!Controls_CanUseWhileInvis(iWeapon) && TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
+			continue;
+		
 		int iButton = Controls_GetPassiveButtonBit(iClient, iWeapon);
 		if (iButton > 0 && iButtons & iButton)
 		{

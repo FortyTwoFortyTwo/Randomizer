@@ -42,6 +42,21 @@ public void Client_PreThink(int iClient)
 	if (iViewModel > MaxClients)
 		SetEntProp(iViewModel, Prop_Send, "m_nSkin", GetEntProp(iClient, Prop_Send, "m_nSkin"));
 	
+	//Make sure player cant use primary or secondary attack while cloaked
+	if (TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
+	{
+		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+		if (iWeapon > MaxClients)
+		{
+			float flGameTime = GetGameTime();
+			if (GetEntPropFloat(iWeapon, Prop_Send, "m_flNextPrimaryAttack") - 0.5 < flGameTime)
+				SetEntPropFloat(iWeapon, Prop_Send, "m_flNextPrimaryAttack", flGameTime + 0.5);
+			
+			if (GetEntPropFloat(iWeapon, Prop_Send, "m_flNextSecondaryAttack") - 0.5 < flGameTime)
+				SetEntPropFloat(iWeapon, Prop_Send, "m_flNextSecondaryAttack", flGameTime + 0.5);
+		}
+	}
+	
 	//PreThink have way too many IsPlayerClass check, always return true during it
 	g_iAllowPlayerClass[iClient]++;
 	
