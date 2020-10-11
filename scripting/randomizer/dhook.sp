@@ -10,6 +10,7 @@ static ArrayList g_aDHookDetours;
 
 static Handle g_hDHookGiveAmmo;
 static Handle g_hDHookSecondaryAttack;
+static Handle g_hDHookSwing;
 static Handle g_hDHookMyTouch;
 static Handle g_hDHookPipebombTouch;
 static Handle g_hDHookOnDecapitation;
@@ -43,6 +44,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, DHook_ValidateWeaponsPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ManageBuilderWeapons", DHook_ManageBuilderWeaponsPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::EndClassSpecialSkill", DHook_EndClassSpecialSkillPre, DHook_EndClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::IsPlayerClass", DHook_IsPlayerClassPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetLoadoutItem", DHook_GetLoadoutItemPre, _);
@@ -53,6 +55,7 @@ public void DHook_Init(GameData hGameData)
 	
 	g_hDHookGiveAmmo = DHook_CreateVirtual(hGameData, "CBaseCombatCharacter::GiveAmmo");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
+	g_hDHookSwing = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Swing");
 	g_hDHookMyTouch = DHook_CreateVirtual(hGameData, "CItem::MyTouch");
 	g_hDHookPipebombTouch = DHook_CreateVirtual(hGameData, "CTFGrenadePipebombProjectile::PipebombTouch");
 	g_hDHookOnDecapitation = DHook_CreateVirtual(hGameData, "CTFDecapitationMeleeWeaponBase::OnDecapitation");
@@ -187,7 +190,10 @@ void DHook_UnhookClient(int iClient)
 void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 {
 	if (StrContains(sClassname, "tf_weapon_") == 0)
+	{
+		SDKHook(iEntity, SDKHook_SpawnPost, DHook_SpawnPost);
 		DHookEntity(g_hDHookSecondaryAttack, true, iEntity, _, DHook_SecondaryWeaponPost);
+	}
 	
 	if (StrContains(sClassname, "item_healthkit") == 0)
 	{
@@ -221,6 +227,12 @@ void DHook_UnhookGamerules()
 {
 	DHookRemoveHookID(g_iDHookGamerulesPre);
 	DHookRemoveHookID(g_iDHookGamerulesPost);
+}
+
+public void DHook_SpawnPost(int iWeapon)
+{
+	if (TF2_GetSlot(iWeapon) == WeaponSlot_Melee)
+		DHookEntity(g_hDHookSwing, false, iWeapon, _, DHook_SwingPre);
 }
 
 public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
@@ -353,6 +365,17 @@ public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, Handle hReturn)
 	RevertClientClass(iClient);
 }
 
+public MRESReturn DHook_EndClassSpecialSkillPre(int iClient, Handle hReturn)
+{
+	//Only have demoman check to end charge
+	SetClientClass(iClient, TFClass_DemoMan);
+}
+
+public MRESReturn DHook_EndClassSpecialSkillPost(int iClient, Handle hReturn)
+{
+	RevertClientClass(iClient);
+}
+
 public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, Handle hReturn)
 {
 	if (IsClientInGame(iClient))
@@ -454,7 +477,7 @@ public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, Handle hRe
 
 public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 {
-	//Not all weapons remove disguise and shield charge
+	//Not all weapons remove disguise
 	int iClient = DHookGetParam(hParams, 1);
 	
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguising))
@@ -462,9 +485,6 @@ public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 	
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
 		TF2_RemoveCondition(iClient, TFCond_Disguised);
-	
-	if (TF2_IsPlayerInCondition(iClient, TFCond_Charging))
-		TF2_RemoveCondition(iClient, TFCond_Charging);
 }
 
 public MRESReturn DHook_HandleRageGainPre(Handle hParams)
@@ -533,6 +553,14 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 	}
 	
 	return MRES_Ignored;
+}
+
+public MRESReturn DHook_SwingPre(int iWeapon, Handle hReturn)
+{
+	//Not all melee weapons call to end demo charge
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	if (0 < iClient <= MaxClients)
+		SDKCall_EndClassSpecialSkill(iClient);
 }
 
 public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)

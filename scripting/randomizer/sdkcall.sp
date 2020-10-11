@@ -1,6 +1,7 @@
 static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
+static Handle g_hSDKEndClassSpecialSkill;
 static Handle g_hSDKGetLoadoutItem;
 static Handle g_hSDKHandleRageGain;
 static Handle g_hSDKGetSlot;
@@ -29,6 +30,13 @@ public void SDKCall_Init(GameData hGameData)
 	g_hSDKDoClassSpecialSkill = EndPrepSDKCall();
 	if (!g_hSDKDoClassSpecialSkill)
 		LogError("Failed to create call: CTFPlayer::DoClassSpecialSkill");
+	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::EndClassSpecialSkill");
+	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+	g_hSDKEndClassSpecialSkill = EndPrepSDKCall();
+	if (!g_hSDKEndClassSpecialSkill)
+		LogError("Failed to create call: CTFPlayer::EndClassSpecialSkill");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetLoadoutItem");
@@ -89,6 +97,11 @@ void SDKCall_RemoveObject(int iClient, int iObject)
 bool SDKCall_DoClassSpecialSkill(int iClient)
 {
 	return SDKCall(g_hSDKDoClassSpecialSkill, iClient);
+}
+
+bool SDKCall_EndClassSpecialSkill(int iClient)
+{
+	return SDKCall(g_hSDKEndClassSpecialSkill, iClient);
 }
 
 Address SDKCall_GetLoadoutItem(int iClient, TFClassType nClass, int iSlot, bool bReportWhitelistFails = false)

@@ -160,6 +160,12 @@
 				"linux"		"@_ZN9CTFPlayer19DoClassSpecialSkillEv"
 				"windows"	"\x56\x8B\xF1\x8B\x06\x8B\x80\x04\x01\x00\x00\xFF\xD0\x84\xC0\x75\x2A\x32\xC0\x5E\xC3\xF7\x86\x84\x1A\x00\x00\x00\x00\x04\x00"
 			}
+			"CTFPlayer::EndClassSpecialSkill"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer20EndClassSpecialSkillEv"
+				"windows"	"\x56\x8B\xF1\x8B\x06\x8B\x80\x04\x01\x00\x00\xFF\xD0\x84\xC0\x75\x2A\x5E\xC3"
+			}
 			"CTFPlayer::GetChargeEffectBeingProvided"
 			{
 				"library"	"server"
@@ -231,6 +237,11 @@
 			{
 				"linux"		"332"
 				"windows"	"326"
+			}
+			"CTFWeaponBaseMelee::Swing"
+			{
+				"linux"		"478"
+				"windows"	"471"
 			}
 			"CItem::MyTouch"
 			{
@@ -358,6 +369,13 @@
 			"CTFPlayer::DoClassSpecialSkill"
 			{
 				"signature"	"CTFPlayer::DoClassSpecialSkill"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"entity"
+			}
+			"CTFPlayer::EndClassSpecialSkill"
+			{
+				"signature"	"CTFPlayer::EndClassSpecialSkill"
 				"callconv"	"thiscall"
 				"return"	"bool"
 				"this"		"entity"
@@ -509,6 +527,20 @@
 				"hooktype"	"entity"
 				"return"	"void"
 				"this"		"entity"
+			}
+			"CTFWeaponBaseMelee::Swing"
+			{
+				"offset"	"CTFWeaponBaseMelee::Swing"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"	"cbaseentity"
+					}
+				}
 			}
 			"CItem::MyTouch"
 			{
