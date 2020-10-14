@@ -241,6 +241,8 @@ int g_iAllowPlayerClass[TF_MAXPLAYERS];
 int g_iMedigunBeamRef[TF_MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
 Handle g_hTimerClientHud[TF_MAXPLAYERS];
 
+int g_iClientEurekaTeleporting;
+
 #include "randomizer/controls.sp"
 #include "randomizer/huds.sp"
 #include "randomizer/viewmodels.sp"
@@ -291,6 +293,8 @@ public void OnPluginStart()
 	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
+	
+	AddCommandListener(Event_EurekaTeleport, "eureka_teleport");
 	
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
@@ -725,6 +729,13 @@ KeyValues LoadConfig(const char[] sFilepath, const char[] sName)
 	}
 	
 	return kv;
+}
+
+public Action Event_EurekaTeleport(int iClient, const char[] sCommand, int iArgs)
+{
+ //We may not always be able to decrement g_iClientClass, so we'll just use a variable that gets cleared when calling IsPlayerClass
+	g_iClientEurekaTeleporting = iClient;
+	return Plugin_Continue;
 }
 
 void SetClientClass(int iClient, TFClassType nClass)
