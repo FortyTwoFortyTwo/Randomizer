@@ -405,7 +405,6 @@ public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hPa
 	
 	if (g_iClientEurekaTeleporting == iClient) 
 	{
-		g_iClientEurekaTeleporting = 0;
 		DHookSetReturn(hReturn, true);
 		return MRES_Supercede;
  }

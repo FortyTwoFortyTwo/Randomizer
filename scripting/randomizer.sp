@@ -416,6 +416,12 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 		RemoveEntity(iEntity);
 }
 
+public void OnGameFrame()
+{
+	//There isn't another event we can reset this reliably (this is also why we're not using g_iAllowClientClass)
+	g_iClientEurekaTeleporting = 0;
+}
+
 public void ConVar_EnableChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	if (!!StringToInt(newValue))
@@ -708,6 +714,13 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 		UpdateClientWeapon(iClient, ClientUpdate_Death);
 }
 
+public Action Event_EurekaTeleport(int iClient, const char[] sCommand, int iArgs)
+{
+	g_iClientEurekaTeleporting = iClient;
+	return Plugin_Continue;
+}
+
+
 KeyValues LoadConfig(const char[] sFilepath, const char[] sName)
 {
 	char sConfigPath[PLATFORM_MAX_PATH];
@@ -729,13 +742,6 @@ KeyValues LoadConfig(const char[] sFilepath, const char[] sName)
 	}
 	
 	return kv;
-}
-
-public Action Event_EurekaTeleport(int iClient, const char[] sCommand, int iArgs)
-{
- //We may not always be able to decrement g_iClientClass, so we'll just use a variable that gets cleared when calling IsPlayerClass
-	g_iClientEurekaTeleporting = iClient;
-	return Plugin_Continue;
 }
 
 void SetClientClass(int iClient, TFClassType nClass)
