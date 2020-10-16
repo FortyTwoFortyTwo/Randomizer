@@ -278,6 +278,11 @@
 				"linux"		"484"
 				"windows"	"477"
 			}
+			"CTFPlayer::ClientCommand"
+			{
+			 "linux"  "373"
+			 "windows" "372"
+			}
 			"CGameRules::FrameUpdatePostEntityThink"
 			{
 				"linux"		"16"
@@ -642,6 +647,20 @@
 					"b"
 					{
 						"type"	"bool"
+					}
+				}
+			}
+			"CTFPlayer::ClientCommand"
+			{
+				"offset"	"CTFPlayer::ClientCommand"
+				"hooktype"	"entity"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"pArgs"
+					{
+						"type"	"objectptr"
 					}
 				}
 			}

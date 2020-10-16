@@ -18,6 +18,7 @@ static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookForceRespawn;
 static Handle g_hDHookEquipWearable;
 static Handle g_hDHookGiveNamedItem;
+static Handle g_hDHookClientCommand;
 static Handle g_hDHookFrameUpdatePostEntityThink;
 
 static bool g_bSkipHandleRageGain;
@@ -25,6 +26,7 @@ static int g_iClientGetChargeEffectBeingProvided;
 static int g_iWeaponGetLoadoutItem = -1;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
+static int g_iHookIdClientCommand[TF_MAXPLAYERS+1];
 static int g_iHookIdGiveAmmo[TF_MAXPLAYERS+1];
 static int g_iHookIdForceRespawnPre[TF_MAXPLAYERS+1];
 static int g_iHookIdForceRespawnPost[TF_MAXPLAYERS+1];
@@ -63,6 +65,7 @@ public void DHook_Init(GameData hGameData)
 	g_hDHookForceRespawn = DHook_CreateVirtual(hGameData, "CBasePlayer::ForceRespawn");
 	g_hDHookEquipWearable = DHook_CreateVirtual(hGameData, "CBasePlayer::EquipWearable");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
+	g_hDHookClientCommand = DHook_CreateVirtual(hGameData, "CTFPlayer::ClientCommand");
 	g_hDHookFrameUpdatePostEntityThink = DHook_CreateVirtual(hGameData, "CGameRules::FrameUpdatePostEntityThink");
 }
 
@@ -158,6 +161,7 @@ void DHook_HookClient(int iClient)
 	g_iHookIdForceRespawnPre[iClient] = DHookEntity(g_hDHookForceRespawn, false, iClient, _, DHook_ForceRespawnPre);
 	g_iHookIdForceRespawnPost[iClient] = DHookEntity(g_hDHookForceRespawn, true, iClient, _, DHook_ForceRespawnPost);
 	g_iHookIdEquipWearable[iClient] = DHookEntity(g_hDHookEquipWearable, true, iClient, _, DHook_EquipWearablePost);
+	g_iHookIdClientCommand[iClient] = DHookEntity(g_hDHookClientCommand, true, iClient, _, DHook_ClientCommandPost);
 }
 
 void DHook_UnhookClient(int iClient)
@@ -185,6 +189,11 @@ void DHook_UnhookClient(int iClient)
 		DHookRemoveHookID(g_iHookIdEquipWearable[iClient]);
 		g_iHookIdEquipWearable[iClient] = 0;	
 	}
+	if (g_iHookIdClientCommand[iClient])
+	{
+		DHookRemoveHookID(g_iHookIdClientCommand[iClient]);
+		g_iHookIdClientCommand[iClient] = 0;
+ }
 }
 
 void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
@@ -717,6 +726,12 @@ public void DHook_GiveNamedItemRemoved(int iHookId)
 			return;
 		}
 	}
+}
+
+public MRESReturn DHook_ClientCommandPost(int iClient, Handle hReturn, Handle hParams)
+{
+	if(iClient == g_iClientEurekaTeleporting)
+	 g_iClientEurekaTeleporting = 0;
 }
 
 public MRESReturn DHook_FrameUpdatePostEntityThinkPre()

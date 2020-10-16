@@ -416,12 +416,6 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 		RemoveEntity(iEntity);
 }
 
-public void OnGameFrame()
-{
-	//There isn't another event we can reset this reliably (this is also why we're not using g_iAllowClientClass)
-	g_iClientEurekaTeleporting = 0;
-}
-
 public void ConVar_EnableChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	if (!!StringToInt(newValue))
