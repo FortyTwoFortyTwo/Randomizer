@@ -238,6 +238,7 @@ int g_iClientWeaponIndex[TF_MAXPLAYERS][WeaponSlot_BuilderEngie+1];
 
 TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
 int g_iAllowPlayerClass[TF_MAXPLAYERS];
+bool g_bFeignDeath[TF_MAXPLAYERS];
 int g_iMedigunBeamRef[TF_MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
 Handle g_hTimerClientHud[TF_MAXPLAYERS];
 
@@ -702,6 +703,9 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
 	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
 	bool bDeadRinger = (event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER) != 0;
+	
+	if (bDeadRinger)
+		g_bFeignDeath[iClient] = true;
 	
 	//Only generate new weapons if killed from attacker
 	if (0 < iAttacker <= MaxClients && IsClientInGame(iAttacker) && iClient != iAttacker && !bDeadRinger)

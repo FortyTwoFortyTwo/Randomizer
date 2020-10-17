@@ -23,6 +23,10 @@ void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 		SDKHook(iEntity, SDKHook_SpawnPost, Weapon_SpawnPost);
 		SDKHook(iEntity, SDKHook_Reload, Weapon_Reload);
 	}
+	else if (StrEqual(sClassname, "item_healthkit_small"))
+	{
+		SDKHook(iEntity, SDKHook_SpawnPost, HealthKit_SpawnPost);
+	}
 }
 
 public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &flDamage, int &iDamageType, int &iWeapon, float vecDamageForce[3], float vecDamagePosition[3], int iDamageCustom)
@@ -33,6 +37,7 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, float flDamage, int iDamageType, int iWeapon, const float vecDamageForce[3], const float vecDamagePosition[3], int iDamageCustom)
 {
 	g_iAllowPlayerClass[iVictim]--;
+	g_bFeignDeath[iVictim] = false;
 }
 
 public void Client_PreThink(int iClient)
@@ -144,4 +149,12 @@ public Action Weapon_Reload(int iWeapon)
 		return Plugin_Handled;
 	
 	return Plugin_Continue;
+}
+
+public void HealthKit_SpawnPost(int iHealthKit)
+{
+	//Feigh death drops health pack if have Candy Cane active. Why? No idea
+	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
+	if (0 < iClient <= MaxClients && g_bFeignDeath[iClient])
+		RemoveEntity(iHealthKit);
 }
