@@ -208,6 +208,12 @@
 				"linux"		"@_ZN20CTFPlayerClassShared14CanBuildObjectEi"
 				"windows"	"\x55\x8B\xEC\x53\x56\xFF\x71\x04"
 			}
+			"CTFKnife::DisguiseOnKill"
+			{
+			 "library" "server"
+			 "linux"  "@_ZN8CTFKnife14DisguiseOnKillEv"
+			 "windows" "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x96\x00\x08\x00\x00"
+			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{
 				"library"	"server"
@@ -459,6 +465,13 @@
 						"type"	"int"
 					}
 				}
+			}
+			"CTFKnife::DisguiseOnKill"
+			{
+			 "signature" "CTFKnife::DisguiseOnKill"
+			 "callconv" "thiscall"
+			 "return" "void"
+			 "this" "entity"
 			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{
