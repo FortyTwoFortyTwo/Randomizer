@@ -202,6 +202,12 @@
 				"linux"		"@_ZNK9CTFPlayer30TeamFortress_CalculateMaxSpeedEb"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x18\x83\x3D\x2A\x2A\x2A\x2A\x00"
 			}
+			"CTFPlayer::TakeHealth"
+			{
+				"library" "server"
+				"linux" 	"@_ZN9CTFPlayer10TakeHealthEfi"
+				"windows" "\x55\x8B\xEC\x56\x8B\xF1\x6A\x1F"
+			}
 			"CTFPlayerClassShared::CanBuildObject"
 			{
 				"library"	"server"
@@ -213,6 +219,12 @@
 			 "library" "server"
 			 "linux"  "@_ZN8CTFKnife14DisguiseOnKillEv"
 			 "windows" "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x96\x00\x08\x00\x00"
+			}
+			"CTFLunchBox::ApplyBiteEffects"
+			{
+				"library" "server"
+				"linux"  "@_ZN11CTFLunchBox16ApplyBiteEffectsEP9CTFPlayer"
+				"windows" "\x55\x8B\xEC\x51\x53\x8B\xD9\x56\x57\x6A\x01"
 			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{
@@ -452,6 +464,24 @@
 					}
 				}
 			}
+			"CTFPlayer::TakeHealth"
+			{
+				"signature"	"CTFPlayer::TakeHealth"
+				"callconv"	"thiscall"
+				"return"	"int"
+				"this"		"entity"
+				"arguments"
+				{
+					"flHealth"
+					{
+						"type"	"float"
+					}
+					"bitsDamageType"
+					{
+						"type"	"int"
+					}
+				}
+			}
 			"CTFPlayerClassShared::CanBuildObject"
 			{
 				"signature"	"CTFPlayerClassShared::CanBuildObject"
@@ -472,6 +502,20 @@
 			 "callconv" "thiscall"
 			 "return" "void"
 			 "this" "entity"
+			}
+			"CTFLunchBox::ApplyBiteEffects"
+			{
+				"signature" "CTFLunchBox::ApplyBiteEffects"
+				"callconv" "thiscall"
+				"return" "void"
+				"this" "entity"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"	"cbaseentity"
+					}
+				}
 			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{
