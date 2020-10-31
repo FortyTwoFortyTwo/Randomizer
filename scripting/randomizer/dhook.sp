@@ -27,7 +27,6 @@ static int g_iWeaponGetLoadoutItem = -1;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static int g_iHookIdClientCommand[TF_MAXPLAYERS+1];
-static int g_iHookIdTakeHealth[TF_MAXPLAYERS+1];
 static int g_iHookIdGiveAmmo[TF_MAXPLAYERS+1];
 static int g_iHookIdForceRespawnPre[TF_MAXPLAYERS+1];
 static int g_iHookIdForceRespawnPost[TF_MAXPLAYERS+1];
