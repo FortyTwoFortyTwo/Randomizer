@@ -27,11 +27,13 @@ static int g_iWeaponGetLoadoutItem = -1;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static int g_iHookIdClientCommand[TF_MAXPLAYERS+1];
+static int g_iHookIdTakeHealth[TF_MAXPLAYERS+1];
 static int g_iHookIdGiveAmmo[TF_MAXPLAYERS+1];
 static int g_iHookIdForceRespawnPre[TF_MAXPLAYERS+1];
 static int g_iHookIdForceRespawnPost[TF_MAXPLAYERS+1];
 static int g_iHookIdEquipWearable[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
+static bool g_bApplyBiteEffectsChocolate[TF_MAXPLAYERS+1];
 
 static int g_iDHookGamerulesPre;
 static int g_iDHookGamerulesPost;
@@ -51,8 +53,10 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::IsPlayerClass", DHook_IsPlayerClassPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetLoadoutItem", DHook_GetLoadoutItemPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetEntityForLoadoutSlot", DHook_GetEntityForLoadoutSlotPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::TakeHealth", DHook_TakeHealthPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
 	DHook_CreateDetour(hGameData, "CTFKnife::DisguiseOnKill", DHook_DisguiseOnKillPre, DHook_DisguiseOnKillPost);
+	DHook_CreateDetour(hGameData, "CTFLunchBox::ApplyBiteEffects", DHook_ApplyBiteEffectsPre, DHook_ApplyBiteEffectsPost);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
 	DHook_CreateDetour(hGameData, "HandleRageGain", DHook_HandleRageGainPre, _);
 	
@@ -503,6 +507,24 @@ public MRESReturn DHook_DisguiseOnKillPost(int iWeapon)
 	RevertClientClass(iClient);
 }
 
+public MRESReturn DHook_ApplyBiteEffectsPre(int iWeapon, Handle hParams)
+{
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");	
+	float flGivesHealth;
+	int iAttrib = TF2Econ_TranslateAttributeNameToDefinitionIndex("lunchbox adds maxhealth bonus");
+	TF2_WeaponFindAttribute(iWeapon, iAttrib, flGivesHealth);
+	
+	if (flGivesHealth > 0)
+		g_bApplyBiteEffectsChocolate[iClient] = true;
+	
+}
+
+public MRESReturn DHook_ApplyBiteEffectsPost(int iWeapon, Handle hParams)
+{
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");	
+	g_bApplyBiteEffectsChocolate[iClient] = false;
+}
+
 public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 {
 	//Not all weapons remove disguise
@@ -745,6 +767,16 @@ public MRESReturn DHook_ClientCommandPost(int iClient, Handle hReturn, Handle hP
 {
 	if(iClient == g_iClientEurekaTeleporting)
 	 g_iClientEurekaTeleporting = 0;
+}
+
+public MRESReturn DHook_TakeHealthPre(int iClient, Handle hReturn, Handle hParams)
+{
+	if (g_bApplyBiteEffectsChocolate[iClient]) 
+	{
+		DHookSetParam(hParams, 2, DMG_GENERIC);
+		return MRES_ChangedHandled;
+	}
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_FrameUpdatePostEntityThinkPre()
