@@ -205,7 +205,7 @@
 			"CTFPlayer::TakeHealth"
 			{
 				"library" "server"
-				"linux" 	"_ZN9CTFPlayer10TakeHealthEfi"
+				"linux" 	"@_ZN9CTFPlayer10TakeHealthEfi"
 				"windows" "\x55\x8B\xEC\x56\x8B\xF1\x6A\x1F"
 			}
 			"CTFPlayerClassShared::CanBuildObject"
