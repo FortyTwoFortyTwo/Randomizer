@@ -139,10 +139,15 @@ stock bool TF2_IsValidEconItemView(Address pItem)
 	return 0 <= iIndex < 65535;
 }
 
-stock bool TF2_WeaponFindAttribute(int iWeapon, int iAttrib, float &flVal)
+stock bool TF2_WeaponFindAttribute(int iWeapon, const char[] sAttrib, float &flVal)
 {
-	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+	return TF2_IndexFindAttribute(GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"), sAttrib, flVal);
+}
+
+stock bool TF2_IndexFindAttribute(int iIndex, const char[] sAttrib, float &flVal)
+{
 	ArrayList aAttribs = TF2Econ_GetItemStaticAttributes(iIndex);
+	int iAttrib = TF2Econ_TranslateAttributeNameToDefinitionIndex(sAttrib);
 	
 	int iPos = aAttribs.FindValue(iAttrib, 0);
 	if (iPos >= 0)
@@ -344,7 +349,41 @@ stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 	return EntIndexToEntRef(iParticle);
 }
 
-stock int CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
+stock bool ItemIsAllowed(int iIndex)
+{
+	if (GameRules_GetProp("m_bPlayingMedieval") || (GameRules_GetRoundState() == RoundState_Stalemate && FindConVar("mp_stalemate_meleeonly").BoolValue))
+	{
+		//TF2 hack!
+		char sClassname[256];
+		TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+		if (StrEqual(sClassname, "tf_weapon_passtime_gun"))
+			return true;
+		
+		//For medieval and melee stalemate, allow melee and spy PDA
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+		{
+			int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+			if (iSlot == WeaponSlot_Melee)
+				return true;
+			else if ((iSlot == WeaponSlot_PDADisguise || iSlot == WeaponSlot_InvisWatch) && view_as<TFClassType>(iClass) == TFClass_Spy)
+				return true;
+		}
+		
+		//For medieval, allow medieval weapons
+		if (GameRules_GetProp("m_bPlayingMedieval"))
+		{
+			float flVal;
+			if (TF2_IndexFindAttribute(iIndex, "allowed in medieval mode", flVal) && flVal)
+				return true;
+		}
+		
+		return false;
+	}
+	
+	return true;
+}
+
+stock bool CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 {
 	if (g_bAllowGiveNamedItem || g_cvRandomWeapons.IntValue == Mode_None)
 		return true;

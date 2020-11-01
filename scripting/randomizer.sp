@@ -26,8 +26,6 @@
 #define TEAM_MIN	2	//First valid TFTeam, TFTeam_Red
 #define TEAM_MAX	3	//Last valid TFTeam, TFTeam_Blue
 
-#define ATTRIB_AIR_DASH_COUNT	250
-
 #define PARTICLE_BEAM_BLU	"medicgun_beam_blue"
 #define PARTICLE_BEAM_RED	"medicgun_beam_red"
 
@@ -653,7 +651,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 	{
 		//Create weapon
-		if (g_iClientWeaponIndex[iClient][iSlot] >= 0 && !bKeepWeapon[iSlot])
+		if (g_iClientWeaponIndex[iClient][iSlot] >= 0 && !bKeepWeapon[iSlot] && ItemIsAllowed(g_iClientWeaponIndex[iClient][iSlot]))
 		{
 			Address pItem = TF2_FindReskinItem(iClient, g_iClientWeaponIndex[iClient][iSlot]);
 			if (pItem)

@@ -309,7 +309,7 @@ public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
 	
 	float flVal;
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iWeapon > MaxClients && TF2_WeaponFindAttribute(iWeapon, ATTRIB_AIR_DASH_COUNT, flVal) && iAirDash < RoundToNearest(flVal))
+	if (iWeapon > MaxClients && TF2_WeaponFindAttribute(iWeapon, "air dash count", flVal) && iAirDash < RoundToNearest(flVal))
 	{
 		SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
 		DHookSetReturn(hReturn, true);
@@ -509,13 +509,11 @@ public MRESReturn DHook_DisguiseOnKillPost(int iWeapon)
 public MRESReturn DHook_ApplyBiteEffectsPre(int iWeapon, Handle hParams)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");	
-	float flGivesHealth;
-	int iAttrib = TF2Econ_TranslateAttributeNameToDefinitionIndex("lunchbox adds maxhealth bonus");
-	TF2_WeaponFindAttribute(iWeapon, iAttrib, flGivesHealth);
 	
+	float flGivesHealth;
+	TF2_WeaponFindAttribute(iWeapon, "lunchbox adds maxhealth bonus", flGivesHealth);
 	if (flGivesHealth > 0)
 		g_bApplyBiteEffectsChocolate[iClient] = true;
-	
 }
 
 public MRESReturn DHook_ApplyBiteEffectsPost(int iWeapon, Handle hParams)
