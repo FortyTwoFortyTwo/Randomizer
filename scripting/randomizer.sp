@@ -237,7 +237,6 @@ int g_iClientWeaponIndex[TF_MAXPLAYERS][WeaponSlot_BuilderEngie+1];
 TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
 int g_iAllowPlayerClass[TF_MAXPLAYERS];
 bool g_bFeignDeath[TF_MAXPLAYERS];
-int g_iMedigunBeamRef[TF_MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
 Handle g_hTimerClientHud[TF_MAXPLAYERS];
 
 int g_iClientEurekaTeleporting;

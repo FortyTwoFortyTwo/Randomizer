@@ -1,3 +1,5 @@
+static int g_iMedigunBeamRef[TF_MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
+
 void SDKHook_HookClient(int iClient)
 {
 	SDKHook(iClient, SDKHook_OnTakeDamage, Client_OnTakeDamage);
@@ -114,6 +116,10 @@ public void Client_PreThink(int iClient)
 public void Client_PreThinkPost(int iClient)
 {
 	g_iAllowPlayerClass[iClient]--;
+	
+	//m_flEnergyDrinkMeter meant to be used for scout drinks, but TFCond_CritCola shared Buffalo Steak and Cleaner's Carbine
+	if (TF2_IsPlayerInCondition(iClient, TFCond_CritCola) && TF2_GetItemFromClassname(iClient, "tf_weapon_lunchbox_drink") <= MaxClients)
+		SetEntPropFloat(iClient, Prop_Send, "m_flEnergyDrinkMeter", 100.0);
 }
 
 public Action Client_WeaponEquip(int iClient, int iWeapon)

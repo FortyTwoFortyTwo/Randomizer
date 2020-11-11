@@ -204,9 +204,9 @@
 			}
 			"CTFPlayer::TakeHealth"
 			{
-				"library" "server"
-				"linux" 	"@_ZN9CTFPlayer10TakeHealthEfi"
-				"windows" "\x55\x8B\xEC\x56\x8B\xF1\x6A\x1F"
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer10TakeHealthEfi"
+				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x6A\x1F"
 			}
 			"CTFPlayerClassShared::CanBuildObject"
 			{
@@ -216,9 +216,9 @@
 			}
 			"CTFKnife::DisguiseOnKill"
 			{
-			 "library" "server"
-			 "linux"  "@_ZN8CTFKnife14DisguiseOnKillEv"
-			 "windows" "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x96\x00\x08\x00\x00"
+				"library" "server"
+				"linux"  "@_ZN8CTFKnife14DisguiseOnKillEv"
+				"windows" "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x96\x00\x08\x00\x00"
 			}
 			"CTFLunchBox::ApplyBiteEffects"
 			{
@@ -298,8 +298,8 @@
 			}
 			"CTFPlayer::ClientCommand"
 			{
-			 "linux"  "373"
-			 "windows" "372"
+				"linux"		"373"
+				"windows"	"372"
 			}
 			"CGameRules::FrameUpdatePostEntityThink"
 			{
@@ -498,10 +498,10 @@
 			}
 			"CTFKnife::DisguiseOnKill"
 			{
-			 "signature" "CTFKnife::DisguiseOnKill"
-			 "callconv" "thiscall"
-			 "return" "void"
-			 "this" "entity"
+				"signature" "CTFKnife::DisguiseOnKill"
+				"callconv" "thiscall"
+				"return" "void"
+				"this" "entity"
 			}
 			"CTFLunchBox::ApplyBiteEffects"
 			{
