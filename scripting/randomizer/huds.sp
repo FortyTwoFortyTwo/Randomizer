@@ -84,15 +84,8 @@ enum struct HudInfo
 	}
 }
 
-enum struct HudWeapon
-{
-	int iRef;					//Weapon ref
-	char sName[64];				//Translated name of weapon to display
-	ArrayList aHudInfo;			//Arrays of HudInfo to display
-}
-
-static ArrayList g_aHuds;	//Arrays of HudInfo
-static HudWeapon g_hudWeapon[TF_MAXPLAYERS][WeaponSlot_InvisWatch+1];	//What to display for each weapons
+static ArrayList g_aHuds;	//Arrays of HudInfo from config
+static ArrayList g_aClientHudInfo[TF_MAXPLAYERS][WeaponSlot_InvisWatch+1];	//Arrays of HudInfo to display
 
 void Huds_Init()
 {
@@ -213,33 +206,20 @@ void Huds_Refresh()
 void Huds_RefreshClient(int iClient)
 {
 	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
-	{
-		delete g_hudWeapon[iClient][iSlot].aHudInfo;
-		
-		HudWeapon nothing;
-		g_hudWeapon[iClient][iSlot] = nothing;
-	}
+		delete g_aClientHudInfo[iClient][iSlot];
 	
 	if (!g_cvHuds.BoolValue)	//ConVar dont want us to do anything
 		return;
 	
-	int iWeapon;
-	int iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
+	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
 	{
-		int iSlot = TF2_GetSlot(iWeapon);
-		if (iSlot < 0 || iSlot >= sizeof(g_hudWeapon[]))
+		int iWeapon = g_ClientWeaponInfo[iClient][iSlot].GetItem();
+		if (iWeapon == INVALID_ENT_REFERENCE)
 			continue;
 		
-		HudWeapon hudWeapon;
-		hudWeapon.iRef = EntIndexToEntRef(iWeapon);
-		
-		int iIndex = Weapons_GetReskinIndex(GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"));
-		if (!Weapons_GetName(iIndex, hudWeapon.sName, sizeof(hudWeapon.sName)))
-			continue;	//This weapon is probably a special one and not from randomizer, ignore
-		
 		//Translate weapon name
-		Format(hudWeapon.sName, sizeof(hudWeapon.sName), "%T", hudWeapon.sName, iClient);
+		if (TranslationPhraseExists(g_ClientWeaponInfo[iClient][iSlot].sName))
+			Format(g_ClientWeaponInfo[iClient][iSlot].sName, sizeof(g_ClientWeaponInfo[][].sName), "%T", g_ClientWeaponInfo[iClient][iSlot].sName, iClient);
 		
 		//Go through every HudInfo to see whenever which weapon can use
 		int iLength = g_aHuds.Length;
@@ -252,16 +232,14 @@ void Huds_RefreshClient(int iClient)
 			if (!HasEntProp(iEntity, Prop_Send, hudInfo.sNetprop))
 				continue;
 			
-			if (!hudInfo.weaponWhitelist.IsEmpty() && !hudInfo.weaponWhitelist.IsIndexAllowed(iIndex))
+			if (!hudInfo.weaponWhitelist.IsEmpty() && !hudInfo.weaponWhitelist.IsAllowed(g_ClientWeaponInfo[iClient][iSlot]))
 				continue;
 			
-			if (!hudWeapon.aHudInfo)
-				hudWeapon.aHudInfo = new ArrayList(sizeof(HudInfo));
+			if (!g_aClientHudInfo[iClient][iSlot])
+				g_aClientHudInfo[iClient][iSlot] = new ArrayList(sizeof(HudInfo));
 			
-			hudWeapon.aHudInfo.PushArray(hudInfo);
+			g_aClientHudInfo[iClient][iSlot].PushArray(hudInfo);
 		}
-		
-		g_hudWeapon[iClient][iSlot] = hudWeapon;
 	}
 }
 
@@ -281,24 +259,24 @@ public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 	
 	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
 	{
-		int iWeapon = EntRefToEntIndex(g_hudWeapon[iClient][iSlot].iRef);
-		if (iWeapon <= MaxClients)
+		int iWeapon = g_ClientWeaponInfo[iClient][iSlot].GetItem();
+		if (iWeapon == INVALID_ENT_REFERENCE)
 			continue;
 		
 		//Break line
 		if (sDisplay[0] != '\0')
 			StrCat(sDisplay, sizeof(sDisplay), "\n");
 		
-		StrCat(sDisplay, sizeof(sDisplay), g_hudWeapon[iClient][iSlot].sName);
+		StrCat(sDisplay, sizeof(sDisplay), g_ClientWeaponInfo[iClient][iSlot].sName);
 		
 		//Go through every netprops to display
-		if (g_hudWeapon[iClient][iSlot].aHudInfo)
+		if (g_aClientHudInfo[iClient][iSlot])
 		{
-			int iLength = g_hudWeapon[iClient][iSlot].aHudInfo.Length;
+			int iLength = g_aClientHudInfo[iClient][iSlot].Length;
 			for (int i = 0; i < iLength; i++)
 			{
 				HudInfo hudInfo;
-				g_hudWeapon[iClient][iSlot].aHudInfo.GetArray(i, hudInfo);
+				g_aClientHudInfo[iClient][iSlot].GetArray(i, hudInfo);
 				int iEntity = hudInfo.GetEntity(iClient, iWeapon);
 				
 				switch (hudInfo.nType)

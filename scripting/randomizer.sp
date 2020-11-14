@@ -15,7 +15,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.5.0"
+#define PLUGIN_VERSION			"1.6.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
@@ -107,6 +107,64 @@ enum Button
 	Button_MAX
 };
 
+enum struct WeaponInfo
+{
+	int iItem;							//Weapon entity ref client uses, should not be used for config stuff
+	int iId;							//WeaponInfo ID, 0 if invalid
+	bool bCustom;						//Does it use custom attribs?
+	int iIndex;							//Weapon def index
+	char sName[CONFIG_MAXCHAR];			//Translation name
+	char sClassname[CONFIG_MAXCHAR];	//Weapon entity classname
+	ArrayList aAttrib;					//block size 2 of custom attribs to apply. Block 0 for attrib index, block 1 for value
+	
+	int GetItem()
+	{
+		if (!this.iItem)	//enum struct init as 0, which is worldspawn entity and we dont want that
+			return INVALID_ENT_REFERENCE;
+		
+		if (IsValidEntity(this.iItem))
+			return this.iItem;
+		
+		return INVALID_ENT_REFERENCE;
+	}
+	
+	void GetClassname(char[] sClassname, int iLength)
+	{
+		if (this.sClassname[0])
+			strcopy(sClassname, iLength, this.sClassname);
+		else
+			TF2Econ_GetItemClassName(this.iIndex, sClassname, iLength);
+	}
+	
+	ArrayList GetAttributes()
+	{
+		if (this.bCustom)
+			return this.aAttrib ? this.aAttrib.Clone() : null;
+		else
+			return TF2Econ_GetItemStaticAttributes(this.iIndex);
+	}
+	
+	bool FindAttribute(const char[] sAttrib, float &flVal)
+	{
+		ArrayList aAttribs = this.GetAttributes();
+		if (!aAttribs)
+			return false;
+		
+		int iAttrib = TF2Econ_TranslateAttributeNameToDefinitionIndex(sAttrib);
+		
+		int iPos = aAttribs.FindValue(iAttrib, 0);
+		if (iPos >= 0)
+		{
+			flVal = aAttribs.Get(iPos, 1);
+			delete aAttribs;
+			return true;
+		}
+		
+		delete aAttribs;
+		return false;
+	}
+}
+
 enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 {
 	ArrayList aClassname;
@@ -154,12 +212,12 @@ enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 		}
 	}
 	
-	bool IsIndexAllowed(int iIndex)
+	bool IsAllowed(WeaponInfo info)
 	{
 		if (this.aClassname)
 		{
 			char sClassname[256];
-			TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+			info.GetClassname(sClassname, sizeof(sClassname));
 			
 			int iLength = this.aClassname.Length;
 			for (int i = 0; i < iLength; i++)
@@ -173,31 +231,34 @@ enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 		
 		if (this.aAttrib)
 		{
-			ArrayList aIndexAttrib = TF2Econ_GetItemStaticAttributes(iIndex);
-			int iIndexAttribLength = aIndexAttrib.Length;
-			int iAllowedAttribLength = this.aAttrib.Length;
-			
-			for (int i = 0; i < iIndexAttribLength; i++)
+			ArrayList aAttributes = info.GetAttributes();
+			if (aAttributes)
 			{
-				int iIndexAttrib = aIndexAttrib.Get(i);
-				for (int j = 0; j < iAllowedAttribLength; j++)
+				int iIndexAttribLength = aAttributes.Length;
+				int iAllowedAttribLength = this.aAttrib.Length;
+				
+				for (int i = 0; i < iIndexAttribLength; i++)
 				{
-					if (iIndexAttrib == this.aAttrib.Get(j))
+					int iIndexAttrib = aAttributes.Get(i);
+					for (int j = 0; j < iAllowedAttribLength; j++)
 					{
-						delete aIndexAttrib;
-						return true;
+						if (iIndexAttrib == this.aAttrib.Get(j))
+						{
+							delete aAttributes;
+							return true;
+						}
 					}
 				}
+				
+				delete aAttributes;
 			}
-			
-			delete aIndexAttrib;
 		}
 		
-		if (this.aIndex)
+		if (this.aIndex && !info.bCustom)
 		{
 			int iLength = this.aIndex.Length;
 			for (int i = 0; i < iLength; i++)
-				if (iIndex == this.aIndex.Get(i))
+				if (info.iIndex == this.aIndex.Get(i))
 					return true;
 		}
 		
@@ -229,10 +290,10 @@ ConVar g_cvDroppedWeapons;
 ConVar g_cvHuds;
 
 TFClassType g_iTeamClass[TEAM_MAX+1];
-int g_iTeamWeaponIndex[TEAM_MAX + 1][WeaponSlot_BuilderEngie + 1];
+WeaponInfo g_TeamWeaponInfo[TEAM_MAX + 1][WeaponSlot_BuilderEngie + 1];
 
 TFClassType g_iClientClass[TF_MAXPLAYERS];
-int g_iClientWeaponIndex[TF_MAXPLAYERS][WeaponSlot_BuilderEngie+1];
+WeaponInfo g_ClientWeaponInfo[TF_MAXPLAYERS][WeaponSlot_BuilderEngie+1];
 
 TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
 int g_iAllowPlayerClass[TF_MAXPLAYERS];
@@ -290,18 +351,9 @@ public void OnPluginStart()
 	Weapons_Init();
 	
 	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
-	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	
 	AddCommandListener(Event_EurekaTeleport, "eureka_teleport");
-	
-	for (int iClient = 1; iClient <= MaxClients; iClient++)
-	{
-		g_iClientClass[iClient] = TFClass_Unknown;
-		
-		for (int iSlot = 0; iSlot < sizeof(g_iClientWeaponIndex[]); iSlot++)
-			g_iClientWeaponIndex[iClient][iSlot] = -1;
-	}
 	
 	CreateConVar("randomizer_version", PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION, "Randomizer plugin version", FCVAR_SPONLY|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	
@@ -432,7 +484,7 @@ public void ConVar_RandomChanged(ConVar convar, const char[] oldValue, const cha
 		
 		for (int iClient = 1; iClient <= MaxClients; iClient++)
 			if (IsClientInGame(iClient))
-				TF2_RespawnPlayer(iClient);
+				UpdateClientWeapon(iClient, ClientUpdate_Spawn);
 	}
 }
 
@@ -451,9 +503,7 @@ void EnableRandomizer()
 		if (IsClientInGame(iClient))
 		{
 			OnClientPutInServer(iClient);
-			
-			if (TF2_GetClientTeam(iClient) > TFTeam_Spectator)
-				TF2_RespawnPlayer(iClient);
+			UpdateClientWeapon(iClient, ClientUpdate_Round);
 		}
 	}
 }
@@ -480,8 +530,8 @@ void DisableRandomizer()
 		RemoveEntity(iBuilding);
 	
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
-		if (IsClientInGame(iClient) && IsPlayerAlive(iClient))
-			TF2_RegeneratePlayer(iClient);
+		if (IsClientInGame(iClient))
+			UpdateClientWeapon(iClient, ClientUpdate_Round);
 }
 
 void UpdateTeamWeapon(TFTeam iForceTeam = TFTeam_Unassigned)
@@ -523,7 +573,7 @@ void UpdateTeamWeapon(TFTeam iForceTeam = TFTeam_Unassigned)
 						iClass = TF2_GetRandomClass();
 					
 					for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-						g_iTeamWeaponIndex[iTeam][iSlot] = Weapons_GetRandomIndex(iSlot, iClass);
+						Weapons_GetRandomInfo(g_TeamWeaponInfo[iTeam][iSlot], iSlot, iClass);
 				}
 			}
 		}
@@ -531,16 +581,18 @@ void UpdateTeamWeapon(TFTeam iForceTeam = TFTeam_Unassigned)
 		{
 			for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
 			{
-				int iWeaponIndex = Weapons_GetRandomIndex(iSlot, iGlobalClass);
+				WeaponInfo info;
+				Weapons_GetRandomInfo(info, iSlot, iGlobalClass);
 				for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
-					g_iTeamWeaponIndex[iTeam][iSlot] = iWeaponIndex;
+					g_TeamWeaponInfo[iTeam][iSlot] = info;
 			}
 		}
 		default:
 		{
+			WeaponInfo nothing;
 			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
 				for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-					g_iTeamWeaponIndex[iTeam][iSlot] = -1;
+					g_TeamWeaponInfo[iTeam][iSlot] = nothing;
 		}
 	}
 }
@@ -549,7 +601,16 @@ void UpdateClientWeapon(int iClient, ClientUpdate iUpdate)
 {
 	TFTeam iTeam = TF2_GetClientTeam(iClient);
 	
-	switch (g_cvRandomClass.IntValue)
+	int iRandomClass = Mode_None;
+	int iRandomWeapon = Mode_None;
+	
+	if (g_bEnabled)
+	{
+		iRandomClass = g_cvRandomClass.IntValue;
+		iRandomWeapon = g_cvRandomWeapons.IntValue;
+	}
+	
+	switch (iRandomClass)
 	{
 		case Mode_None:
 		{
@@ -571,31 +632,148 @@ void UpdateClientWeapon(int iClient, ClientUpdate iUpdate)
 		}
 	}
 	
-	switch (g_cvRandomWeapons.IntValue)
+	WeaponInfo info[WeaponSlot_BuilderEngie+1];
+	
+	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
+		info[iSlot] = g_ClientWeaponInfo[iClient][iSlot];	//Same info as default
+	
+	switch (iRandomWeapon)
 	{
 		case Mode_None:
 		{
+			WeaponInfo nothing;
 			for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-				g_iClientWeaponIndex[iClient][iSlot] = -1;
+				info[iSlot] = nothing;
 		}
 		case Mode_Normal:
 		{
 			if (iUpdate == ClientUpdate_Round || iUpdate == ClientUpdate_Death)
 				for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-					g_iClientWeaponIndex[iClient][iSlot] = Weapons_GetRandomIndex(iSlot, g_iClientClass[iClient]);
+					Weapons_GetRandomInfo(info[iSlot], iSlot, g_iClientClass[iClient]);
 		}
 		case Mode_NormalRound:
 		{
 			if (iUpdate == ClientUpdate_Round)
 				for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-					g_iClientWeaponIndex[iClient][iSlot] = Weapons_GetRandomIndex(iSlot, g_iClientClass[iClient]);
+					Weapons_GetRandomInfo(info[iSlot], iSlot, g_iClientClass[iClient]);
 		}
 		case Mode_Team, Mode_All:
 		{
 			for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-				g_iClientWeaponIndex[iClient][iSlot] = g_iTeamWeaponIndex[iTeam][iSlot];
+				info[iSlot] = g_TeamWeaponInfo[iTeam][iSlot];
 		}
 	}
+	
+	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
+		SetClientWeapon(iClient, iSlot, info[iSlot]);
+	
+	if (IsPlayerAlive(iClient))
+	{
+		if (g_iClientClass[iClient] != TFClass_Unknown)
+			TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+		
+		SetEntProp(iClient, Prop_Send, "m_iHealth", 0);
+		TF2_RegeneratePlayer(iClient);
+		
+		//Set active weapon if dont have one
+		if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
+		{
+			for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
+			{
+				int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);	//Dont want wearable
+				if (iWeapon > MaxClients)
+				{
+					SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
+					break;
+				}
+			}
+		}
+	}
+	else if (g_iClientClass[iClient] != TFClass_Unknown)
+	{
+		SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(g_iClientClass[iClient]));
+	}
+}
+
+void SetClientWeapon(int iClient, int iSlot, WeaponInfo info)
+{
+	WeaponInfo old;
+	old = g_ClientWeaponInfo[iClient][iSlot];
+	g_ClientWeaponInfo[iClient][iSlot] = info;
+	g_ClientWeaponInfo[iClient][iSlot].iItem = old.iItem;
+	
+	//Do we need to update client's current weapons?
+	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
+		return;
+	
+	if (!info.iId && old.GetItem() != INVALID_ENT_REFERENCE)
+	{
+		int iWeapon = EntRefToEntIndex(old.GetItem());
+		
+		//No randomizer weapon to equip but has one equipped, remove and give back normal weapon
+		TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
+		int iEconSlot = TF2_GetEconSlot(iWeapon, nClass);
+		TF2_RemoveItem(iClient, iWeapon);
+		
+		Address pItem = SDKCall_GetLoadoutItem(iClient, nClass, iEconSlot);
+		if (pItem)
+		{
+			iWeapon = TF2_GiveNamedItem(iClient, pItem, iSlot);
+			TF2_EquipWeapon(iClient, iWeapon);
+		}
+		
+		return;
+	}
+	
+	if (!info.iId || (info.iId == old.iId && old.GetItem() != INVALID_ENT_REFERENCE))
+		return;	//Equipped weapon should be the same, dont bother modify
+	
+	//Destroy currently equipped normal/randomizer weapon
+	int iWeapon, iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		if (TF2_GetSlot(iWeapon) != iSlot)
+			continue;
+		
+		char sClassname[256];
+		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+		if (!CanKeepWeapon(iClient, sClassname, GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex")))
+			TF2_RemoveItem(iClient, iWeapon);
+	}
+	
+	if (!ItemIsAllowed(g_ClientWeaponInfo[iClient][iSlot], iSlot))
+		return;
+	
+	//Create weapon
+	iWeapon = INVALID_ENT_REFERENCE;
+	if (!g_ClientWeaponInfo[iClient][iSlot].bCustom)
+	{
+		Address pItem = TF2_FindReskinItem(iClient, g_ClientWeaponInfo[iClient][iSlot].iIndex);
+		if (pItem)
+			iWeapon = TF2_GiveNamedItem(iClient, pItem, iSlot);
+	}
+	
+	if (iWeapon == INVALID_ENT_REFERENCE)
+		iWeapon = TF2_CreateWeapon(iClient, g_ClientWeaponInfo[iClient][iSlot], iSlot);
+	
+	if (iWeapon == INVALID_ENT_REFERENCE)
+	{
+		//TODO better way to error this
+		PrintToChat(iClient, "Unable to create weapon! index (%d)", g_ClientWeaponInfo[iClient][iSlot].iIndex);
+		LogError("Unable to create weapon! index (%d)", g_ClientWeaponInfo[iClient][iSlot].iIndex);
+	}
+	
+	//Set iItem before equip weapon
+	g_ClientWeaponInfo[iClient][iSlot].iItem = EntIndexToEntRef(iWeapon);
+	
+	//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
+	if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
+		SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
+	
+	TF2_EquipWeapon(iClient, iWeapon);
+	
+	if (ViewModels_ShouldBeInvisible(iWeapon, TF2_GetPlayerClass(iClient)))
+		ViewModels_EnableInvisible(iWeapon);
 }
 
 public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
@@ -607,90 +785,8 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 	
 	//Update client weapons
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
-	{
 		if (IsClientInGame(iClient))
-		{
 			UpdateClientWeapon(iClient, ClientUpdate_Round);
-			
-			if (TF2_GetClientTeam(iClient) > TFTeam_Spectator)
-				if (g_cvRandomClass.IntValue != Mode_None || g_cvRandomWeapons.IntValue != Mode_None)
-					TF2_RespawnPlayer(iClient);
-		}
-	}
-}
-
-public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
-{
-	if (!g_bEnabled)
-		return;
-	
-	int iClient = GetClientOfUserId(event.GetInt("userid"));
-	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
-		return;
-	
-	if (!g_cvRandomWeapons.BoolValue)
-		return;
-	
-	bool bKeepWeapon[WeaponSlot_BuilderEngie+1];
-	
-	int iWeapon;
-	int iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		char sClassname[256];
-		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-		int iSlot = TF2_GetSlot(iWeapon);
-		
-		if (g_iClientWeaponIndex[iClient][iSlot] == Weapons_GetReskinIndex(iIndex))
-			bKeepWeapon[iSlot] = true;
-		else if (!CanKeepWeapon(iClient, sClassname, iIndex))
-			TF2_RemoveItem(iClient, iWeapon);
-	}
-	
-	for (int iSlot = 0; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-	{
-		//Create weapon
-		if (g_iClientWeaponIndex[iClient][iSlot] >= 0 && !bKeepWeapon[iSlot] && ItemIsAllowed(g_iClientWeaponIndex[iClient][iSlot]))
-		{
-			Address pItem = TF2_FindReskinItem(iClient, g_iClientWeaponIndex[iClient][iSlot]);
-			if (pItem)
-				iWeapon = TF2_GiveNamedItem(iClient, pItem, iSlot);
-			else
-				iWeapon = TF2_CreateWeapon(iClient, g_iClientWeaponIndex[iClient][iSlot], iSlot);
-			
-			if (iWeapon <= MaxClients)
-			{
-				PrintToChat(iClient, "Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
-				LogError("Unable to create weapon! index (%d)", g_iClientWeaponIndex[iClient][iSlot]);
-			}
-			
-			//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
-			if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
-				SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
-			
-			TF2_EquipWeapon(iClient, iWeapon);
-			
-			if (ViewModels_ShouldBeInvisible(iWeapon, TF2_GetPlayerClass(iClient)))
-			{
-				ViewModels_EnableInvisible(iWeapon);
-			}
-		}
-	}
-	
-	//Set active weapon if dont have one
-	if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
-	{
-		for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
-		{
-			iWeapon = GetPlayerWeaponSlot(iClient, iSlot);	//Dont want wearable
-			if (iWeapon > MaxClients)
-			{
-				SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
-				break;
-			}
-		}
-	}
 }
 
 public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroadcast)

@@ -45,7 +45,9 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", DHook_CanAirDashPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, DHook_ValidateWeaponsPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWearables", DHook_ValidateWearablesPre, DHook_ValidateWearablesPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ManageBuilderWeapons", DHook_ManageBuilderWeaponsPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::ItemsMatch", DHook_ItemsMatchPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::EndClassSpecialSkill", DHook_EndClassSpecialSkillPre, DHook_EndClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
@@ -330,9 +332,66 @@ public MRESReturn DHook_ValidateWeaponsPost(int iClient, Handle hParams)
 	RevertClientClass(iClient);	//Reset from GetLoadoutItem hook
 }
 
+public MRESReturn DHook_ValidateWearablesPre(int iClient, Handle hParams)
+{
+	//Set class to unknown so default slot can be used, otherwise invalid slot is used for class who cant normally use wearable
+	SetClientClass(iClient, TFClass_Unknown);
+}
+
+public MRESReturn DHook_ValidateWearablesPost(int iClient, Handle hParams)
+{
+	RevertClientClass(iClient);
+}
+
 public MRESReturn DHook_ManageBuilderWeaponsPre(int iClient, Handle hParams)
 {
 	//Don't do anything, we'll handle it
+	return MRES_Supercede;
+}
+
+public MRESReturn DHook_ItemsMatchPre(int iClient, Handle hReturn, Handle hParams)
+{
+	//Always allow weapons
+	
+	int iIndex1 = DHookGetParamObjectPtrVar(hParams, 2, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
+	
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	{
+		int iSlot = TF2_GetSlotFromIndex(iIndex1, view_as<TFClassType>(iClass));
+		if (iSlot > WeaponSlot_BuilderEngie)
+		{
+			return MRES_Ignored;
+		}
+		else if (iSlot >= WeaponSlot_Primary)
+		{
+			DHookSetReturn(hReturn, true);
+			return MRES_Supercede;
+		}
+	}
+	
+	if (DHookIsNullParam(hParams, 3))
+	{
+		DHookSetReturn(hReturn, false);
+		return MRES_Supercede;
+	}
+	
+	int iIndex2 = DHookGetParamObjectPtrVar(hParams, 3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
+	
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	{
+		int iSlot = TF2_GetSlotFromIndex(iIndex2, view_as<TFClassType>(iClass));
+		if (iSlot > WeaponSlot_BuilderEngie)
+		{
+			return MRES_Ignored;
+		}
+		else if (iSlot >= WeaponSlot_Primary)
+		{
+			DHookSetReturn(hReturn, true);
+			return MRES_Supercede;
+		}
+	}
+	
+	DHookSetReturn(hReturn, true);
 	return MRES_Supercede;
 }
 

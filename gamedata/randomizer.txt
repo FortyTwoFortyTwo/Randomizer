@@ -136,11 +136,23 @@
 				"linux"		"@_ZN9CTFPlayer15ValidateWeaponsEP19TFPlayerClassData_tb"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x38\x81\x65\xE4\xFF\xFF\x0F\xFF"
 			}
+			"CTFPlayer::ValidateWearables"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer17ValidateWearablesEP19TFPlayerClassData_t"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x1C\x81\x65\xE8\xFF\xFF\x0F\xFF"
+			}
 			"CTFPlayer::ManageBuilderWeapons"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer20ManageBuilderWeaponsEP19TFPlayerClassData_t"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x28\x53\x56\x8B\xF1\xC7\x45\xF0\x30\x00\x00\x00"
+			}
+			"CTFPlayer::ItemsMatch"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer10ItemsMatchEP19TFPlayerClassData_tP13CEconItemViewS3_P13CTFWeaponBase"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x57\x8B\x7D\x10"
 			}
 			"CTFPlayer::AddObject"
 			{
@@ -298,8 +310,8 @@
 			}
 			"CTFPlayer::ClientCommand"
 			{
-			 "linux"  "373"
-			 "windows" "372"
+				"linux"		"373"
+				"windows"	"372"
 			}
 			"CGameRules::FrameUpdatePostEntityThink"
 			{
@@ -375,6 +387,20 @@
 					}
 				}
 			}
+			"CTFPlayer::ValidateWearables"
+			{
+				"signature"	"CTFPlayer::ValidateWearables"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"pData"
+					{
+						"type"	"objectptr"
+					}
+				}
+			}
 			"CTFPlayer::ManageBuilderWeapons"
 			{
 				"signature"	"CTFPlayer::ManageBuilderWeapons"
@@ -386,6 +412,32 @@
 					"pData"
 					{
 						"type"	"objectptr"
+					}
+				}
+			}
+			"CTFPlayer::ItemsMatch"
+			{
+				"signature"	"CTFPlayer::ItemsMatch"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"pData"		//TFPlayerClassData_t *
+					{
+						"type"	"objectptr"
+					}
+					"pItem1"	//CEconItemView *
+					{
+						"type"	"objectptr"
+					}
+					"pItem2"	//CEconItemView *
+					{
+						"type"	"objectptr"
+					}
+					"pWeapon"	//CTFWeaponBase *
+					{
+						"type"	"cbaseentity"
 					}
 				}
 			}

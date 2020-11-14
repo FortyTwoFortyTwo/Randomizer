@@ -1,16 +1,19 @@
-stock int TF2_CreateWeapon(int iClient, int iIndex, int iSlot)
+stock int TF2_CreateWeapon(int iClient, WeaponInfo info, int iSlot)
 {
 	char sClassname[256];
-	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+	info.GetClassname(sClassname, sizeof(sClassname));
 	
-	//We want to translate classname to correct classname AND slot wanted
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	if (!info.bCustom)
 	{
-		int iClassSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (iClassSlot == iSlot)
+		//We want to translate classname to correct classname AND slot wanted
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 		{
-			TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), view_as<TFClassType>(iClass));
-			break;
+			int iClassSlot = TF2_GetSlotFromIndex(info.iIndex, view_as<TFClassType>(iClass));
+			if (iClassSlot == iSlot)
+			{
+				TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), view_as<TFClassType>(iClass));
+				break;
+			}
 		}
 	}
 	
@@ -26,8 +29,9 @@ stock int TF2_CreateWeapon(int iClient, int iIndex, int iSlot)
 	int iWeapon = CreateEntityByName(sClassname);
 	if (IsValidEntity(iWeapon))
 	{
-		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", iIndex);
+		SetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex", info.iIndex);
 		SetEntProp(iWeapon, Prop_Send, "m_bInitialized", 1);
+		SetEntProp(iWeapon, Prop_Send, "m_bOnlyIterateItemViewAttributes", info.bCustom);
 		
 		SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
 		SetEntProp(iWeapon, Prop_Send, "m_iEntityLevel", 1);
@@ -38,6 +42,19 @@ stock int TF2_CreateWeapon(int iClient, int iIndex, int iSlot)
 			SetEntProp(iWeapon, Prop_Data, "m_iSubType", TFObject_Sapper);
 		}
 		
+		if (info.bCustom)
+		{
+			ArrayList aAttribs = info.GetAttributes();
+			if (aAttribs)
+			{
+				int iLength = aAttribs.Length;
+				for (int i = 0; i < iLength; i++)
+					TF2Attrib_SetByDefIndex(iWeapon, aAttribs.Get(i, 0), aAttribs.Get(i, 1));
+				
+				delete aAttribs;
+			}
+		}
+		
 		DispatchSpawn(iWeapon);
 		
 		//Reset charge meter
@@ -45,8 +62,9 @@ stock int TF2_CreateWeapon(int iClient, int iIndex, int iSlot)
 	}
 	else
 	{
-		PrintToChat(iClient, "Unable to create weapon! index (%d) classname (%s)", iIndex, sClassname);
-		LogError("Unable to create weapon! index (%d), classname (%s)", iIndex, sClassname);
+		//TODO better error
+		PrintToChat(iClient, "Unable to create weapon! index (%d) classname (%s)", info.iIndex, sClassname);
+		LogError("Unable to create weapon! index (%d), classname (%s)", info.iIndex, sClassname);
 	}
 	
 	return iWeapon;
@@ -100,6 +118,7 @@ stock int TF2_EquipWeapon(int iClient, int iWeapon)
 	
 	char sClassname[256];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	
 	if (StrContains(sClassname, "tf_weapon") == 0)
 	{
 		EquipPlayerWeapon(iClient, iWeapon);
@@ -141,12 +160,8 @@ stock bool TF2_IsValidEconItemView(Address pItem)
 
 stock bool TF2_WeaponFindAttribute(int iWeapon, const char[] sAttrib, float &flVal)
 {
-	return TF2_IndexFindAttribute(GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"), sAttrib, flVal);
-}
-
-stock bool TF2_IndexFindAttribute(int iIndex, const char[] sAttrib, float &flVal)
-{
-	ArrayList aAttribs = TF2Econ_GetItemStaticAttributes(iIndex);
+	//TODO custom attribs
+	ArrayList aAttribs = TF2Econ_GetItemStaticAttributes(GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"));
 	int iAttrib = TF2Econ_TranslateAttributeNameToDefinitionIndex(sAttrib);
 	
 	int iPos = aAttribs.FindValue(iAttrib, 0);
@@ -214,6 +229,39 @@ stock int TF2_GetItemFromClassname(int iClient, const char[] sClassname)
 	}
 	
 	return -1;
+}
+
+stock int TF2_GetEconSlot(int iWeapon, TFClassType nClass)
+{
+	int iSlot = TF2_GetSlot(iWeapon);
+	if (iSlot >= 0)
+	{
+		// Econ reports wrong slots for Engineer and Spy
+		switch (nClass)
+		{
+			case TFClass_Engineer:
+			{
+				switch (iSlot)
+				{
+					case WeaponSlot_PDABuild: iSlot = 5; // Construction PDA
+					case WeaponSlot_PDADestroy: iSlot = 6; // Destruction PDA
+					case WeaponSlot_BuilderEngie: iSlot = 4; // Toolbox
+				}
+			}
+			case TFClass_Spy:
+			{
+				switch (iSlot)
+				{
+					case WeaponSlot_Primary: iSlot = 1; // Revolver
+					case WeaponSlot_Secondary: iSlot = 4; // Sapper
+					case WeaponSlot_PDADisguise: iSlot = 5; // Disguise Kit
+					case WeaponSlot_InvisWatch: iSlot = 6; // Invis Watch
+				}
+			}
+		}
+	}
+	
+	return iSlot;
 }
 
 stock int TF2_GetSlot(int iWeapon)
@@ -349,31 +397,28 @@ stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 	return EntIndexToEntRef(iParticle);
 }
 
-stock bool ItemIsAllowed(int iIndex)
+stock bool ItemIsAllowed(WeaponInfo info, int iSlot)
 {
 	if (GameRules_GetProp("m_bPlayingMedieval") || (GameRules_GetRoundState() == RoundState_Stalemate && FindConVar("mp_stalemate_meleeonly").BoolValue))
 	{
 		//TF2 hack!
 		char sClassname[256];
-		TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+		info.GetClassname(sClassname, sizeof(sClassname));
 		if (StrEqual(sClassname, "tf_weapon_passtime_gun"))
 			return true;
 		
 		//For medieval and melee stalemate, allow melee and spy PDA
-		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-		{
-			int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-			if (iSlot == WeaponSlot_Melee)
-				return true;
-			else if ((iSlot == WeaponSlot_PDADisguise || iSlot == WeaponSlot_InvisWatch) && view_as<TFClassType>(iClass) == TFClass_Spy)
-				return true;
-		}
+		if (iSlot == WeaponSlot_Melee)
+			return true;
+		
+		if (StrEqual(sClassname, "tf_weapon_pda_spy") || StrEqual(sClassname, "tf_weapon_invis"))	//Not sure if there better way to do this
+			return true;
 		
 		//For medieval, allow medieval weapons
 		if (GameRules_GetProp("m_bPlayingMedieval"))
 		{
 			float flVal;
-			if (TF2_IndexFindAttribute(iIndex, "allowed in medieval mode", flVal) && flVal)
+			if (info.FindAttribute("allowed in medieval mode", flVal) && flVal)
 				return true;
 		}
 		
