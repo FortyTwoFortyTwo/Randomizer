@@ -14,7 +14,10 @@ jobs:
       
       - name: Environments
         run: |
-          echo ::set-env name=SM_VERSION::1.10
+          echo "SM_VERSION=1.10" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION_REVISION<<EOF" >> $GITHUB_ENV
+          git rev-list --count HEAD >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
       
       - name: Install
         run: |
