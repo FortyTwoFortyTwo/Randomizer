@@ -22,6 +22,8 @@ static Handle g_hDHookClientCommand;
 static Handle g_hDHookFrameUpdatePostEntityThink;
 
 static bool g_bSkipHandleRageGain;
+static TFClassType g_nClassGainingRage;
+static bool g_bSkipUpdateRageBuffsAndRage = false;
 static int g_iClientGetChargeEffectBeingProvided;
 static int g_iWeaponGetLoadoutItem = -1;
 
@@ -33,6 +35,8 @@ static int g_iHookIdForceRespawnPost[TF_MAXPLAYERS+1];
 static int g_iHookIdEquipWearable[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
 static bool g_bApplyBiteEffectsChocolate[TF_MAXPLAYERS+1];
+static float g_flRageMeter[TF_MAXPLAYERS+1][CLASS_MAX+1];
+static bool g_bRageDraining[TF_MAXPLAYERS+1][CLASS_MAX+1];
 
 static int g_iDHookGamerulesPre;
 static int g_iDHookGamerulesPost;
@@ -57,6 +61,9 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFKnife::DisguiseOnKill", DHook_DisguiseOnKillPre, DHook_DisguiseOnKillPost);
 	DHook_CreateDetour(hGameData, "CTFLunchBox::ApplyBiteEffects", DHook_ApplyBiteEffectsPre, DHook_ApplyBiteEffectsPost);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateRageBuffsAndRage", DHook_UpdateRageBuffsAndRagePre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayerShared::ModifyRage", DHook_ModifyRagePre, DHook_ModifyRagePost);
+	DHook_CreateDetour(hGameData, "CTFPlayerShared::ActivateRageBuff", DHook_ActivateRageBuffPre, DHook_ActivateRageBuffPost);
 	DHook_CreateDetour(hGameData, "HandleRageGain", DHook_HandleRageGainPre, _);
 	
 	g_hDHookGiveAmmo = DHook_CreateVirtual(hGameData, "CBaseCombatCharacter::GiveAmmo");
@@ -534,6 +541,172 @@ public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 		TF2_RemoveCondition(iClient, TFCond_Disguised);
 }
 
+//Next several functions work together to effectively seperate m_flRageMeter between weapons
+//Whenever it matters, we change the players m_flRageMeter and m_bRageDraining to whatever it should be for the weapon's class
+
+public void Rage_LoadRageProps(int iClient, TFClassType nClass)
+{
+	int iClass = view_as<int>(nClass);
+	float flRageMeter = g_flRageMeter[iClient][iClass];
+	bool bRageDraining = g_bRageDraining[iClient][iClass];
+ 
+	SetEntPropFloat(iClient, Prop_Send, "m_flRageMeter", flRageMeter);
+	SetEntProp(iClient, Prop_Send, "m_bRageDraining", view_as<int>(bRageDraining));
+}
+
+public void Rage_SaveRageProps(int iClient, TFClassType nClass)
+{
+	int iClass = view_as<int>(nClass);
+	float flRageMeter = GetEntPropFloat(iClient, Prop_Send, "m_flRageMeter");
+	bool bRageDraining = !!GetEntProp(iClient, Prop_Send, "m_bRageDraining");
+	
+	g_flRageMeter[iClient][iClass] = flRageMeter;
+	g_bRageDraining[iClient][iClass] = bRageDraining;
+	
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if(iWeapon > MaxClients)
+		Rage_LoadRageProps(iClient, TF2_GetDefaultClassFromItem(iWeapon));
+	
+}
+
+public void Rage_ResetRageProps(int iClient)
+{
+	for(int i = CLASS_MIN; i <= CLASS_MAX; i++)
+	{
+		g_flRageMeter[iClient][i] = 0.0;
+		g_bRageDraining[iClient][i] = false;
+	}
+}
+
+//Internally, rage type is determined by the "mod soldier buff type" attribute on the player
+//That takes into account each weapon equipped, resulting in the sum not being the correct rage type
+//This returns the sum of the attribute on each weapon, so that we can correct it ourselves
+
+public float Rage_GetBuffTypeAttribute(int iClient)
+{
+	float flTotal;
+	int iWeapon;
+	int iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		float flVal;
+		TF2_WeaponFindAttribute(iWeapon, "mod soldier buff type", flVal);
+		flTotal += flVal;
+	}
+	return flTotal;
+}
+
+public MRESReturn DHook_UpdateRageBuffsAndRagePre(Address pPlayerShared)
+{
+	int iClient = GetClientFromAddress(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
+	if (g_bSkipUpdateRageBuffsAndRage || iClient <= 0 || iClient > TF_MAXPLAYERS)
+		return MRES_Ignored;
+
+	RequestFrame(Frame_UpdateRageBuffsAndRage, iClient);
+	return MRES_Supercede;
+}
+
+public void Frame_UpdateRageBuffsAndRage(int iClient)
+{
+	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
+		return;
+	
+	bool bCalledClass[CLASS_MAX + 1];
+	g_bSkipUpdateRageBuffsAndRage = true;
+	
+	float flRageType = Rage_GetBuffTypeAttribute(iClient);
+	if(!flRageType)
+	{
+		SDKCall_UpdateRageBuffsAndRage(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared));
+		g_bSkipUpdateRageBuffsAndRage = false;
+		return;
+	}
+	
+	int iWeapon;
+	int iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		if(iWeapon <= MaxClients)
+			continue;
+		
+		float flVal;
+		TF2_WeaponFindAttribute(iWeapon, "mod soldier buff type", flVal);
+		if (!flVal)
+			continue;
+  
+		TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
+		if (bCalledClass[nClass])
+			continue;
+  
+		bCalledClass[nClass] = true;
+		//Apply the attribute to the player to make up for the difference. The total should now be the weapon's value
+		TF2Attrib_SetByName(iClient, "mod soldier buff type", flVal - flRageType);
+		Rage_LoadRageProps(iClient, nClass);
+		SetClientClass(iClient, nClass);
+		g_nClassGainingRage = nClass;
+		
+		SDKCall_UpdateRageBuffsAndRage(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared));
+  
+		Rage_SaveRageProps(iClient, nClass);
+	}
+	g_nClassGainingRage = TFClass_Unknown;
+	RevertClientClass(iClient);
+	TF2Attrib_SetByName(iClient, "mod soldier buff type", 0.0);
+	g_bSkipUpdateRageBuffsAndRage = false;
+}
+
+public MRESReturn DHook_ModifyRagePre(Address pPlayerShared, Handle hParams)
+{
+	int iClient = GetClientFromAddress(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
+	if(iClient && g_nClassGainingRage != TFClass_Unknown)
+		Rage_LoadRageProps(iClient, g_nClassGainingRage);
+}
+
+public MRESReturn DHook_ModifyRagePost(Address pPlayerShared, Handle hParams)
+{
+	int iClient = GetClientFromAddress(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
+	if(iClient && g_nClassGainingRage != TFClass_Unknown)
+		Rage_SaveRageProps(iClient, g_nClassGainingRage);
+}
+
+public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParams)
+{
+	int iClient = GetClientFromAddress(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
+	if(!iClient)
+		return MRES_Ignored;
+	
+	//int iWeapon = DHookGetParam(hParams, 1); //First param is supposed to be the item, but I couldn't get it working
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if(iWeapon <= MaxClients)
+		return MRES_Ignored;
+	
+	int iBuffType = DHookGetParam(hParams, 2);
+	TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
+	
+	float flClientRageType = Rage_GetBuffTypeAttribute(iClient);
+	TF2Attrib_SetByName(iClient, "mod soldier buff type", view_as<float>(iBuffType) - flClientRageType);
+	
+	Rage_LoadRageProps(iClient, nClass);
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_ActivateRageBuffPost(Address pPlayerShared, Handle hParams)
+{
+	int iClient = GetClientFromAddress(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
+	if(!iClient)
+		return MRES_Ignored;
+	
+	//int iWeapon = DHookGetParam(hParams, 1);
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if(iWeapon <= MaxClients)
+		return MRES_Ignored;
+	
+	TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
+	TF2Attrib_SetByName(iClient, "mod soldier buff type", 0.0);
+	Rage_SaveRageProps(iClient, nClass);
+	return MRES_Ignored;
+}
+
 public MRESReturn DHook_HandleRageGainPre(Handle hParams)
 {
 	//Banners, Phlogistinator and Hitman Heatmaker use m_flRageMeter with class check, call this function to each weapons
@@ -578,11 +751,13 @@ public void Frame_HandleRageGain(DataPack hPack)
 		bCalledClass[nClass] = true;
 		
 		SetClientClass(iClient, nClass);
+		g_nClassGainingRage = nClass;
 		SDKCall_HandleRageGain(iClient, iRequiredBuffFlags, flDamage, fInverseRageGainScale);
 	}
 	
 	RevertClientClass(iClient);
 	g_bSkipHandleRageGain = false;
+	g_nClassGainingRage = TFClass_Unknown;
 }
 
 public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)

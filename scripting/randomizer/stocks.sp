@@ -438,3 +438,12 @@ stock int FindStringIndex2(int iTableId, const char[] sParticle)
 
 	return INVALID_STRING_INDEX;
 }
+
+stock int GetClientFromAddress(Address pPlayer)
+{
+	for(int i = 1; i <= MaxClients; i++)
+		if(IsClientInGame(i) && GetEntityAddress(i) == pPlayer)
+			return i;
+	
+	return -1;
+}

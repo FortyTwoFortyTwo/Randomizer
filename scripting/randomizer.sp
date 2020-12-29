@@ -221,6 +221,7 @@ bool g_bEnabled;
 bool g_bTF2Items;
 bool g_bAllowGiveNamedItem;
 int g_iOffsetItemDefinitionIndex = -1;
+int g_iOffsetPlayerShared;
 
 ConVar g_cvEnabled;
 ConVar g_cvRandomClass;
@@ -278,6 +279,7 @@ public void OnPluginStart()
 	DHook_Init(hGameData);
 	SDKCall_Init(hGameData);
 	g_iOffsetItemDefinitionIndex = hGameData.GetOffset("CEconItemView::m_iItemDefinitionIndex");
+	g_iOffsetPlayerShared = FindSendPropInfo("CTFPlayer", "m_Shared");
 	
 	delete hGameData;
 	

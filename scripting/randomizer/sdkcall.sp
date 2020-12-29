@@ -3,6 +3,7 @@ static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKEndClassSpecialSkill;
 static Handle g_hSDKGetLoadoutItem;
+static Handle g_hSDKUpdateRageBuffsAndRage;
 static Handle g_hSDKHandleRageGain;
 static Handle g_hSDKGetSlot;
 static Handle g_hSDKEquipWearable;
@@ -47,6 +48,12 @@ public void SDKCall_Init(GameData hGameData)
 	g_hSDKGetLoadoutItem = EndPrepSDKCall();
 	if (!g_hSDKGetLoadoutItem)
 		SetFailState("Failed to create call: CTFPlayer::GetLoadoutItem");
+	
+	StartPrepSDKCall(SDKCall_Raw);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayerShared::UpdateRageBuffsAndRage");
+	g_hSDKUpdateRageBuffsAndRage = EndPrepSDKCall();
+	if (!g_hSDKUpdateRageBuffsAndRage)
+		SetFailState("Failed to create call: CTFPlayerShared::UpdateRageBuffsAndRage");
 	
 	StartPrepSDKCall(SDKCall_Static);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "HandleRageGain");
@@ -107,6 +114,11 @@ bool SDKCall_EndClassSpecialSkill(int iClient)
 Address SDKCall_GetLoadoutItem(int iClient, TFClassType nClass, int iSlot, bool bReportWhitelistFails = false)
 {
 	return SDKCall(g_hSDKGetLoadoutItem, iClient, nClass, iSlot, bReportWhitelistFails);
+}
+
+void SDKCall_UpdateRageBuffsAndRage(Address pPlayerShared)
+{
+	SDKCall(g_hSDKUpdateRageBuffsAndRage, pPlayerShared);
 }
 
 void SDKCall_HandleRageGain(int iClient, int iRequiredBuffFlags, float flDamage, float fInverseRageGainScale)

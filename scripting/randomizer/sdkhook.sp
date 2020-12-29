@@ -142,6 +142,13 @@ public void Client_WeaponEquipPost(int iClient, int iWeapon)
 	Huds_RefreshClient(iClient);
 }
 
+public void Client_WeaponSwitchPost(int iClient, int iWeapon)
+{
+	TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
+	if (nClass != TFClass_Unknown)
+		Rage_LoadRageProps(iClient, nClass);
+}
+
 public void Weapon_SpawnPost(int iWeapon)
 {
 	Ammo_OnWeaponSpawned(iWeapon);
