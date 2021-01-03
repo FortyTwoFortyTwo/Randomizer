@@ -563,6 +563,7 @@ public void Rage_SaveRageProps(int iClient, TFClassType nClass)
 	g_flRageMeter[iClient][iClass] = flRageMeter;
 	g_bRageDraining[iClient][iClass] = bRageDraining;
 	
+	//Revert back to the props for the current weapon's class, to allow activating rage
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if(iWeapon > MaxClients)
 		Rage_LoadRageProps(iClient, TF2_GetDefaultClassFromItem(iWeapon));
@@ -578,7 +579,7 @@ public void Rage_ResetRageProps(int iClient)
 	}
 }
 
-//Internally, rage type is determined by the "mod soldier buff type" attribute on the player
+//Rage type is determined by the "mod soldier buff type" attribute on the player
 //That takes into account each weapon equipped, resulting in the sum not being the correct rage type
 //This returns the sum of the attribute on each weapon, so that we can correct it ourselves
 
@@ -602,6 +603,10 @@ public MRESReturn DHook_UpdateRageBuffsAndRagePre(Address pPlayerShared)
 	if (g_bSkipUpdateRageBuffsAndRage || iClient <= 0 || iClient > TF_MAXPLAYERS)
 		return MRES_Ignored;
 
+	float flRageType = Rage_GetBuffTypeAttribute(iClient);
+	if(!flRageType) //We don't have any rage items, don't need to do anything
+		return MRES_Ignored;
+
 	RequestFrame(Frame_UpdateRageBuffsAndRage, iClient);
 	return MRES_Supercede;
 }
@@ -613,14 +618,7 @@ public void Frame_UpdateRageBuffsAndRage(int iClient)
 	
 	bool bCalledClass[CLASS_MAX + 1];
 	g_bSkipUpdateRageBuffsAndRage = true;
-	
 	float flRageType = Rage_GetBuffTypeAttribute(iClient);
-	if(!flRageType)
-	{
-		SDKCall_UpdateRageBuffsAndRage(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared));
-		g_bSkipUpdateRageBuffsAndRage = false;
-		return;
-	}
 	
 	int iWeapon;
 	int iPos;
@@ -675,7 +673,7 @@ public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParam
 	if(!iClient)
 		return MRES_Ignored;
 	
-	//int iWeapon = DHookGetParam(hParams, 1); //First param is supposed to be the item, but I couldn't get it working
+	//int iWeapon = DHookGetParam(hParams, 1); //First param is supposed to be the weapon, but I couldn't get it working
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if(iWeapon <= MaxClients)
 		return MRES_Ignored;
