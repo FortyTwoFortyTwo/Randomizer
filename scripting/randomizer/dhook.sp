@@ -599,7 +599,7 @@ public float Rage_GetBuffTypeAttribute(int iClient)
 
 public MRESReturn DHook_UpdateRageBuffsAndRagePre(Address pPlayerShared)
 {
-	int iClient = GetClientFromAddress(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
+	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
 	if (g_bSkipUpdateRageBuffsAndRage || iClient <= 0 || iClient > TF_MAXPLAYERS)
 		return MRES_Ignored;
 
@@ -655,21 +655,21 @@ public void Frame_UpdateRageBuffsAndRage(int iClient)
 
 public MRESReturn DHook_ModifyRagePre(Address pPlayerShared, Handle hParams)
 {
-	int iClient = GetClientFromAddress(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
+	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
 	if(iClient && g_nClassGainingRage != TFClass_Unknown)
 		Rage_LoadRageProps(iClient, g_nClassGainingRage);
 }
 
 public MRESReturn DHook_ModifyRagePost(Address pPlayerShared, Handle hParams)
 {
-	int iClient = GetClientFromAddress(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
+	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
 	if(iClient && g_nClassGainingRage != TFClass_Unknown)
 		Rage_SaveRageProps(iClient, g_nClassGainingRage);
 }
 
 public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParams)
 {
-	int iClient = GetClientFromAddress(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
+	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
 	if(!iClient)
 		return MRES_Ignored;
 	
@@ -690,7 +690,7 @@ public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParam
 
 public MRESReturn DHook_ActivateRageBuffPost(Address pPlayerShared, Handle hParams)
 {
-	int iClient = GetClientFromAddress(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
+	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
 	if(!iClient)
 		return MRES_Ignored;
 	

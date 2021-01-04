@@ -1,3 +1,4 @@
+static Handle g_hSDKGetBaseEntity;
 static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
@@ -11,19 +12,26 @@ static Handle g_hSDKGiveNamedItem;
 
 public void SDKCall_Init(GameData hGameData)
 {
+	StartPrepSDKCall(SDKCall_Raw);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetBaseEntity");
+	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
+	g_hSDKGetBaseEntity = EndPrepSDKCall();
+	if (!g_hSDKGetBaseEntity)
+		LogError("Failed to create call: CBaseEntity::GetBaseEntity");
+	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::AddObject");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	g_hSDKAddObject = EndPrepSDKCall();
-	if (g_hSDKAddObject == null)
-		LogMessage("Failed to create call: CTFPlayer::AddObject");
+	if (!g_hSDKAddObject)
+		LogError("Failed to create call: CTFPlayer::AddObject");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::RemoveObject");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	g_hSDKRemoveObject = EndPrepSDKCall();
-	if (g_hSDKRemoveObject == null)
-		LogMessage("Failed to create call: CTFPlayer::RemoveObject");
+	if (!g_hSDKRemoveObject)
+		LogError("Failed to create call: CTFPlayer::RemoveObject");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::DoClassSpecialSkill");
@@ -47,13 +55,13 @@ public void SDKCall_Init(GameData hGameData)
 	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
 	g_hSDKGetLoadoutItem = EndPrepSDKCall();
 	if (!g_hSDKGetLoadoutItem)
-		SetFailState("Failed to create call: CTFPlayer::GetLoadoutItem");
+		LogError("Failed to create call: CTFPlayer::GetLoadoutItem");
 	
 	StartPrepSDKCall(SDKCall_Raw);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayerShared::UpdateRageBuffsAndRage");
 	g_hSDKUpdateRageBuffsAndRage = EndPrepSDKCall();
 	if (!g_hSDKUpdateRageBuffsAndRage)
-		SetFailState("Failed to create call: CTFPlayerShared::UpdateRageBuffsAndRage");
+		LogError("Failed to create call: CTFPlayerShared::UpdateRageBuffsAndRage");
 	
 	StartPrepSDKCall(SDKCall_Static);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "HandleRageGain");
@@ -63,7 +71,7 @@ public void SDKCall_Init(GameData hGameData)
 	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
 	g_hSDKHandleRageGain = EndPrepSDKCall();
 	if (!g_hSDKHandleRageGain)
-		SetFailState("Failed to create call: HandleRageGain");
+		LogError("Failed to create call: HandleRageGain");
 	
 	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseCombatWeapon::GetSlot");
@@ -88,7 +96,12 @@ public void SDKCall_Init(GameData hGameData)
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 	g_hSDKGiveNamedItem = EndPrepSDKCall();
 	if (!g_hSDKGiveNamedItem)
-		SetFailState("Failed to create call: CTFPlayer::GiveNamedItem");
+		LogError("Failed to create call: CTFPlayer::GiveNamedItem");
+}
+
+int SDKCall_GetBaseEntity(Address pEntity)
+{
+	return SDKCall(g_hSDKGetBaseEntity, pEntity);
 }
 
 void SDKCall_AddObject(int iClient, int iObject)

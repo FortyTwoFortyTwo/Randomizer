@@ -259,6 +259,11 @@
 		}
 		"Offsets"
 		{
+			"CBaseEntity::GetBaseEntity"
+			{
+				"linux"		"6"
+				"windows"	"5"
+			}
 			"CBaseCombatCharacter::GiveAmmo"
 			{
 				"linux"		"256"
