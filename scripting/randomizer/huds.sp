@@ -318,7 +318,20 @@ public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 					case HudType_Float, HudType_Time:
 					{
 						float flVal;
-						if (hudInfo.GetEntPropFloat(iEntity, flVal))
+						bool bHasValue;
+						if(StrEqual(hudInfo.sNetprop, "m_flRageMeter"))
+						{
+							TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
+							flVal = g_flRageMeter[iClient][nClass];
+							//Redo the logic normally done in hudInfo.GetEntPropFloat
+							flVal *= hudInfo.flMultiply;
+							flVal += hudInfo.flAdd;
+							bHasValue = (!hudInfo.bMin || flVal > hudInfo.flMin) && (!hudInfo.bMax || flVal < hudInfo.flMax);
+						}
+						else 
+							bHasValue = hudInfo.GetEntPropFloat(iEntity, flVal);
+						
+						if (bHasValue)
 							Format(sDisplay, sizeof(sDisplay), "%s: %T", sDisplay, hudInfo.sText, iClient, flVal);
 					}
 				}

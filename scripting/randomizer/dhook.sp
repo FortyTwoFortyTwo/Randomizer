@@ -35,8 +35,6 @@ static int g_iHookIdForceRespawnPost[TF_MAXPLAYERS+1];
 static int g_iHookIdEquipWearable[TF_MAXPLAYERS+1];
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
 static bool g_bApplyBiteEffectsChocolate[TF_MAXPLAYERS+1];
-static float g_flRageMeter[TF_MAXPLAYERS+1][CLASS_MAX+1];
-static bool g_bRageDraining[TF_MAXPLAYERS+1][CLASS_MAX+1];
 
 static int g_iDHookGamerulesPre;
 static int g_iDHookGamerulesPost;
