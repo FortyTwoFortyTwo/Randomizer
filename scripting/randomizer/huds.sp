@@ -11,6 +11,7 @@ enum HudType
 	HudType_Int,
 	HudType_Float,
 	HudType_Time,
+	HudType_RageMeter,
 }
 
 enum struct HudInfo
@@ -39,9 +40,8 @@ enum struct HudInfo
 		}
 	}
 	
-	bool GetEntProp(int iEntity, int &iVal)
+	bool CalculateIntValue(int &iVal)
 	{
-		iVal = GetEntProp(iEntity, Prop_Send, this.sNetprop, _, this.iElement);
 		iVal = RoundToNearest(float(iVal) * this.flMultiply);
 		iVal += RoundToNearest(this.flAdd);
 		
@@ -54,13 +54,8 @@ enum struct HudInfo
 		return true;
 	}
 	
-	bool GetEntPropFloat(int iEntity, float &flVal)
+	bool CalculateFloatValue(float &flVal)
 	{
-		flVal = GetEntPropFloat(iEntity, Prop_Send, this.sNetprop, this.iElement);
-		
-		if (this.nType == HudType_Time)
-			flVal -= GetGameTime();
-		
 		flVal *= this.flMultiply;
 		flVal += this.flAdd;
 		
@@ -155,6 +150,10 @@ void Huds_Refresh()
 			else if (StrEqual(sBuffer, "time"))
 			{
 				hudInfo.nType = HudType_Time;
+			}
+			else if (StrEqual(sBuffer, "ragemeter"))
+			{
+				hudInfo.nType = HudType_RageMeter;
 			}
 			else
 			{
@@ -301,12 +300,14 @@ public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 				g_hudWeapon[iClient][iSlot].aHudInfo.GetArray(i, hudInfo);
 				int iEntity = hudInfo.GetEntity(iClient, iWeapon);
 				
+				float flVal;
+				
 				switch (hudInfo.nType)
 				{
 					case HudType_Int:
 					{
-						int iVal;
-						if (hudInfo.GetEntProp(iEntity, iVal))
+						int iVal = GetEntProp(iEntity, Prop_Send, hudInfo.sNetprop, _, hudInfo.iElement);
+						if (hudInfo.CalculateIntValue(iVal))
 						{
 							char sText[64];
 							if (hudInfo.GetDynamicText(iVal, sText, sizeof(sText)))
@@ -314,27 +315,26 @@ public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 							else
 								Format(sDisplay, sizeof(sDisplay), "%s: %T", sDisplay, hudInfo.sText, iClient, iVal);
 						}
-					}
-					case HudType_Float, HudType_Time:
-					{
-						float flVal;
-						bool bHasValue;
-						if(StrEqual(hudInfo.sNetprop, "m_flRageMeter"))
-						{
-							TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
-							flVal = g_flRageMeter[iClient][nClass];
-							//Redo the logic normally done in hudInfo.GetEntPropFloat
-							flVal *= hudInfo.flMultiply;
-							flVal += hudInfo.flAdd;
-							bHasValue = (!hudInfo.bMin || flVal > hudInfo.flMin) && (!hudInfo.bMax || flVal < hudInfo.flMax);
-						}
-						else 
-							bHasValue = hudInfo.GetEntPropFloat(iEntity, flVal);
 						
-						if (bHasValue)
-							Format(sDisplay, sizeof(sDisplay), "%s: %T", sDisplay, hudInfo.sText, iClient, flVal);
+						continue;	//Don't do float stuff below
+					}
+					case HudType_Float:
+					{
+						flVal = GetEntPropFloat(iEntity, Prop_Send, hudInfo.sNetprop, hudInfo.iElement);
+					}
+					case HudType_Time:
+					{
+						flVal = GetEntPropFloat(iEntity, Prop_Send, hudInfo.sNetprop, hudInfo.iElement) - GetGameTime();
+					}
+					case HudType_RageMeter:
+					{
+						TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
+						flVal = g_flRageMeter[iClient][nClass];
 					}
 				}
+				
+				if (hudInfo.CalculateFloatValue(flVal))
+					Format(sDisplay, sizeof(sDisplay), "%s: %T", sDisplay, hudInfo.sText, iClient, flVal);
 			}
 			
 			char sBuffer[64];
