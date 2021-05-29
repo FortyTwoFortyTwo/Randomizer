@@ -329,7 +329,7 @@ public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 					case HudType_RageMeter:
 					{
 						TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
-						flVal = g_flRageMeter[iClient][nClass];
+						flVal = Rage_GetClassMeter(iClient, nClass);
 					}
 				}
 				

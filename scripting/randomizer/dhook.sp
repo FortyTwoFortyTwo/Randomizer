@@ -539,72 +539,16 @@ public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 		TF2_RemoveCondition(iClient, TFCond_Disguised);
 }
 
-//Next several functions work together to effectively seperate m_flRageMeter between weapons
-//Whenever it matters, we change the players m_flRageMeter and m_bRageDraining to whatever it should be for the weapon's class
-
-public void Rage_LoadRageProps(int iClient, TFClassType nClass)
-{
-	int iClass = view_as<int>(nClass);
-	float flRageMeter = g_flRageMeter[iClient][iClass];
-	bool bRageDraining = g_bRageDraining[iClient][iClass];
- 
-	SetEntPropFloat(iClient, Prop_Send, "m_flRageMeter", flRageMeter);
-	SetEntProp(iClient, Prop_Send, "m_bRageDraining", view_as<int>(bRageDraining));
-}
-
-public void Rage_SaveRageProps(int iClient, TFClassType nClass)
-{
-	int iClass = view_as<int>(nClass);
-	float flRageMeter = GetEntPropFloat(iClient, Prop_Send, "m_flRageMeter");
-	bool bRageDraining = !!GetEntProp(iClient, Prop_Send, "m_bRageDraining");
-	
-	g_flRageMeter[iClient][iClass] = flRageMeter;
-	g_bRageDraining[iClient][iClass] = bRageDraining;
-	
-	//Revert back to the props for the current weapon's class, to allow activating rage
-	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if(iWeapon > MaxClients)
-		Rage_LoadRageProps(iClient, TF2_GetDefaultClassFromItem(iWeapon));
-	
-}
-
-public void Rage_ResetRageProps(int iClient)
-{
-	for(int i = CLASS_MIN; i <= CLASS_MAX; i++)
-	{
-		g_flRageMeter[iClient][i] = 0.0;
-		g_bRageDraining[iClient][i] = false;
-	}
-}
-
-//Rage type is determined by the "mod soldier buff type" attribute on the player
-//That takes into account each weapon equipped, resulting in the sum not being the correct rage type
-//This returns the sum of the attribute on each weapon, so that we can correct it ourselves
-
-public float Rage_GetBuffTypeAttribute(int iClient)
-{
-	float flTotal;
-	int iWeapon;
-	int iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		float flVal;
-		TF2_WeaponFindAttribute(iWeapon, "mod soldier buff type", flVal);
-		flTotal += flVal;
-	}
-	return flTotal;
-}
-
 public MRESReturn DHook_UpdateRageBuffsAndRagePre(Address pPlayerShared)
 {
 	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
-	if (g_bSkipUpdateRageBuffsAndRage || iClient <= 0 || iClient > TF_MAXPLAYERS)
+	if (g_bSkipUpdateRageBuffsAndRage || iClient <= 0 || iClient > MaxClients)
 		return MRES_Ignored;
-
+	
 	float flRageType = Rage_GetBuffTypeAttribute(iClient);
-	if(!flRageType) //We don't have any rage items, don't need to do anything
+	if (!flRageType) //We don't have any rage items, don't need to do anything
 		return MRES_Ignored;
-
+	
 	RequestFrame(Frame_UpdateRageBuffsAndRage, iClient);
 	return MRES_Supercede;
 }
@@ -622,7 +566,7 @@ public void Frame_UpdateRageBuffsAndRage(int iClient)
 	int iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
-		if(iWeapon <= MaxClients)
+		if (iWeapon <= MaxClients)
 			continue;
 		
 		float flVal;
@@ -645,6 +589,7 @@ public void Frame_UpdateRageBuffsAndRage(int iClient)
   
 		Rage_SaveRageProps(iClient, nClass);
 	}
+	
 	g_nClassGainingRage = TFClass_Unknown;
 	RevertClientClass(iClient);
 	TF2Attrib_SetByName(iClient, "mod soldier buff type", 0.0);
@@ -654,26 +599,26 @@ public void Frame_UpdateRageBuffsAndRage(int iClient)
 public MRESReturn DHook_ModifyRagePre(Address pPlayerShared, Handle hParams)
 {
 	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
-	if(iClient && g_nClassGainingRage != TFClass_Unknown)
+	if (iClient && g_nClassGainingRage != TFClass_Unknown)
 		Rage_LoadRageProps(iClient, g_nClassGainingRage);
 }
 
 public MRESReturn DHook_ModifyRagePost(Address pPlayerShared, Handle hParams)
 {
 	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
-	if(iClient && g_nClassGainingRage != TFClass_Unknown)
+	if (iClient && g_nClassGainingRage != TFClass_Unknown)
 		Rage_SaveRageProps(iClient, g_nClassGainingRage);
 }
 
 public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParams)
 {
 	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
-	if(!iClient)
+	if (!iClient)
 		return MRES_Ignored;
 	
 	//int iWeapon = DHookGetParam(hParams, 1); //First param is supposed to be the weapon, but I couldn't get it working
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if(iWeapon <= MaxClients)
+	if (iWeapon <= MaxClients)
 		return MRES_Ignored;
 	
 	int iBuffType = DHookGetParam(hParams, 2);
@@ -689,7 +634,7 @@ public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParam
 public MRESReturn DHook_ActivateRageBuffPost(Address pPlayerShared, Handle hParams)
 {
 	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
-	if(!iClient)
+	if (!iClient)
 		return MRES_Ignored;
 	
 	//int iWeapon = DHookGetParam(hParams, 1);

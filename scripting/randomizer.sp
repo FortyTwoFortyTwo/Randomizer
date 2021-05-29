@@ -242,10 +242,6 @@ Handle g_hTimerClientHud[TF_MAXPLAYERS];
 
 int g_iClientEurekaTeleporting;
 
-float g_flRageMeter[TF_MAXPLAYERS+1][CLASS_MAX+1];
-bool g_bRageDraining[TF_MAXPLAYERS+1][CLASS_MAX+1];
-
-
 #include "randomizer/controls.sp"
 #include "randomizer/huds.sp"
 #include "randomizer/viewmodels.sp"
@@ -255,6 +251,7 @@ bool g_bRageDraining[TF_MAXPLAYERS+1][CLASS_MAX+1];
 #include "randomizer/commands.sp"
 #include "randomizer/dhook.sp"
 #include "randomizer/patch.sp"
+#include "randomizer/ragemeter.sp"
 #include "randomizer/sdkcall.sp"
 #include "randomizer/sdkhook.sp"
 #include "randomizer/stocks.sp"
