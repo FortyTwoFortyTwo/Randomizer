@@ -30,6 +30,15 @@ void Rage_SaveRageProps(int iClient, TFClassType nClass)
 	
 }
 
+void Rage_ResetRageMeters(int iClient)
+{
+	for(int i = CLASS_MIN; i <= CLASS_MAX; i++)
+	{
+		g_flRageMeter[iClient][i] = 0.0;
+		g_bRageDraining[iClient][i] = false;
+	}
+}
+
 //Rage type is determined by the "mod soldier buff type" attribute on the player
 //That takes into account each weapon equipped, resulting in the sum not being the correct rage type
 //This returns the sum of the attribute on each weapon, so that we can correct it ourselves

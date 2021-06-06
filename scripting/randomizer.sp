@@ -393,6 +393,7 @@ public void OnClientDisconnect(int iClient)
 	g_hTimerClientHud[iClient] = null;
 	DHook_UnhookGiveNamedItem(iClient);
 	DHook_UnhookClient(iClient);
+	Rage_ResetRageMeters(iClient);
 }
 
 public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const float vecVel[3], const float vecAngles[3], int iWeapon, int iSubtype, int iCmdNum, int iTickCount, int iSeed, const int iMouse[2]) 
