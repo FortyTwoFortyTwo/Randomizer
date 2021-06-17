@@ -1048,5 +1048,10 @@
 	{
 		"en"		"Cloak and Dagger"
 	}
+	
+	"Weapon_ArmyOfOne"
+	{
+		"en"		"Army Of One"
+	}
 }
 

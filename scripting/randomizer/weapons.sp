@@ -3,6 +3,7 @@
 
 enum
 {
+	ConfigWeapon_Invalid = -1,
 	ConfigWeapon_Primary,
 	ConfigWeapon_Secondary,
 	ConfigWeapon_Melee,
@@ -14,16 +15,17 @@ enum
 	ConfigWeapon_MAX
 }
 
+static int g_iWeaponsInfoId;
 static ArrayList g_aWeapons[ConfigWeapon_MAX];
-static StringMap g_mWeaponsName;
 static StringMap g_mWeaponsReskins;
 
 public void Weapons_Init()
 {
-	for (int i = 0; i < ConfigWeapon_MAX; i++)
-		g_aWeapons[i] = new ArrayList();
+	g_iWeaponsInfoId = 1;	//Dont start at 0
 	
-	g_mWeaponsName = new StringMap();
+	for (int i = 0; i < ConfigWeapon_MAX; i++)
+		g_aWeapons[i] = new ArrayList(sizeof(WeaponInfo));
+	
 	g_mWeaponsReskins = new StringMap();
 }
 
@@ -34,9 +36,17 @@ public void Weapons_Refresh()
 		return;
 	
 	for (int i = 0; i < ConfigWeapon_MAX; i++)
+	{
+		int iLength = g_aWeapons[i].Length;
+		for (int j = 0; j < iLength; j++)
+		{
+			WeaponInfo info;
+			g_aWeapons[i].GetArray(j, info);
+			delete info.aAttrib;
+		}
+		
 		g_aWeapons[i].Clear();
-	
-	g_mWeaponsName.Clear();
+	}
 	
 	Weapons_LoadSlot(kv, "Primary", ConfigWeapon_Primary);
 	Weapons_LoadSlot(kv, "Secondary", ConfigWeapon_Secondary);
@@ -91,25 +101,66 @@ void Weapons_LoadSlot(KeyValues kv, char[] sSection, int iSlot)
 		{
 			do
 			{
-				char sIndex[16], sName[256];
+				WeaponInfo info;
+				
+				char sIndex[16];
 				kv.GetSectionName(sIndex, sizeof(sIndex));
-				kv.GetString(NULL_STRING, sName, sizeof(sName));
 				
-				int iIndex;
-				if (!StringToIntEx(sIndex, iIndex))
+				if (StrEqual(sIndex, "weapon"))
 				{
-					LogError("Randomizer Weapons config have invalid integer index: %s", sIndex);
+					info.bCustom = true;
+					info.iIndex = kv.GetNum("index");
+					kv.GetString("name", info.sName, sizeof(info.sName));
+					kv.GetString("classname", info.sClassname, sizeof(info.sClassname));
+					
+					if (kv.JumpToKey("attrib"))
+					{
+						if (kv.GotoFirstSubKey(false))
+						{
+							info.aAttrib = new ArrayList(2);
+							
+							do
+							{
+								char sAttribName[CONFIG_MAXCHAR];
+								kv.GetSectionName(sAttribName, sizeof(sAttribName));
+								int iAttrib = TF2Econ_TranslateAttributeNameToDefinitionIndex(sAttribName) & 0xFFFF;	//For server using older econ data plugin
+								
+								if (iAttrib == -1)
+								{
+									LogError("Randomizer Weapons config have unknown attribute name: %s", sAttribName);
+									continue;
+								}
+								
+								int iPos = info.aAttrib.Length;
+								info.aAttrib.Resize(iPos + 1);
+								info.aAttrib.Set(iPos, iAttrib, 0);
+								info.aAttrib.Set(iPos, kv.GetFloat(NULL_STRING), 1);
+							}
+							while (kv.GotoNextKey(false));
+							kv.GoBack();
+						}
+						
+						kv.GoBack();
+					}
+				}
+				else if (StringToIntEx(sIndex, info.iIndex))
+				{
+					kv.GetString(NULL_STRING, info.sName, sizeof(info.sName));
+				}
+				else
+				{
+					LogError("Randomizer Weapons config have invalid value: %s", sIndex);
 					continue;
 				}
 				
-				if (!TranslationPhraseExists(sName))
-				{
-					LogError("Found weapon index '%d' but translation '%s' doesn't exist", iIndex, sName);
-					continue;
-				}
+				if (!TranslationPhraseExists(info.sName))
+					//TODO better error
+					LogError("Found weapon index '%d' but translation '%s' doesn't exist", info.iIndex, info.sName);
 				
-				g_aWeapons[iSlot].Push(iIndex);
-				g_mWeaponsName.SetString(sIndex, sName);
+				info.iId = g_iWeaponsInfoId;
+				g_aWeapons[iSlot].PushArray(info);
+				
+				g_iWeaponsInfoId++;
 			}
 			while (kv.GotoNextKey(false));
 			kv.GoBack();
@@ -122,15 +173,87 @@ void Weapons_LoadSlot(KeyValues kv, char[] sSection, int iSlot)
 	}
 }
 
-int Weapons_GetRandomIndex(int iSlot, TFClassType nClass = TFClass_Unknown)
+void Weapons_GetRandomInfo(WeaponInfo info, int iSlot, TFClassType nClass = TFClass_Unknown)
 {
-	int iPos = -1;
+	int iPos = Weapons_GetConfigSlot(iSlot, nClass);
+	if (iPos == ConfigWeapon_Invalid || !g_aWeapons[iPos])
+	{
+		WeaponInfo nothing;
+		info = nothing;
+		return;
+	}
 	
+	int iLength = g_aWeapons[iPos].Length;
+	if (iLength == 0)
+	{
+		WeaponInfo nothing;
+		info = nothing;
+		return;
+	}
+	
+	g_aWeapons[iPos].GetArray(GetRandomInt(0, iLength - 1), info);
+}
+
+void Weapons_GetInfoFromIndex(int iIndex, WeaponInfo info, int iSlot, TFClassType nClass = TFClass_Unknown)
+{
+	int iPos = Weapons_GetConfigSlot(iSlot, nClass);
+	if (iPos == ConfigWeapon_Invalid || !g_aWeapons[iPos])
+	{
+		WeaponInfo nothing;
+		info = nothing;
+		return;
+	}
+	
+	int iLength = g_aWeapons[iPos].Length;
+	for (int i = 0; i < iLength; i++)
+	{
+		g_aWeapons[iPos].GetArray(i, info);
+		if (!info.bCustom && info.iIndex == iIndex)	//Ignore custom weapons
+			return;
+	}
+	
+	//Cant find one
+	WeaponInfo nothing;
+	info = nothing;
+}
+
+void Weapons_GetInfoFromName(int iClient, const char[] sName, WeaponInfo info, int iSlot, TFClassType nClass = TFClass_Unknown)
+{
+	int iPos = Weapons_GetConfigSlot(iSlot, nClass);
+	if (iPos == ConfigWeapon_Invalid || !g_aWeapons[iPos])
+	{
+		WeaponInfo nothing;
+		info = nothing;
+		return;
+	}
+	
+	int iLength = g_aWeapons[iPos].Length;
+	for (int i = 0; i < iLength; i++)
+	{
+		char sBuffer[256];
+		g_aWeapons[iPos].GetArray(i, info);
+		
+		Format(sBuffer, sizeof(sBuffer), "%T", info.sName, iClient);
+		if (StrContains(sBuffer, sName, false) == 0)
+			return;
+		
+		Format(sBuffer, sizeof(sBuffer), "%T", info.sName, LANG_SERVER);
+		if (StrContains(sBuffer, sName, false) == 0)
+			return;
+	}
+	
+	//Cant find one
+	WeaponInfo nothing;
+	info = nothing;
+}
+
+int Weapons_GetConfigSlot(int iSlot, TFClassType nClass = TFClass_Unknown)
+{
 	switch (iSlot)
 	{
-		case WeaponSlot_Primary: iPos = ConfigWeapon_Primary;
-		case WeaponSlot_Secondary: iPos = ConfigWeapon_Secondary;
-		case WeaponSlot_Melee: iPos = ConfigWeapon_Melee;
+		case WeaponSlot_Primary: return ConfigWeapon_Primary;
+		case WeaponSlot_Secondary: return ConfigWeapon_Secondary;
+		case WeaponSlot_Melee: return ConfigWeapon_Melee;
 	}
 	
 	switch (nClass)
@@ -139,36 +262,22 @@ int Weapons_GetRandomIndex(int iSlot, TFClassType nClass = TFClass_Unknown)
 		{
 			switch (iSlot)
 			{
-				case WeaponSlot_PDABuild: iPos = ConfigWeapon_PDABuild;
-				case WeaponSlot_PDADestroy: iPos = ConfigWeapon_PDADestroy;
-				case WeaponSlot_BuilderEngie: iPos = ConfigWeapon_Toolbox;
+				case WeaponSlot_PDABuild: return ConfigWeapon_PDABuild;
+				case WeaponSlot_PDADestroy: return ConfigWeapon_PDADestroy;
+				case WeaponSlot_BuilderEngie: return ConfigWeapon_Toolbox;
 			}
 		}
 		case TFClass_Spy:
 		{
 			switch (iSlot)
 			{
-				case WeaponSlot_PDADisguise: iPos = ConfigWeapon_DisguiseKit;
-				case WeaponSlot_InvisWatch: iPos = ConfigWeapon_InvisWatch;
+				case WeaponSlot_PDADisguise: return ConfigWeapon_DisguiseKit;
+				case WeaponSlot_InvisWatch: return ConfigWeapon_InvisWatch;
 			}
 		}
 	}
 	
-	if (iPos == -1 || !g_aWeapons[iPos])
-		return -1;
-	
-	int iLength = g_aWeapons[iPos].Length;
-	if (iLength == 0)
-		return -1;
-	
-	return g_aWeapons[iPos].Get(GetRandomInt(0, iLength - 1));
-}
-
-bool Weapons_GetName(int iIndex, char[] sBuffer, int iLength)
-{
-	char sIndex[16];
-	IntToString(iIndex, sIndex, sizeof(sIndex));
-	return g_mWeaponsName.GetString(sIndex, sBuffer, iLength);
+	return ConfigWeapon_Invalid;
 }
 
 int Weapons_GetReskinIndex(int iIndex)

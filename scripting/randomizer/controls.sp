@@ -111,19 +111,12 @@ void Controls_RefreshClient(int iClient)
 		g_flControlsCooldown[iClient][iSlot] = 0.0;
 		
 		for (Button nButton; nButton < Button_MAX; nButton++)
-			g_bControlsButton[iClient][iSlot][nButton] = false;
-	}
-	
-	int iWeapon;
-	int iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		int iSlot = TF2_GetSlot(iWeapon);
-		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-		
-		for (Button nButton; nButton < Button_MAX; nButton++)
-			if (g_controlsInfo[nButton].weaponWhitelist.IsIndexAllowed(iIndex))
-				g_bControlsButton[iClient][iSlot][nButton] = true;
+		{
+			if (g_ClientWeaponInfo[iClient][iSlot].GetItem() == INVALID_ENT_REFERENCE)
+				g_bControlsButton[iClient][iSlot][nButton] = false;
+			else
+				g_bControlsButton[iClient][iSlot][nButton] = g_controlsInfo[nButton].weaponWhitelist.IsAllowed(g_ClientWeaponInfo[iClient][iSlot]);
+		}
 	}
 }
 
