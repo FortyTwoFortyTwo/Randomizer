@@ -266,63 +266,63 @@
 			}
 			"CBaseCombatCharacter::GiveAmmo"
 			{
-				"linux"		"256"
-				"windows"	"255"
+				"linux"		"257"
+				"windows"	"256"
 			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
-				"linux"		"286"
-				"windows"	"280"
+				"linux"		"287"
+				"windows"	"281"
 			}
 			"CBaseCombatWeapon::GetSlot"
 			{
-				"linux"		"332"
-				"windows"	"326"
+				"linux"		"333"
+				"windows"	"327"
 			}
 			"CTFWeaponBaseMelee::Swing"
 			{
-				"linux"		"478"
-				"windows"	"471"
+				"linux"		"479"
+				"windows"	"472"
 			}
 			"CItem::MyTouch"
 			{
-				"linux"		"222"
-				"windows"	"221"
+				"linux"		"223"
+				"windows"	"222"
 			}
 			"CTFGrenadePipebombProjectile::PipebombTouch"
 			{
-				"linux"		"254"
-				"windows"	"253"
+				"linux"		"255"
+				"windows"	"254"
 			}
 			"CTFDecapitationMeleeWeaponBase::OnDecapitation"
 			{
-				"linux"		"482"
-				"windows"	"475"
+				"linux"		"483"
+				"windows"	"476"
 			}
 			"CBaseObject::CanBeUpgraded"
 			{
-				"linux"		"376"
-				"windows"	"375"
+				"linux"		"377"
+				"windows"	"376"
 			}
 			"CBasePlayer::ForceRespawn"
 			{
-				"linux"		"330"
-				"windows"	"329"
+				"linux"		"331"
+				"windows"	"330"
 			}
 			"CBasePlayer::EquipWearable"
 			{
-				"linux"		"431"
-				"windows"	"430"
+				"linux"		"432"
+				"windows"	"431"
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
-				"linux"		"484"
-				"windows"	"477"
+				"linux"		"485"
+				"windows"	"478"
 			}
 			"CTFPlayer::ClientCommand"
 			{
-				"linux"		"373"
-				"windows"	"372"
+				"linux"		"374"
+				"windows"	"373"
 			}
 			"CGameRules::FrameUpdatePostEntityThink"
 			{
