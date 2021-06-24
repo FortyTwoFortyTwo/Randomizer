@@ -21,7 +21,7 @@
 				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
 				"linux"
 				{
-					"offset"	"672"
+					"offset"	"711"
 				}
 				"windows"
 				{
@@ -33,7 +33,7 @@
 				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
 				"linux"
 				{
-					"offset"	"1173"
+					"offset"	"1262"
 				}
 				"windows"
 				{
@@ -45,7 +45,7 @@
 				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
 				"linux"
 				{
-					"offset"	"1733"
+					"offset"	"1842"
 				}
 				"windows"
 				{
@@ -57,7 +57,7 @@
 				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
 				"linux"
 				{
-					"offset"	"2141"
+					"offset"	"2262"
 				}
 				"windows"
 				{
@@ -69,7 +69,7 @@
 				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
 				"linux"
 				{
-					"offset"	"2150"
+					"offset"	"2271"
 				}
 				"windows"
 				{
