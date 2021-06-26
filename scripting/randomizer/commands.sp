@@ -69,12 +69,7 @@ public Action Command_Class(int iClient, int iArgs)
 		case Mode_Normal, Mode_NormalRound:
 		{
 			for (int i = 0; i < iTargetCount; i++) 
-			{
 				g_iClientClass[iTargetList[i]] = nClass;
-				//Regenerate each slot beyond 2, as we generally don't want other classes to have watches/PDAs
-				for (int iSlot = 3; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-					g_iClientWeaponIndex[iTargetList[i]][iSlot] = Weapons_GetRandomIndex(iSlot, g_iClientClass[iTargetList[i]]);
-			}
 		}
 		case Mode_Team:
 		{
@@ -96,24 +91,8 @@ public Action Command_Class(int iClient, int iArgs)
 			}
 			
 			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
-			{
 				if (bTargetTeam[iTeam])
-				{
 					g_iTeamClass[iTeam] = nClass;
-					//If doing normal random weapons, we need to regenerate pda slots for each player on the team
-					if (g_cvRandomWeapons.IntValue == Mode_Normal || g_cvRandomWeapons.IntValue == Mode_NormalRound)
-					{
-					 for (int iTarget = 1; iTarget <= MaxClients; iTarget++)
-					  if (IsClientInGame(iTarget) && bTargetTeam[TF2_GetClientTeam(iTarget)])
-					   for (int iSlot = 3; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-					    g_iClientWeaponIndex[iTarget][iSlot] = Weapons_GetRandomIndex(iSlot, g_iTeamClass[iTeam]);
-					}
-					else if (g_cvRandomWeapons.IntValue == Mode_Team || g_cvRandomWeapons.IntValue == Mode_All)
-				  for (int iSlot = 3; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-					  g_iTeamWeaponIndex[iTeam][iSlot] = Weapons_GetRandomIndex(iSlot, g_iTeamClass[iTeam]);
-					  
-		  }
-		 }
 		}
 		case Mode_All:
 		{
@@ -126,26 +105,12 @@ public Action Command_Class(int iClient, int iArgs)
 				}
 			}
 			
-			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
-			{
-				g_iTeamClass[iTeam] = nClass;
-				if (g_cvRandomWeapons.IntValue == Mode_Normal || g_cvRandomWeapons.IntValue == Mode_NormalRound)
-				{
-				 for (int iTarget = 1; iTarget <= MaxClients; iTarget++)
-				  if (IsClientInGame(iTarget))
-				   for (int iSlot = 3; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-				    g_iClientWeaponIndex[iTarget][iSlot] = Weapons_GetRandomIndex(iSlot, g_iTeamClass[iTeam]);
-				}
-				else if (g_cvRandomWeapons.IntValue == Mode_Team || g_cvRandomWeapons.IntValue == Mode_All)
-				 for (int iSlot = 3; iSlot <= WeaponSlot_BuilderEngie; iSlot++)
-				  g_iTeamWeaponIndex[iTeam][iSlot] = Weapons_GetRandomIndex(iSlot, g_iTeamClass[iTeam]);
-					 
-		 }
+			g_iTeamClass[TEAM_ALL] = nClass;	 
 		}
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsPlayerAlive(iTargetList[i]))
+		if (IsPlayerAlive(iTargetList[i]) && IsClassRandomized(iClient))
 			TF2_RespawnPlayer(iTargetList[i]);
 			
 	ReplyToCommand(iClient, "Set %s class to %s", sTargetName, sClass);
@@ -202,7 +167,7 @@ public Action Command_Weapon(int iClient, int iArgs)
 		case Mode_Normal, Mode_NormalRound:
 		{
 			for (int i = 0; i < iTargetCount; i++)
-				g_iClientWeaponIndex[iTargetList[i]][iSlot] = iIndex;
+				SetRandomizedWeaponIndex(g_iClientWeaponIndex[iTargetList[i]], iSlot, iIndex);
 		}
 		case Mode_Team:
 		{
@@ -217,7 +182,7 @@ public Action Command_Weapon(int iClient, int iArgs)
 					}
 					else if (bTargetTeam[TF2_GetClientTeam(iTarget)] == true)
 					{
-						ReplyToCommand(iClient, "Can only target teams with randomizer_randomclass set to 3");
+						ReplyToCommand(iClient, "Can only target teams with randomizer_randomweapons set to 3");
 						return Plugin_Handled;
 					}
 				}
@@ -225,7 +190,7 @@ public Action Command_Weapon(int iClient, int iArgs)
 			
 			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
 				if (bTargetTeam[iTeam])
-					g_iTeamWeaponIndex[iTeam][iSlot] = iIndex;
+					SetRandomizedWeaponIndex(g_iTeamWeaponIndex[iTeam], iSlot, iIndex);
 		}
 		case Mode_All:
 		{
@@ -233,18 +198,17 @@ public Action Command_Weapon(int iClient, int iArgs)
 			{
 				if (IsClientInGame(iTarget) && !IsClientInTargetList(iTarget, iTargetList, iTargetCount))
 				{
-					ReplyToCommand(iClient, "Can only target everyone with randomizer_randomclass set to 4");
+					ReplyToCommand(iClient, "Can only target everyone with randomizer_randomweapons set to 4");
 					return Plugin_Handled;
 				}
 			}
 			
-			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
-				g_iTeamWeaponIndex[iTeam][iSlot] = iIndex;
+			SetRandomizedWeaponIndex(g_iTeamWeaponIndex[TEAM_ALL], iSlot, iIndex);
 		}
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsPlayerAlive(iTargetList[i]))
+		if (IsPlayerAlive(iTargetList[i]) && IsWeaponRandomized(iClient))
 			TF2_RespawnPlayer(iTargetList[i]);
 	
 	ReplyToCommand(iClient, "Set %s weapon def index at slot '%d' to '%d'", sTargetName, iSlot, iIndex);
@@ -295,7 +259,7 @@ public Action Command_Generate(int iClient, int iArgs)
 			}
 		}
 		
-		UpdateTeamWeapon();
+		RandomizeTeamWeapon();
 	}
 	else if (iModeClass == Mode_Team || iModeWeapons == Mode_Team)
 	{
@@ -318,17 +282,17 @@ public Action Command_Generate(int iClient, int iArgs)
 		
 		for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
 			if (bTargetTeam[iTeam])
-				UpdateTeamWeapon(view_as<TFTeam>(iTeam));
+				RandomizeTeamWeapon(view_as<TFTeam>(iTeam));
 	}
 	
 	if (iModeClass == Mode_Normal || iModeClass == Mode_NormalRound || iModeWeapons == Mode_Normal || iModeWeapons == Mode_NormalRound)
 	{
 		for (int i = 0; i < iTargetCount; i++)
-			UpdateClientWeapon(iTargetList[i], ClientUpdate_Round);
+			RandomizeClientWeapon(iTargetList[i]);
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsPlayerAlive(iTargetList[i]))
+		if (IsPlayerAlive(iTargetList[i]) && (IsClassRandomized(iClient) || IsWeaponRandomized(iClient)))
 			TF2_RespawnPlayer(iTargetList[i]);
 	
 	ReplyToCommand(iClient, "Regenerated %s class and weapons", sTargetName);
