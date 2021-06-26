@@ -425,14 +425,14 @@ public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hPa
 	{
 		DHookSetReturn(hReturn, true);
 		return MRES_Supercede;
- }
+	}
 	
 	return MRES_Ignored;
 }
 
 public MRESReturn DHook_GetLoadoutItemPre(int iClient, Handle hReturn, Handle hParams)
 {
-	if (g_iWeaponGetLoadoutItem == -1)	//not inside ValidateWeapons
+	if (g_iWeaponGetLoadoutItem == -1 || !IsWeaponRandomized(iClient))	//not inside ValidateWeapons
 		return MRES_Ignored;
 	
 	int iWeapon = -1;
@@ -652,7 +652,6 @@ public MRESReturn DHook_HandleRageGainPre(Handle hParams)
 {
 	//Banners, Phlogistinator and Hitman Heatmaker use m_flRageMeter with class check, call this function to each weapons
 	//Must be called a frame, will crash if detour is called while inside a detour
-	//TODO somehow make multiple m_flRageMeter to seperate each ones
 	if (g_bSkipHandleRageGain ||  DHookIsNullParam(hParams, 1))
 		return MRES_Ignored;
 	
@@ -822,11 +821,12 @@ public MRESReturn DHook_ForceRespawnPre(int iClient)
 		if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
 			SDKCall_RemoveObject(iClient, iBuilding);
 	
-	//Update client weapons incase if switching teams
-	UpdateClientWeapon(iClient, ClientUpdate_Spawn);
-	
-	if (g_iClientClass[iClient] != TFClass_Unknown)
-		SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(g_iClientClass[iClient]));
+	if (IsClassRandomized(iClient))
+	{
+		TFClassType nClass = GetRandomizedClass(iClient);
+		if (nClass != TFClass_Unknown)
+			SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(nClass));
+	}
 }
 
 public MRESReturn DHook_ForceRespawnPost(int iClient)
@@ -878,8 +878,8 @@ public void DHook_GiveNamedItemRemoved(int iHookId)
 
 public MRESReturn DHook_ClientCommandPost(int iClient, Handle hReturn, Handle hParams)
 {
-	if(iClient == g_iClientEurekaTeleporting)
-	 g_iClientEurekaTeleporting = 0;
+	if (iClient == g_iClientEurekaTeleporting)
+		g_iClientEurekaTeleporting = 0;
 }
 
 public MRESReturn DHook_TakeHealthPre(int iClient, Handle hReturn, Handle hParams)

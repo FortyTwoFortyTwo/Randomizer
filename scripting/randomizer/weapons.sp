@@ -1,28 +1,12 @@
 #define FILEPATH_CONFIG_WEAPONS "configs/randomizer/weapons.cfg"
 #define FILEPATH_CONFIG_RESKINS "configs/randomizer/reskins.cfg"
 
-enum
-{
-	ConfigWeapon_Primary,
-	ConfigWeapon_Secondary,
-	ConfigWeapon_Melee,
-	ConfigWeapon_PDABuild,
-	ConfigWeapon_PDADestroy,
-	ConfigWeapon_Toolbox,
-	ConfigWeapon_DisguiseKit,
-	ConfigWeapon_InvisWatch,
-	ConfigWeapon_MAX
-}
-
-static ArrayList g_aWeapons[ConfigWeapon_MAX];
+static ArrayList g_aWeapons[CLASS_MAX+1][WeaponSlot_BuilderEngie+1];
 static StringMap g_mWeaponsName;
 static StringMap g_mWeaponsReskins;
 
 public void Weapons_Init()
 {
-	for (int i = 0; i < ConfigWeapon_MAX; i++)
-		g_aWeapons[i] = new ArrayList();
-	
 	g_mWeaponsName = new StringMap();
 	g_mWeaponsReskins = new StringMap();
 }
@@ -33,19 +17,20 @@ public void Weapons_Refresh()
 	if (!kv)
 		return;
 	
-	for (int i = 0; i < ConfigWeapon_MAX; i++)
-		g_aWeapons[i].Clear();
+	for (int i = 0; i < sizeof(g_aWeapons); i++)
+		for (int j = 0; j < sizeof(g_aWeapons[]); j++)
+			delete g_aWeapons[i][j];
 	
 	g_mWeaponsName.Clear();
 	
-	Weapons_LoadSlot(kv, "Primary", ConfigWeapon_Primary);
-	Weapons_LoadSlot(kv, "Secondary", ConfigWeapon_Secondary);
-	Weapons_LoadSlot(kv, "Melee", ConfigWeapon_Melee);
-	Weapons_LoadSlot(kv, "PDABuild", ConfigWeapon_PDABuild);
-	Weapons_LoadSlot(kv, "PDADestroy", ConfigWeapon_PDADestroy);
-	Weapons_LoadSlot(kv, "Toolbox", ConfigWeapon_Toolbox);
-	Weapons_LoadSlot(kv, "DisguiseKit", ConfigWeapon_DisguiseKit);
-	Weapons_LoadSlot(kv, "InvisWatch", ConfigWeapon_InvisWatch);
+	Weapons_LoadSlot(kv, "Primary", WeaponSlot_Primary);
+	Weapons_LoadSlot(kv, "Secondary", WeaponSlot_Secondary);
+	Weapons_LoadSlot(kv, "Melee", WeaponSlot_Melee);
+	Weapons_LoadSlot(kv, "PDABuild", WeaponSlot_PDABuild);
+	Weapons_LoadSlot(kv, "PDADestroy", WeaponSlot_PDADestroy);
+	Weapons_LoadSlot(kv, "Toolbox", WeaponSlot_BuilderEngie);
+	Weapons_LoadSlot(kv, "DisguiseKit", WeaponSlot_PDADisguise);
+	Weapons_LoadSlot(kv, "InvisWatch", WeaponSlot_InvisWatch);
 	
 	delete kv;
 	
@@ -108,7 +93,22 @@ void Weapons_LoadSlot(KeyValues kv, char[] sSection, int iSlot)
 					continue;
 				}
 				
-				g_aWeapons[iSlot].Push(iIndex);
+				if (!g_aWeapons[CLASS_ALL][iSlot])
+					g_aWeapons[CLASS_ALL][iSlot] = new ArrayList();
+				
+				g_aWeapons[CLASS_ALL][iSlot].Push(iIndex);
+				
+				for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+				{
+					if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) == iSlot)
+					{
+						if (!g_aWeapons[iClass][iSlot])
+							g_aWeapons[iClass][iSlot] = new ArrayList();
+						
+						g_aWeapons[iClass][iSlot].Push(iIndex);
+					}
+				}
+				
 				g_mWeaponsName.SetString(sIndex, sName);
 			}
 			while (kv.GotoNextKey(false));
@@ -122,46 +122,13 @@ void Weapons_LoadSlot(KeyValues kv, char[] sSection, int iSlot)
 	}
 }
 
-int Weapons_GetRandomIndex(int iSlot, TFClassType nClass = TFClass_Unknown)
+int Weapons_GetRandomIndex(int iSlot, TFClassType nClass)
 {
-	int iPos = -1;
-	
-	switch (iSlot)
-	{
-		case WeaponSlot_Primary: iPos = ConfigWeapon_Primary;
-		case WeaponSlot_Secondary: iPos = ConfigWeapon_Secondary;
-		case WeaponSlot_Melee: iPos = ConfigWeapon_Melee;
-	}
-	
-	switch (nClass)
-	{
-		case TFClass_Engineer:
-		{
-			switch (iSlot)
-			{
-				case WeaponSlot_PDABuild: iPos = ConfigWeapon_PDABuild;
-				case WeaponSlot_PDADestroy: iPos = ConfigWeapon_PDADestroy;
-				case WeaponSlot_BuilderEngie: iPos = ConfigWeapon_Toolbox;
-			}
-		}
-		case TFClass_Spy:
-		{
-			switch (iSlot)
-			{
-				case WeaponSlot_PDADisguise: iPos = ConfigWeapon_DisguiseKit;
-				case WeaponSlot_InvisWatch: iPos = ConfigWeapon_InvisWatch;
-			}
-		}
-	}
-	
-	if (iPos == -1 || !g_aWeapons[iPos])
+	if (!g_aWeapons[nClass][iSlot])
 		return -1;
 	
-	int iLength = g_aWeapons[iPos].Length;
-	if (iLength == 0)
-		return -1;
-	
-	return g_aWeapons[iPos].Get(GetRandomInt(0, iLength - 1));
+	int iLength = g_aWeapons[nClass][iSlot].Length;
+	return g_aWeapons[nClass][iSlot].Get(GetRandomInt(0, iLength - 1));
 }
 
 bool Weapons_GetName(int iIndex, char[] sBuffer, int iLength)

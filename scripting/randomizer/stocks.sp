@@ -385,7 +385,7 @@ stock bool ItemIsAllowed(int iIndex)
 
 stock bool CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 {
-	if (g_bAllowGiveNamedItem || g_cvRandomWeapons.IntValue == Mode_None)
+	if (g_bAllowGiveNamedItem || !IsWeaponRandomized(iClient))
 		return true;
 	
 	//Allow grappling hook and passtime gun
