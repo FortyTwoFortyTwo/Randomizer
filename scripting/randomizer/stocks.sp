@@ -139,9 +139,16 @@ stock bool TF2_IsValidEconItemView(Address pItem)
 	return 0 <= iIndex < 65535;
 }
 
-stock bool TF2_WeaponFindAttribute(int iWeapon, const char[] sAttrib, float &flVal)
+stock bool TF2_WeaponFindAttribute(int iWeapon, char[] sAttrib, float &flVal)
 {
-	return TF2_IndexFindAttribute(GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"), sAttrib, flVal);
+	Address pAttrib = TF2Attrib_GetByName(iWeapon, sAttrib);
+	if (pAttrib != Address_Null)
+	{
+		flVal = TF2Attrib_GetValue(pAttrib);
+		return true;
+	}
+	
+	return false;
 }
 
 stock bool TF2_IndexFindAttribute(int iIndex, const char[] sAttrib, float &flVal)

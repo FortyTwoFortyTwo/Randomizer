@@ -43,6 +43,20 @@ void Ammo_OnWeaponSpawned(int iWeapon)
 	
 	//Set new ammotype location to weapon
 	SetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType", iNewAmmoType);
+	
+	float flVal;
+	if (iAmmoType == TF_AMMO_GRENADES1 && TF2_IndexFindAttribute(iIndex, "grenades1_resupply_denied", flVal))
+		TF2Attrib_RemoveByName(iWeapon, "grenades1_resupply_denied");
+	else if (iAmmoType == TF_AMMO_GRENADES2 && TF2_IndexFindAttribute(iIndex, "grenades2_resupply_denied", flVal))
+		TF2Attrib_RemoveByName(iWeapon, "grenades2_resupply_denied");
+	
+	if (flVal > 0.0)
+	{
+		if (iNewAmmoType == TF_AMMO_GRENADES1)
+			TF2Attrib_SetByName(iWeapon, "grenades1_resupply_denied", flVal);
+		else if (iNewAmmoType == TF_AMMO_GRENADES2)
+			TF2Attrib_SetByName(iWeapon, "grenades2_resupply_denied", flVal);
+	}
 }
 
 bool Ammo_GetDefaultType(int iClient, int &iAmmoType, TFClassType &nClass = TFClass_Unknown)
