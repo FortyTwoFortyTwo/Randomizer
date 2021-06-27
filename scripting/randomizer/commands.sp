@@ -110,7 +110,7 @@ public Action Command_Class(int iClient, int iArgs)
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsPlayerAlive(iTargetList[i]) && IsClassRandomized(iClient))
+		if (IsPlayerAlive(iTargetList[i]) && IsClassRandomized(iTargetList[i]))
 			TF2_RespawnPlayer(iTargetList[i]);
 			
 	ReplyToCommand(iClient, "Set %s class to %s", sTargetName, sClass);
@@ -208,7 +208,7 @@ public Action Command_Weapon(int iClient, int iArgs)
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsPlayerAlive(iTargetList[i]) && IsWeaponRandomized(iClient))
+		if (IsPlayerAlive(iTargetList[i]) && IsWeaponRandomized(iTargetList[i]))
 			TF2_RespawnPlayer(iTargetList[i]);
 	
 	ReplyToCommand(iClient, "Set %s weapon def index at slot '%d' to '%d'", sTargetName, iSlot, iIndex);
@@ -292,7 +292,7 @@ public Action Command_Generate(int iClient, int iArgs)
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsPlayerAlive(iTargetList[i]) && (IsClassRandomized(iClient) || IsWeaponRandomized(iClient)))
+		if (IsPlayerAlive(iTargetList[i]) && (IsClassRandomized(iTargetList[i]) || IsWeaponRandomized(iTargetList[i])))
 			TF2_RespawnPlayer(iTargetList[i]);
 	
 	ReplyToCommand(iClient, "Regenerated %s class and weapons", sTargetName);
