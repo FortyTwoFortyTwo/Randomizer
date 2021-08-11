@@ -337,8 +337,10 @@ public MRESReturn DHook_ValidateWeaponsPost(int iClient, Handle hParams)
 
 public MRESReturn DHook_ManageBuilderWeaponsPre(int iClient, Handle hParams)
 {
-	//Don't do anything, we'll handle it
-	return MRES_Supercede;
+	if (IsWeaponRandomized(iClient))
+		return MRES_Supercede;	//Don't do anything, we'll handle it
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
