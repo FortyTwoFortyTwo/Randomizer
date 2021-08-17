@@ -34,12 +34,18 @@ void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &flDamage, int &iDamageType, int &iWeapon, float vecDamageForce[3], float vecDamagePosition[3], int iDamageCustom)
 {
 	g_iAllowPlayerClass[iVictim]++;
+	
+	if (0 < iAttacker <= MaxClients)
+		g_iAllowPlayerClass[iAttacker]++;
 }
 
 public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, float flDamage, int iDamageType, int iWeapon, const float vecDamageForce[3], const float vecDamagePosition[3], int iDamageCustom)
 {
 	g_iAllowPlayerClass[iVictim]--;
 	g_bFeignDeath[iVictim] = false;
+	
+	if (0 < iAttacker <= MaxClients)
+		g_iAllowPlayerClass[iAttacker]--;
 }
 
 public void Client_PreThink(int iClient)
