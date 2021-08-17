@@ -26,6 +26,7 @@ static TFClassType g_nClassGainingRage;
 static bool g_bSkipUpdateRageBuffsAndRage = false;
 static int g_iClientGetChargeEffectBeingProvided;
 static int g_iWeaponGetLoadoutItem = -1;
+static bool g_bManageBuilderWeapons;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
 static int g_iHookIdClientCommand[TF_MAXPLAYERS+1];
@@ -47,7 +48,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", DHook_CanAirDashPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, DHook_ValidateWeaponsPost);
-	DHook_CreateDetour(hGameData, "CTFPlayer::ManageBuilderWeapons", DHook_ManageBuilderWeaponsPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::ManageBuilderWeapons", DHook_ManageBuilderWeaponsPre, DHook_ManageBuilderWeaponsPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::EndClassSpecialSkill", DHook_EndClassSpecialSkillPre, DHook_EndClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
@@ -340,7 +341,13 @@ public MRESReturn DHook_ManageBuilderWeaponsPre(int iClient, Handle hParams)
 	if (IsWeaponRandomized(iClient))
 		return MRES_Supercede;	//Don't do anything, we'll handle it
 	
+	g_bManageBuilderWeapons = true;
 	return MRES_Ignored;
+}
+
+public MRESReturn DHook_ManageBuilderWeaponsPost(int iClient, Handle hParams)
+{
+	g_bManageBuilderWeapons = false;
 }
 
 public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
@@ -496,7 +503,9 @@ public MRESReturn DHook_GetEntityForLoadoutSlotPre(int iClient, Handle hReturn, 
 
 public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, Handle hReturn, Handle hParams)
 {
-	//Always return true no matter what
+	if (g_bManageBuilderWeapons)
+		return MRES_Ignored;	//Do class check if inside CTFPlayer::ManageBuilderWeapons
+	
 	DHookSetReturn(hReturn, true);
 	return MRES_Supercede;
 }
