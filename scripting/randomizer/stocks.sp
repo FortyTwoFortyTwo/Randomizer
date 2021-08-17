@@ -4,13 +4,20 @@ stock int TF2_CreateWeapon(int iClient, int iIndex, int iSlot)
 	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
 	
 	//We want to translate classname to correct classname AND slot wanted
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	//First, try current class client playing
+	if (TF2_GetSlotFromIndex(iIndex, TF2_GetPlayerClass(iClient)) == iSlot)
 	{
-		int iClassSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (iClassSlot == iSlot)
+		TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), TF2_GetPlayerClass(iClient));
+	}
+	else
+	{
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 		{
-			TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), view_as<TFClassType>(iClass));
-			break;
+			if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) == iSlot)
+			{
+				TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), view_as<TFClassType>(iClass));
+				break;
+			}
 		}
 	}
 	
@@ -281,13 +288,22 @@ stock int TF2_GetSlotFromIndex(int iIndex, TFClassType nClass = TFClass_Unknown)
 stock TFClassType TF2_GetDefaultClassFromItem(int iWeapon)
 {
 	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-	int iSlot = TF2_GetSlot(iWeapon);
+	
+	char sWeaponClassname[256], sIndexClassname[256];
+	GetEntityClassname(iWeapon, sWeaponClassname, sizeof(sWeaponClassname));
+	TF2Econ_GetItemClassName(iIndex, sIndexClassname, sizeof(sIndexClassname));
 	
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
-		int iClassSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (iClassSlot == iSlot)
-			return view_as<TFClassType>(iClass);
+		if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) >= WeaponSlot_Primary)
+		{
+			char sClassClassname[256];
+			sClassClassname = sIndexClassname;
+			TF2Econ_TranslateWeaponEntForClass(sClassClassname, sizeof(sClassClassname), view_as<TFClassType>(iClass));
+			
+			if (StrEqual(sWeaponClassname, sClassClassname))
+				return view_as<TFClassType>(iClass);
+		}
 	}
 	
 	return TFClass_Unknown;

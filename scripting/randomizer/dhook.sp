@@ -457,18 +457,14 @@ public MRESReturn DHook_GetLoadoutItemPre(int iClient, Handle hReturn, Handle hP
 	//There also class type and weapon classname checks if they should have correct classname by class type
 	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
 	
-	char sWeaponClassname[256], sIndexClassname[256];
-	GetEntityClassname(iWeapon, sWeaponClassname, sizeof(sWeaponClassname));
-	TF2Econ_GetItemClassName(iIndex, sIndexClassname, sizeof(sIndexClassname));
-	
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	//First, try current class client playing
+	RevertClientClass(iClient);
+	if (TF2_GetSlotFromIndex(iIndex, TF2_GetPlayerClass(iClient)) < WeaponSlot_Primary)
 	{
-		if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) >= WeaponSlot_Primary)
+		//If weapon can't use current class, find class that would work and change
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 		{
-			char sTemp[256];
-			strcopy(sTemp, sizeof(sTemp), sIndexClassname);
-			TF2Econ_TranslateWeaponEntForClass(sTemp, sizeof(sTemp), view_as<TFClassType>(iClass));
-			if (StrEqual(sWeaponClassname, sTemp))
+			if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) >= WeaponSlot_Primary)
 			{
 				SetClientClass(iClient, view_as<TFClassType>(iClass));
 				break;
