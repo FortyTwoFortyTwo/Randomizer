@@ -8,8 +8,8 @@ TF2 Gamemode where everyone plays as random class with random weapons, a rewritt
 - `randomizer_droppedweapons`: Enable/Disable dropped weapons.
 - `randomizer_huds`: Enable/Disable weapon huds.
 - `randomizer_weaponsfromclass`: Whenever generated weapon should only be whatever class can normally equip.
-- `randomizer_cosmeticsconflicts`: Whenever generated cosmetics check for possible conflicts.
 - `randomizer_randomcosmetics`: How many cosmetics to randomly generate, -1 for no cosmetic randomization.
+- `randomizer_cosmeticsconflicts`: Whenever generated cosmetics should check for possible conflicts.
 - `randomizer_randomclass`/`randomizer_randomweapons`: Modes to change player class/weapon randomization.
   - 0: No randomizes, allowing players to freely change class/weapon themself
   - 1: Randomizes on death
