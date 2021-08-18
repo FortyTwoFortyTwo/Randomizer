@@ -48,6 +48,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", DHook_CanAirDashPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, DHook_ValidateWeaponsPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWearables", DHook_ValidateWearablesPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ManageBuilderWeapons", DHook_ManageBuilderWeaponsPre, DHook_ManageBuilderWeaponsPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::EndClassSpecialSkill", DHook_EndClassSpecialSkillPre, DHook_EndClassSpecialSkillPost);
@@ -336,6 +337,16 @@ public MRESReturn DHook_ValidateWeaponsPost(int iClient, Handle hParams)
 	RevertClientClass(iClient);	//Reset from GetLoadoutItem hook
 }
 
+public MRESReturn DHook_ValidateWearablesPre(int iClient, Handle hParams)
+{
+	//This function validates both wearable weapons and cosmetics, but post_inventory_application hook should be able to handle wearable weapon fine
+	
+	if (IsCosmeticRandomized(iClient))
+		return MRES_Supercede;	//Dont create or destroy any cosmetics
+	
+	return MRES_Ignored;
+}
+
 public MRESReturn DHook_ManageBuilderWeaponsPre(int iClient, Handle hParams)
 {
 	if (IsWeaponRandomized(iClient))
@@ -482,7 +493,7 @@ public MRESReturn DHook_GetEntityForLoadoutSlotPre(int iClient, Handle hReturn, 
 		return MRES_Ignored;
 	
 	int iSlot = DHookGetParam(hParams, 1);
-	if (iSlot < 0 || iSlot > WeaponSlot_BuilderEngie)
+	if (iSlot < 0 || iSlot > WeaponSlot_Building)
 		return MRES_Ignored;
 	
 	//This function sucks as it have default class check, lets use GetPlayerWeaponSlot instead

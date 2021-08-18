@@ -59,7 +59,7 @@ stock int TF2_CreateWeapon(int iClient, int iIndex, int iSlot)
 	return iWeapon;
 }
 
-stock int TF2_GiveNamedItem(int iClient, Address pItem, int iSlot)
+stock int TF2_GiveNamedItem(int iClient, Address pItem, int iSlot = -1)
 {
 	int iIndex = LoadFromAddress(pItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
 	int iSubType = 0;
@@ -175,7 +175,7 @@ stock bool TF2_IndexFindAttribute(int iIndex, const char[] sAttrib, float &flVal
 	return false;
 }
 
-stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos)
+stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos, bool bCosmetic = false)
 {
 	//Could be looped through client slots, but would cause issues with >1 weapons in same slot
 	
@@ -197,21 +197,27 @@ stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos)
 			iWeapon = MaxClients+1;
 	}
 	
-	//Loop through all weapon wearables (don't allow cosmetics)
+	//Loop through all wearables
 	while ((iWeapon = FindEntityByClassname(iWeapon, "tf_wearable*")) > MaxClients)
 	{
 		if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") == iClient || GetEntPropEnt(iWeapon, Prop_Send, "moveparent") == iClient)
 		{
+			if (bCosmetic)
+				return true;
+			
+			//Check if it not cosmetic
 			int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
 			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 			{
 				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-				if (0 <= iSlot <= WeaponSlot_BuilderEngie)
+				if (0 <= iSlot <= WeaponSlot_Building)
 					return true;
 			}
 		}
 	}
 	
+	iWeapon = -1;
+	iPos = 0;
 	return false;
 }
 
@@ -230,6 +236,21 @@ stock int TF2_GetItemFromClassname(int iClient, const char[] sClassname)
 	return -1;
 }
 
+stock bool TF2_GetItemFromLoadoutSlot(int iClient, int iSlot, int &iWeapon, int &iPos)
+{
+	while (TF2_GetItem(iClient, iWeapon, iPos, true))
+	{
+		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+		{
+			if (TF2Econ_GetItemLoadoutSlot(iIndex, view_as<TFClassType>(iClass)) == iSlot)
+				return true;
+		}
+	}
+	
+	return false;
+}
+
 stock int TF2_GetSlot(int iWeapon)
 {
 	char sClassname[256];
@@ -240,7 +261,7 @@ stock int TF2_GetSlot(int iWeapon)
 		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 		{
 			int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-			if (0 <= iSlot <= WeaponSlot_BuilderEngie)
+			if (0 <= iSlot <= WeaponSlot_Building)
 				return iSlot;
 		}
 	}
@@ -264,19 +285,19 @@ stock int TF2_GetSlotFromIndex(int iIndex, TFClassType nClass = TFClass_Unknown)
 			{
 				switch (iSlot)
 				{
-					case 4: iSlot = WeaponSlot_BuilderEngie; // Toolbox
-					case 5: iSlot = WeaponSlot_PDABuild; // Construction PDA
-					case 6: iSlot = WeaponSlot_PDADestroy; // Destruction PDA
+					case LoadoutSlot_Building: iSlot = WeaponSlot_Building; // Toolbox
+					case LoadoutSlot_PDA: iSlot = WeaponSlot_PDA; // Construction PDA
+					case LoadoutSlot_PDA2: iSlot = WeaponSlot_PDA2; // Destruction PDA
 				}
 			}
 			case TFClass_Spy:
 			{
 				switch (iSlot)
 				{
-					case 1: iSlot = WeaponSlot_Primary; // Revolver
-					case 4: iSlot = WeaponSlot_Secondary; // Sapper
-					case 5: iSlot = WeaponSlot_PDADisguise; // Disguise Kit
-					case 6: iSlot = WeaponSlot_InvisWatch; // Invis Watch
+					case LoadoutSlot_Secondary: iSlot = WeaponSlot_Primary; // Revolver
+					case LoadoutSlot_Building: iSlot = WeaponSlot_Secondary; // Sapper
+					case LoadoutSlot_PDA: iSlot = WeaponSlot_PDA; // Disguise Kit
+					case LoadoutSlot_PDA2: iSlot = WeaponSlot_PDA2; // Invis Watch
 				}
 			}
 		}
@@ -388,7 +409,7 @@ stock bool ItemIsAllowed(int iIndex)
 			int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
 			if (iSlot == WeaponSlot_Melee)
 				return true;
-			else if ((iSlot == WeaponSlot_PDADisguise || iSlot == WeaponSlot_InvisWatch) && view_as<TFClassType>(iClass) == TFClass_Spy)
+			else if ((iSlot == WeaponSlot_PDA || iSlot == WeaponSlot_PDA2) && view_as<TFClassType>(iClass) == TFClass_Spy)
 				return true;
 		}
 		
@@ -408,22 +429,40 @@ stock bool ItemIsAllowed(int iIndex)
 
 stock bool CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 {
-	if (g_bAllowGiveNamedItem || !IsWeaponRandomized(iClient))
+	if (g_bAllowGiveNamedItem)
 		return true;
 	
 	//Allow grappling hook and passtime gun
 	if (StrEqual(sClassname, "tf_weapon_grapplinghook") || StrEqual(sClassname, "tf_weapon_passtime_gun"))
 		return true;
 	
-	//Don't allow weapons from client loadout slots
+	int iSlot = -1;
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
-		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (WeaponSlot_Primary <= iSlot <= WeaponSlot_BuilderEngie)
+		iSlot = TF2Econ_GetItemLoadoutSlot(iIndex, view_as<TFClassType>(iClass));
+		if (iSlot != -1)
+			break;
+	}
+	
+	//Allow action items
+	if (iSlot == LoadoutSlot_Action)
+		return true;
+	
+	if (IsWeaponRandomized(iClient))
+	{
+		//Dont allow weapons
+		if (LoadoutSlot_Primary <= iSlot <= LoadoutSlot_PDA2)
 			return false;
 	}
 	
-	//Allow cosmetics
+	if (IsCosmeticRandomized(iClient))
+	{
+		//Dont allow cosmetics
+		if (iSlot == LoadoutSlot_Misc)
+			return false;
+	}
+	
+	//Should be allowed
 	return true;
 }
 

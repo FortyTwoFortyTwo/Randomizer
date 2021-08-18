@@ -87,7 +87,7 @@ enum struct HudWeapon
 }
 
 static ArrayList g_aHuds;	//Arrays of HudInfo
-static HudWeapon g_hudWeapon[TF_MAXPLAYERS][WeaponSlot_InvisWatch+1];	//What to display for each weapons
+static HudWeapon g_hudWeapon[TF_MAXPLAYERS][WeaponSlot_PDA2+1];	//What to display for each weapons
 
 void Huds_Init()
 {
@@ -211,7 +211,7 @@ void Huds_Refresh()
 
 void Huds_RefreshClient(int iClient)
 {
-	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
+	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_PDA2; iSlot++)
 	{
 		delete g_hudWeapon[iClient][iSlot].aHudInfo;
 		
@@ -278,7 +278,7 @@ public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 	
 	char sDisplay[512];
 	
-	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
+	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_PDA2; iSlot++)
 	{
 		int iWeapon = EntRefToEntIndex(g_hudWeapon[iClient][iSlot].iRef);
 		if (iWeapon <= MaxClients)

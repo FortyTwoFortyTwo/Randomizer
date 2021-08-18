@@ -1,7 +1,7 @@
 #define FILEPATH_CONFIG_WEAPONS "configs/randomizer/weapons.cfg"
 #define FILEPATH_CONFIG_RESKINS "configs/randomizer/reskins.cfg"
 
-static ArrayList g_aWeapons[CLASS_MAX+1][WeaponSlot_BuilderEngie+1];
+static ArrayList g_aWeapons[CLASS_MAX+1][WeaponSlot_Building+1];
 static StringMap g_mWeaponsName;
 static StringMap g_mWeaponsReskins;
 
@@ -26,11 +26,11 @@ public void Weapons_Refresh()
 	Weapons_LoadSlot(kv, "Primary", WeaponSlot_Primary);
 	Weapons_LoadSlot(kv, "Secondary", WeaponSlot_Secondary);
 	Weapons_LoadSlot(kv, "Melee", WeaponSlot_Melee);
-	Weapons_LoadSlot(kv, "PDABuild", WeaponSlot_PDABuild);
-	Weapons_LoadSlot(kv, "PDADestroy", WeaponSlot_PDADestroy);
-	Weapons_LoadSlot(kv, "Toolbox", WeaponSlot_BuilderEngie);
-	Weapons_LoadSlot(kv, "DisguiseKit", WeaponSlot_PDADisguise);
-	Weapons_LoadSlot(kv, "InvisWatch", WeaponSlot_InvisWatch);
+	Weapons_LoadSlot(kv, "PDABuild", WeaponSlot_PDA);
+	Weapons_LoadSlot(kv, "PDADestroy", WeaponSlot_PDA2);
+	Weapons_LoadSlot(kv, "Toolbox", WeaponSlot_Building);
+	Weapons_LoadSlot(kv, "DisguiseKit", WeaponSlot_PDA);
+	Weapons_LoadSlot(kv, "InvisWatch", WeaponSlot_PDA2);
 	
 	delete kv;
 	
