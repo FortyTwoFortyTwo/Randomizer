@@ -20,8 +20,8 @@ enum struct ControlsPassive
 
 static ControlsInfo g_controlsInfo[Button_MAX];
 static StringMap g_mControlsPassive;
-static bool g_bControlsButton[TF_MAXPLAYERS][WeaponSlot_BuilderEngie+1][view_as<int>(Button_MAX)];
-static float g_flControlsCooldown[TF_MAXPLAYERS][WeaponSlot_BuilderEngie+1];
+static bool g_bControlsButton[TF_MAXPLAYERS][WeaponSlot_Building+1][view_as<int>(Button_MAX)];
+static float g_flControlsCooldown[TF_MAXPLAYERS][WeaponSlot_Building+1];
 
 public void Controls_Init()
 {
@@ -106,7 +106,7 @@ bool Controls_GetTranslation(KeyValues kv, const char[] sName, const char[] sKey
 
 void Controls_RefreshClient(int iClient)
 {
-	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_InvisWatch; iSlot++)
+	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_PDA2; iSlot++)
 	{
 		g_flControlsCooldown[iClient][iSlot] = 0.0;
 		

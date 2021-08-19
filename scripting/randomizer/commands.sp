@@ -134,7 +134,7 @@ public Action Command_Weapon(int iClient, int iArgs)
 	GetCmdArg(2, sSlot, sizeof(sSlot));
 	GetCmdArg(3, sIndex, sizeof(sIndex));
 	
-	if (!StringToIntEx(sSlot, iSlot) || iSlot < 0 || iSlot > WeaponSlot_BuilderEngie)
+	if (!StringToIntEx(sSlot, iSlot) || iSlot < 0 || iSlot > WeaponSlot_Building)
 	{
 		ReplyToCommand(iClient, "Invalid slot '%s'", sSlot);
 		return Plugin_Handled;

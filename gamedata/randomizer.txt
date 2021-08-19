@@ -136,6 +136,12 @@
 				"linux"		"@_ZN9CTFPlayer15ValidateWeaponsEP19TFPlayerClassData_tb"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x38\x81\x65\xE4\xFF\xFF\x0F\xFF"
 			}
+			"CTFPlayer::ValidateWearables"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer17ValidateWearablesEP19TFPlayerClassData_t"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x1C\x81\x65\xE8\xFF\xFF\x0F\xFF"
+			}
 			"CTFPlayer::ManageBuilderWeapons"
 			{
 				"library"	"server"
@@ -395,6 +401,20 @@
 					"bResetWeapons"
 					{
 						"type"	"bool"
+					}
+				}
+			}
+			"CTFPlayer::ValidateWearables"
+			{
+				"signature"	"CTFPlayer::ValidateWearables"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"pData"
+					{
+						"type"	"objectptr"
 					}
 				}
 			}
