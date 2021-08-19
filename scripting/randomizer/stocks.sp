@@ -63,25 +63,29 @@ stock int TF2_GiveNamedItem(int iClient, Address pItem, int iSlot)
 {
 	int iIndex = LoadFromAddress(pItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
 	int iSubType = 0;
-	TFClassType nClassBuilder = TFClass_Unknown;
+	
+	//We want to translate classname to correct classname AND slot wanted
+	//First, try current class client playing
+	TFClassType nClass = TF2_GetPlayerClass(iClient);
+	if (TF2_GetSlotFromIndex(iIndex, nClass) != iSlot)
+	{
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+		{
+			if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) == iSlot)
+			{
+				nClass = view_as<TFClassType>(iClass);
+				break;
+			}
+		}
+	}
 	
 	char sClassname[256];
 	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+	TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), nClass);
 	
-	//We want to translate classname to correct classname AND slot wanted
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-	{
-		int iClassSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (iClassSlot == iSlot)
-		{
-			TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), view_as<TFClassType>(iClass));
-			
-			if (StrEqual(sClassname, "tf_weapon_builder") || StrEqual(sClassname, "tf_weapon_sapper"))
-				nClassBuilder = view_as<TFClassType>(iClass);
-			
-			break;
-		}
-	}
+	TFClassType nClassBuilder = TFClass_Unknown;
+	if (StrEqual(sClassname, "tf_weapon_builder") || StrEqual(sClassname, "tf_weapon_sapper"))
+		nClassBuilder = nClass;
 	
 	if (nClassBuilder == TFClass_Spy)
 		iSubType = view_as<int>(TFObject_Sapper);
