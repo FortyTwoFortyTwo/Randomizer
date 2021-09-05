@@ -159,6 +159,12 @@ stock bool TF2_WeaponFindAttribute(int iWeapon, char[] sAttrib, float &flVal)
 		return true;
 	}
 	
+	if(GetEntProp(iWeapon, Prop_Send, "m_bOnlyIterateItemViewAttributes") == 0) //Weapon is still using it's default attributes
+	{
+		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+		return TF2_IndexFindAttribute(iIndex, sAttrib, flVal);
+	}
+	
 	return false;
 }
 
