@@ -8,8 +8,8 @@ enum struct Detour
 
 static ArrayList g_aDHookDetours;
 
-static Handle g_hDHookGiveAmmo;
 static Handle g_hDHookSecondaryAttack;
+static Handle g_hDHookGetEffectBarAmmo;
 static Handle g_hDHookSwing;
 static Handle g_hDHookMyTouch;
 static Handle g_hDHookPipebombTouch;
@@ -17,25 +17,27 @@ static Handle g_hDHookOnDecapitation;
 static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookForceRespawn;
 static Handle g_hDHookEquipWearable;
+static Handle g_hDHookGetAmmoCount;
 static Handle g_hDHookGiveNamedItem;
 static Handle g_hDHookClientCommand;
 static Handle g_hDHookFrameUpdatePostEntityThink;
 
+static bool g_bSkipGetMaxAmmo;
 static bool g_bSkipHandleRageGain;
-static TFClassType g_nClassGainingRage;
+static int g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 static bool g_bSkipUpdateRageBuffsAndRage = false;
 static int g_iClientGetChargeEffectBeingProvided;
 static int g_iWeaponGetLoadoutItem = -1;
 static bool g_bManageBuilderWeapons;
 
-static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS+1];
-static int g_iHookIdClientCommand[TF_MAXPLAYERS+1];
-static int g_iHookIdGiveAmmo[TF_MAXPLAYERS+1];
-static int g_iHookIdForceRespawnPre[TF_MAXPLAYERS+1];
-static int g_iHookIdForceRespawnPost[TF_MAXPLAYERS+1];
-static int g_iHookIdEquipWearable[TF_MAXPLAYERS+1];
-static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS+1];
-static bool g_bApplyBiteEffectsChocolate[TF_MAXPLAYERS+1];
+static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS];
+static int g_iHookIdClientCommand[TF_MAXPLAYERS];
+static int g_iHookIdForceRespawnPre[TF_MAXPLAYERS];
+static int g_iHookIdForceRespawnPost[TF_MAXPLAYERS];
+static int g_iHookIdEquipWearable[TF_MAXPLAYERS];
+static int g_iHookIdGetAmmoCount[TF_MAXPLAYERS];
+static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS];
+static bool g_bApplyBiteEffectsChocolate[TF_MAXPLAYERS];
 
 static int g_iDHookGamerulesPre;
 static int g_iDHookGamerulesPost;
@@ -44,6 +46,7 @@ public void DHook_Init(GameData hGameData)
 {
 	g_aDHookDetours = new ArrayList(sizeof(Detour));
 	
+	DHook_CreateDetour(hGameData, "CTFPlayer::GiveAmmo", DHook_GiveAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", DHook_CanAirDashPre, _);
@@ -66,8 +69,8 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::ActivateRageBuff", DHook_ActivateRageBuffPre, DHook_ActivateRageBuffPost);
 	DHook_CreateDetour(hGameData, "HandleRageGain", DHook_HandleRageGainPre, _);
 	
-	g_hDHookGiveAmmo = DHook_CreateVirtual(hGameData, "CBaseCombatCharacter::GiveAmmo");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
+	g_hDHookGetEffectBarAmmo = DHook_CreateVirtual(hGameData, "CTFWeaponBase::GetEffectBarAmmo");
 	g_hDHookSwing = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Swing");
 	g_hDHookMyTouch = DHook_CreateVirtual(hGameData, "CItem::MyTouch");
 	g_hDHookPipebombTouch = DHook_CreateVirtual(hGameData, "CTFGrenadePipebombProjectile::PipebombTouch");
@@ -75,6 +78,7 @@ public void DHook_Init(GameData hGameData)
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
 	g_hDHookForceRespawn = DHook_CreateVirtual(hGameData, "CBasePlayer::ForceRespawn");
 	g_hDHookEquipWearable = DHook_CreateVirtual(hGameData, "CBasePlayer::EquipWearable");
+	g_hDHookGetAmmoCount = DHook_CreateVirtual(hGameData, "CBaseCombatCharacter::GetAmmoCount");
 	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	g_hDHookClientCommand = DHook_CreateVirtual(hGameData, "CTFPlayer::ClientCommand");
 	g_hDHookFrameUpdatePostEntityThink = DHook_CreateVirtual(hGameData, "CGameRules::FrameUpdatePostEntityThink");
@@ -168,21 +172,15 @@ bool DHook_IsGiveNamedItemActive()
 
 void DHook_HookClient(int iClient)
 {
-	g_iHookIdGiveAmmo[iClient] = DHookEntity(g_hDHookGiveAmmo, false, iClient, _, DHook_GiveAmmoPre);
 	g_iHookIdForceRespawnPre[iClient] = DHookEntity(g_hDHookForceRespawn, false, iClient, _, DHook_ForceRespawnPre);
 	g_iHookIdForceRespawnPost[iClient] = DHookEntity(g_hDHookForceRespawn, true, iClient, _, DHook_ForceRespawnPost);
 	g_iHookIdEquipWearable[iClient] = DHookEntity(g_hDHookEquipWearable, true, iClient, _, DHook_EquipWearablePost);
+	g_iHookIdGetAmmoCount[iClient] = DHookEntity(g_hDHookGetAmmoCount, false, iClient, _, DHook_GetAmmoCountPre);
 	g_iHookIdClientCommand[iClient] = DHookEntity(g_hDHookClientCommand, true, iClient, _, DHook_ClientCommandPost);
 }
 
 void DHook_UnhookClient(int iClient)
 {
-	if (g_iHookIdGiveAmmo[iClient])
-	{
-		DHookRemoveHookID(g_iHookIdGiveAmmo[iClient]);
-		g_iHookIdGiveAmmo[iClient] = 0;	
-	}
-	
 	if (g_iHookIdForceRespawnPre[iClient])
 	{
 		DHookRemoveHookID(g_iHookIdForceRespawnPre[iClient]);
@@ -200,11 +198,18 @@ void DHook_UnhookClient(int iClient)
 		DHookRemoveHookID(g_iHookIdEquipWearable[iClient]);
 		g_iHookIdEquipWearable[iClient] = 0;	
 	}
+	
+	if (g_iHookIdGetAmmoCount[iClient])
+	{
+		DHookRemoveHookID(g_iHookIdGetAmmoCount[iClient]);
+		g_iHookIdGetAmmoCount[iClient] = 0;	
+	}
+	
 	if (g_iHookIdClientCommand[iClient])
 	{
 		DHookRemoveHookID(g_iHookIdClientCommand[iClient]);
 		g_iHookIdClientCommand[iClient] = 0;
- }
+	}
 }
 
 void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
@@ -213,6 +218,7 @@ void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 	{
 		SDKHook(iEntity, SDKHook_SpawnPost, DHook_SpawnPost);
 		DHookEntity(g_hDHookSecondaryAttack, true, iEntity, _, DHook_SecondaryWeaponPost);
+		DHookEntity(g_hDHookGetEffectBarAmmo, true, iEntity, _, DHook_GetEffectBarAmmoPost);
 	}
 	
 	if (StrContains(sClassname, "item_healthkit") == 0)
@@ -255,20 +261,116 @@ public void DHook_SpawnPost(int iWeapon)
 		DHookEntity(g_hDHookSwing, false, iWeapon, _, DHook_SwingPre);
 }
 
+public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
+{
+	//Detour is used instead of virtual because non-virtual CTFPlayer::GiveAmmo directly calls CBaseCombatCharacter::GiveAmmo in non-virtual way
+	int iWeapon = Ammo_GetForceWeapon();
+	if (iWeapon != INVALID_ENT_REFERENCE)
+		Ammo_ResetForceWeapon();
+	
+	if (g_bSkipGetMaxAmmo)
+		return MRES_Ignored;
+	
+	int iAmmoIndex = DHookGetParam(hParams, 2);
+	if (iAmmoIndex == TF_AMMO_METAL)	//Nothing fancy for metal
+		return MRES_Ignored;
+	
+	int iCount = DHookGetParam(hParams, 1);
+	if (iCount <= 0)
+		return MRES_Ignored;
+	
+	bool bSuppressSound = DHookGetParam(hParams, 3);
+	
+	Ammo_SaveActiveWeapon(iClient);
+	g_bSkipGetMaxAmmo = true;
+	
+	int iTotalAdded;
+	int iMaxWeapons = GetMaxWeapons();
+	int[] iWeapons = new int[iMaxWeapons];
+	
+	//Remove all weapons using same ammo index so they don't interfere with max ammo attributes
+	//Don't remove weapons with different ammo index so they could interfere with max ammo attributes
+	for (int i = 0; i < iMaxWeapons; i++)
+	{
+		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		if (iWeapons[i] != INVALID_ENT_REFERENCE && GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType") == iAmmoIndex)
+			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
+	}
+	
+	//Now actually give the ammo
+	for (int i = 0; i < iMaxWeapons; i++)
+	{
+		bool bGive;
+		if (iWeapon == INVALID_ENT_REFERENCE && iWeapons[i] != INVALID_ENT_REFERENCE && GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType") == iAmmoIndex)
+			bGive = true;
+		else if (iWeapon != INVALID_ENT_REFERENCE && iWeapon == iWeapons[i])
+			bGive = true;
+		
+		if (bGive)
+		{
+			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
+			
+			SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapons[i]));	//Could've made GetMaxAmmo detour return correct class, meh
+			
+			int iMaxAmmo = SDKCall_GetMaxAmmo(iClient, iAmmoIndex);
+			
+			int iAdd = iCount;
+			if (iAmmoIndex == TF_AMMO_PRIMARY || iAmmoIndex == TF_AMMO_SECONDARY)	//based from DEFAULT_MAX_AMMO
+				iAdd = RoundToFloor(float(iCount) / float(DEFAULT_MAX_AMMO) * float(iMaxAmmo));
+			
+			int iCurrent = Ammo_GetWeaponAmmo(iWeapons[i]);
+			iAdd = TF2_GiveAmmo(iClient, iCurrent, iAdd, iAmmoIndex, bSuppressSound);
+			Ammo_SetWeaponAmmo(iWeapons[i], iCurrent + iAdd);
+			iTotalAdded += iAdd;
+			
+			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
+		}
+	}
+	
+	//Set it back
+	for (int i = 0; i < iMaxWeapons; i++)
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
+	
+	//Set class and ammo back to what it was for active weapon
+	RevertClientClass(iClient);
+	Ammo_UpdateActiveWeapon(iClient);
+	
+	g_bSkipGetMaxAmmo = false;
+	
+	DHookSetReturn(hReturn, iTotalAdded);
+	return MRES_Supercede;
+}
+
 public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
 {
-	int iAmmoType = DHookGetParam(hParams, 1);
-	TFClassType nClass;
+	int iWeapon = Ammo_GetForceWeapon();
+	if (iWeapon != INVALID_ENT_REFERENCE)
+		Ammo_ResetForceWeapon();	//Could add primary ammo type check, but it should always be true anyway
 	
-	//By default iClassNumber returns -1, which would get client's class instead of given iClassNumber.
-	// However using client's class can cause max ammo calculate to be incorrect,
-	// we want to set iClassNumber to whatever class would normaly use weapon from iAmmoIndex.
-	// Also update ammotype since we may have moved it somewhere else
-	if (Ammo_GetDefaultType(iClient, iAmmoType, nClass))
+	if (g_bSkipGetMaxAmmo)
+		return MRES_Ignored;
+	
+	if (iWeapon != INVALID_ENT_REFERENCE)
 	{
-		DHookSetParam(hParams, 1, iAmmoType);
-		DHookSetParam(hParams, 2, nClass);
+		//Shouldn't need to worry with multiple weapons using same index, only
+		// TF_AMMO_GRENADES1 and TF_AMMO_GRENADES2 is used here
+		DHookSetParam(hParams, 2, TF2_GetDefaultClassFromItem(iWeapon));
 		return MRES_ChangedHandled;
+	}
+	
+	switch (DHookGetParam(hParams, 1))
+	{
+		case TF_AMMO_PRIMARY, TF_AMMO_SECONDARY:
+		{
+			DHookSetReturn(hReturn, DEFAULT_MAX_AMMO);
+			return MRES_Supercede;
+		}
+		case TF_AMMO_METAL:
+		{
+			//Engineer have max metal 200 while others have 100
+			DHookSetParam(hParams, 2, TFClass_Engineer);
+			return MRES_ChangedHandled;
+		}
 	}
 	
 	return MRES_Ignored;
@@ -563,7 +665,7 @@ public MRESReturn DHook_UpdateRageBuffsAndRagePre(Address pPlayerShared)
 	if (g_bSkipUpdateRageBuffsAndRage || iClient <= 0 || iClient > MaxClients)
 		return MRES_Ignored;
 	
-	float flRageType = Rage_GetBuffTypeAttribute(iClient);
+	float flRageType = Properties_GetBuffTypeAttribute(iClient);
 	if (!flRageType) //We don't have any rage items, don't need to do anything
 		return MRES_Ignored;
 	
@@ -576,56 +678,61 @@ public void Frame_UpdateRageBuffsAndRage(int iClient)
 	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
 		return;
 	
-	bool bCalledClass[CLASS_MAX + 1];
 	g_bSkipUpdateRageBuffsAndRage = true;
-	float flRageType = Rage_GetBuffTypeAttribute(iClient);
 	
-	int iWeapon;
-	int iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
+	int iMaxWeapons = GetMaxWeapons();
+	int[] iWeapons = new int[iMaxWeapons];
+	
+	//Remove all weapons so they don't interfere with its rage stats
+	for (int i = 0; i < iMaxWeapons; i++)
 	{
-		if (iWeapon <= MaxClients)
+		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
+	}
+	
+	for (int i = 0; i < iMaxWeapons; i++)
+	{
+		if (iWeapons[i] == INVALID_ENT_REFERENCE)
 			continue;
 		
 		float flVal;
-		TF2_WeaponFindAttribute(iWeapon, "mod soldier buff type", flVal);
-		if (!flVal)
+		if (!TF2_WeaponFindAttribute(iWeapons[i], "mod soldier buff type", flVal))
 			continue;
-  
-		TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
-		if (bCalledClass[nClass])
-			continue;
-  
-		bCalledClass[nClass] = true;
-		//Apply the attribute to the player to make up for the difference. The total should now be the weapon's value
-		TF2Attrib_SetByName(iClient, "mod soldier buff type", flVal - flRageType);
-		Rage_LoadRageProps(iClient, nClass);
-		SetClientClass(iClient, nClass);
-		g_nClassGainingRage = nClass;
 		
+		TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapons[i]);
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
+		Properties_LoadRageProps(iClient, iWeapons[i]);
+		
+		SetClientClass(iClient, nClass);
+		g_iGainingRageWeapon = iWeapons[i];
 		SDKCall_UpdateRageBuffsAndRage(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared));
-  
-		Rage_SaveRageProps(iClient, nClass);
+		
+		Properties_SaveRageProps(iClient, iWeapons[i]);
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
 	}
 	
-	g_nClassGainingRage = TFClass_Unknown;
+	//Set it back
+	for (int i = 0; i < iMaxWeapons; i++)
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
+	
 	RevertClientClass(iClient);
-	TF2Attrib_SetByName(iClient, "mod soldier buff type", 0.0);
+	
 	g_bSkipUpdateRageBuffsAndRage = false;
+	g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 }
 
 public MRESReturn DHook_ModifyRagePre(Address pPlayerShared, Handle hParams)
 {
 	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
-	if (iClient && g_nClassGainingRage != TFClass_Unknown)
-		Rage_LoadRageProps(iClient, g_nClassGainingRage);
+	if (iClient && g_iGainingRageWeapon != INVALID_ENT_REFERENCE)
+		Properties_LoadRageProps(iClient, g_iGainingRageWeapon);
 }
 
 public MRESReturn DHook_ModifyRagePost(Address pPlayerShared, Handle hParams)
 {
 	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
-	if (iClient && g_nClassGainingRage != TFClass_Unknown)
-		Rage_SaveRageProps(iClient, g_nClassGainingRage);
+	if (iClient && g_iGainingRageWeapon != INVALID_ENT_REFERENCE)
+		Properties_SaveRageProps(iClient, g_iGainingRageWeapon);
 }
 
 public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParams)
@@ -640,12 +747,10 @@ public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParam
 		return MRES_Ignored;
 	
 	int iBuffType = DHookGetParam(hParams, 2);
-	TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
-	
-	float flClientRageType = Rage_GetBuffTypeAttribute(iClient);
+	float flClientRageType = Properties_GetBuffTypeAttribute(iClient);
 	TF2Attrib_SetByName(iClient, "mod soldier buff type", view_as<float>(iBuffType) - flClientRageType);
 	
-	Rage_LoadRageProps(iClient, nClass);
+	Properties_LoadRageProps(iClient, iWeapon);
 	return MRES_Ignored;
 }
 
@@ -657,12 +762,11 @@ public MRESReturn DHook_ActivateRageBuffPost(Address pPlayerShared, Handle hPara
 	
 	//int iWeapon = DHookGetParam(hParams, 1);
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if(iWeapon <= MaxClients)
+	if (iWeapon <= MaxClients)
 		return MRES_Ignored;
 	
-	TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
-	TF2Attrib_SetByName(iClient, "mod soldier buff type", 0.0);
-	Rage_SaveRageProps(iClient, nClass);
+	TF2Attrib_RemoveByName(iClient, "mod soldier buff type");
+	Properties_SaveRageProps(iClient, iWeapon);
 	return MRES_Ignored;
 }
 
@@ -695,44 +799,52 @@ public void Frame_HandleRageGain(DataPack hPack)
 	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
 		return;
 	
-	bool bCalledClass[CLASS_MAX + 1];
 	g_bSkipHandleRageGain = true;
 	
-	int iWeapon;
-	int iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
+	//All weapons using set_buff_type, generate_rage_on_dmg and generate_rage_on_heal attrib is tf_weapon and no wearables, for now...
+	int iMaxWeapons = GetMaxWeapons();
+	int[] iWeapons = new int[iMaxWeapons];
+	
+	//Remove all weapons so they don't interfere with its rage stats
+	for (int i = 0; i < iMaxWeapons; i++)
 	{
-		TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
-		if (bCalledClass[nClass])	//Already called as same class, dont double value
+		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
+	}
+	
+	bool bCalledClass[CLASS_MAX + 1];
+	
+	for (int i = 0; i < iMaxWeapons; i++)
+	{
+		if (iWeapons[i] == INVALID_ENT_REFERENCE)
+			continue;
+		
+		float flVal;
+		TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapons[i]);
+		
+		//Prevent calling same class twice, but only if it not for rage meter
+		//Soldier, Pyro and Sniper(?) use rage meter, while Heavy, Engineer, Medic and Sniper use whatever else there
+		if (bCalledClass[nClass] && !TF2_WeaponFindAttribute(iWeapons[i], "mod soldier buff type", flVal))
 			continue;
 		
 		bCalledClass[nClass] = true;
 		
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
+		
 		SetClientClass(iClient, nClass);
-		g_nClassGainingRage = nClass;
+		g_iGainingRageWeapon = iWeapons[i];
 		SDKCall_HandleRageGain(iClient, iRequiredBuffFlags, flDamage, fInverseRageGainScale);
+		
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
 	}
+	
+	//Set it back
+	for (int i = 0; i < iMaxWeapons; i++)
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
 	
 	RevertClientClass(iClient);
 	g_bSkipHandleRageGain = false;
-	g_nClassGainingRage = TFClass_Unknown;
-}
-
-public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
-{
-	int iSlot = Ammo_GetGiveAmmoSlot();
-	Ammo_SetGiveAmmoSlot(-1);	//Entity may be destroyed, unable to set back to -1 in post hook
-	if (iSlot >= WeaponSlot_Primary)
-	{
-		int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
-		if (iWeapon > MaxClients)
-		{
-			DHookSetParam(hParams, 2, GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"));
-			return MRES_ChangedHandled;
-		}
-	}
-	
-	return MRES_Ignored;
+	g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 }
 
 public MRESReturn DHook_SwingPre(int iWeapon, Handle hReturn)
@@ -763,46 +875,40 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 	g_bDoClassSpecialSkill[iClient] = false;
 }
 
+public MRESReturn DHook_GetEffectBarAmmoPost(int iWeapon, Handle hReturn)
+{
+	//This function is only called for GetAmmoCount, GetMaxAmmo and GiveAmmo
+	Ammo_SetForceWeapon(iWeapon);
+}
+
 public MRESReturn DHook_MyTouchPre(int iHealthKit, Handle hReturn, Handle hParams)
 {
-	//Has heavy class check for lunchbox, and ensure GiveAmmo is done to secondary slot
+	//Has heavy class check for lunchbox
 	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
-	{
 		g_iAllowPlayerClass[iClient]++;
-		Ammo_SetGiveAmmoSlot(WeaponSlot_Secondary);
-	}
 }
 
 public MRESReturn DHook_MyTouchPost(int iHealthKit, Handle hReturn, Handle hParams)
 {
 	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
-	{
 		g_iAllowPlayerClass[iClient]--;
-		Ammo_SetGiveAmmoSlot(-1);
-	}
 }
 
 public MRESReturn DHook_PipebombTouchPre(int iStunBall, Handle hParams)
 {
-	//Has scout class check, and make sure GiveAmmo is given to melee weapon
+	//Has scout class check
 	int iClient = GetEntPropEnt(iStunBall, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
-	{
 		g_iAllowPlayerClass[iClient]++;
-		Ammo_SetGiveAmmoSlot(WeaponSlot_Melee);
-	}
 }
 
 public MRESReturn DHook_PipebombTouchPost(int iStunBall, Handle hParams)
 {
 	int iClient = GetEntPropEnt(iStunBall, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
-	{
 		g_iAllowPlayerClass[iClient]--;
-		Ammo_SetGiveAmmoSlot(-1);
-	}
 }
 
 public MRESReturn DHook_OnDecapitationPre(int iSword, Handle hParams)
@@ -841,7 +947,7 @@ public MRESReturn DHook_ForceRespawnPre(int iClient)
 	
 	if (IsClassRandomized(iClient))
 	{
-		TFClassType nClass = GetRandomizedClass(iClient);
+		TFClassType nClass = g_iClientClass[iClient];
 		if (nClass != TFClass_Unknown)
 			SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(nClass));
 	}
@@ -861,6 +967,19 @@ public MRESReturn DHook_EquipWearablePost(int iClient, Handle hParams)
 	//New wearable is given from somewhere, refresh controls and huds
 	Controls_RefreshClient(iClient);
 	Huds_RefreshClient(iClient);
+}
+
+public MRESReturn DHook_GetAmmoCountPre(int iClient, Handle hReturn, Handle hParams)
+{
+	int iWeapon = Ammo_GetForceWeapon();
+	if (iWeapon != INVALID_ENT_REFERENCE)
+	{
+		Ammo_ResetForceWeapon();
+		DHookSetReturn(hReturn, Ammo_GetWeaponAmmo(iWeapon));
+		return MRES_Supercede;
+	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hParams)

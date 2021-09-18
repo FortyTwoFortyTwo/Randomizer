@@ -11,7 +11,6 @@ enum HudType
 	HudType_Int,
 	HudType_Float,
 	HudType_Time,
-	HudType_RageMeter,
 }
 
 enum struct HudInfo
@@ -84,14 +83,86 @@ enum struct HudWeapon
 	int iRef;					//Weapon ref
 	char sName[64];				//Translated name of weapon to display
 	ArrayList aHudInfo;			//Arrays of HudInfo to display
+	
+	bool GetText(int iClient, char[] sDisplay, int iLength)
+	{
+		int iWeapon = EntRefToEntIndex(this.iRef);
+		if (iWeapon == INVALID_ENT_REFERENCE)
+			return false;
+		
+		strcopy(sDisplay, iLength, this.sName);
+		
+		//Go through every netprops to display
+		if (this.aHudInfo)
+		{
+			int iHudLength = this.aHudInfo.Length;
+			for (int j = 0; j < iHudLength; j++)
+			{
+				HudInfo hudInfo;
+				this.aHudInfo.GetArray(j, hudInfo);
+				int iEntity = hudInfo.GetEntity(iClient, iWeapon);
+				
+				float flVal;
+				
+				switch (hudInfo.nType)
+				{
+					case HudType_Int:
+					{
+						int iVal;
+						if (hudInfo.nEntity == HudEntity_Client && Properties_HasWeaponProp(iWeapon, hudInfo.sNetprop))
+							iVal = Properties_GetWeaponPropInt(iWeapon, hudInfo.sNetprop);
+						else
+							iVal = GetEntProp(iEntity, Prop_Send, hudInfo.sNetprop, _, hudInfo.iElement);
+						
+						if (hudInfo.CalculateIntValue(iVal))
+						{
+							char sText[64];
+							if (hudInfo.GetDynamicText(iVal, sText, sizeof(sText)))
+								Format(sDisplay, iLength, "%s: %T", sDisplay, sText, iClient);
+							else
+								Format(sDisplay, iLength, "%s: %T", sDisplay, hudInfo.sText, iClient, iVal);
+						}
+						
+						continue;	//Don't do float stuff below
+					}
+					case HudType_Float:
+					{
+						if (hudInfo.nEntity == HudEntity_Client && Properties_HasWeaponProp(iWeapon, hudInfo.sNetprop))
+							flVal = Properties_GetWeaponPropFloat(iWeapon, hudInfo.sNetprop);
+						else
+							flVal = GetEntPropFloat(iEntity, Prop_Send, hudInfo.sNetprop, hudInfo.iElement);
+					}
+					case HudType_Time:
+					{
+						if (hudInfo.nEntity == HudEntity_Client && Properties_HasWeaponProp(iWeapon, hudInfo.sNetprop))
+							flVal = Properties_GetWeaponPropFloat(iWeapon, hudInfo.sNetprop) - GetGameTime();
+						else
+							flVal = GetEntPropFloat(iEntity, Prop_Send, hudInfo.sNetprop, hudInfo.iElement) - GetGameTime();
+					}
+				}
+				
+				if (hudInfo.CalculateFloatValue(flVal))
+					Format(sDisplay, iLength, "%s: %T", sDisplay, hudInfo.sText, iClient, flVal);
+			}
+			
+			char sBuffer[64];
+			if (Controls_GetPassiveInfo(iClient, iWeapon, sBuffer, sizeof(sBuffer)))
+				Format(sDisplay, iLength, "%s (%s)", sDisplay, sBuffer);
+		}
+		
+		return true;
+	}
 }
 
 static ArrayList g_aHuds;	//Arrays of HudInfo
-static HudWeapon g_hudWeapon[TF_MAXPLAYERS][WeaponSlot_PDA2+1];	//What to display for each weapons
+static ArrayList g_aHudWeapon[TF_MAXPLAYERS];	//Arrays of HudWeapon
 
 void Huds_Init()
 {
 	g_aHuds = new ArrayList(sizeof(HudInfo));
+	
+	for (int iClient = 0; iClient < sizeof(g_aHudWeapon); iClient++)
+		g_aHudWeapon[iClient] = new ArrayList(sizeof(HudWeapon));
 }
 
 void Huds_Refresh()
@@ -151,10 +222,6 @@ void Huds_Refresh()
 			{
 				hudInfo.nType = HudType_Time;
 			}
-			else if (StrEqual(sBuffer, "ragemeter"))
-			{
-				hudInfo.nType = HudType_RageMeter;
-			}
 			else
 			{
 				LogError("Invalid value type at %s: %s", hudInfo.sNetprop, sBuffer);
@@ -211,23 +278,20 @@ void Huds_Refresh()
 
 void Huds_RefreshClient(int iClient)
 {
-	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_PDA2; iSlot++)
-	{
-		delete g_hudWeapon[iClient][iSlot].aHudInfo;
-		
-		HudWeapon nothing;
-		g_hudWeapon[iClient][iSlot] = nothing;
-	}
+	int iLength = g_aHudWeapon[iClient].Length;
+	for (int i = 0; i < iLength; i++)
+		delete view_as<ArrayList>(g_aHudWeapon[iClient].Get(i, HudWeapon::aHudInfo));
 	
-	if (!g_cvHuds.BoolValue)	//ConVar dont want us to do anything
+	g_aHudWeapon[iClient].Clear();
+	
+	if (g_cvHuds.IntValue == HudMode_None)	//ConVar dont want us to do anything
 		return;
 	
 	int iWeapon;
 	int iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
-		int iSlot = TF2_GetSlot(iWeapon);
-		if (iSlot < 0 || iSlot >= sizeof(g_hudWeapon[]))
+		if (TF2_GetSlot(iWeapon) >= WeaponSlot_Building)	//Ignore toolbox
 			continue;
 		
 		HudWeapon hudWeapon;
@@ -241,8 +305,8 @@ void Huds_RefreshClient(int iClient)
 		Format(hudWeapon.sName, sizeof(hudWeapon.sName), "%T", hudWeapon.sName, iClient);
 		
 		//Go through every HudInfo to see whenever which weapon can use
-		int iLength = g_aHuds.Length;
-		for (int i = 0; i < iLength; i++)
+		int iHudLength = g_aHuds.Length;
+		for (int i = 0; i < iHudLength; i++)
 		{
 			HudInfo hudInfo;
 			g_aHuds.GetArray(i, hudInfo);
@@ -260,91 +324,175 @@ void Huds_RefreshClient(int iClient)
 			hudWeapon.aHudInfo.PushArray(hudInfo);
 		}
 		
-		g_hudWeapon[iClient][iSlot] = hudWeapon;
+		g_aHudWeapon[iClient].PushArray(hudWeapon);
 	}
+	
+	g_aHudWeapon[iClient].SortCustom(Huds_SortWeapons);
 }
 
-public Action Huds_ClientDisplay(Handle hTimer, int iClient)
+public int Huds_SortWeapons(int iPos1, int iPos2, Handle hMap, Handle hHandle)
+{
+	HudWeapon hudWeapon1, hudWeapon2;
+	GetArrayArray(hMap, iPos1, hudWeapon1);	//Callback using legacy handle reeee
+	GetArrayArray(hMap, iPos2, hudWeapon2);
+	
+	//Sort by slot position
+	int iSlot1 = TF2_GetSlot(hudWeapon1.iRef);
+	int iSlot2 = TF2_GetSlot(hudWeapon2.iRef);
+	if (iSlot1 < iSlot2)
+		return -1;
+	else if (iSlot1 > iSlot2)
+		return 1;
+	
+	//Sort by wearable
+	bool bWearable1 = TF2_IsWearable(hudWeapon1.iRef);
+	bool bWearable2 = TF2_IsWearable(hudWeapon2.iRef);
+	if (!bWearable1 && bWearable2)
+		return -1;
+	else if (bWearable1 && !bWearable2)
+		return 1;
+	
+	if (!bWearable1 && !bWearable2)
+	{
+		//If both not wearable, sort by ammo type
+		int iAmmoType1 = GetEntProp(hudWeapon1.iRef, Prop_Send, "m_iPrimaryAmmoType");
+		int iAmmoType2 = GetEntProp(hudWeapon2.iRef, Prop_Send, "m_iPrimaryAmmoType");
+		if (iAmmoType1 == -1 && iAmmoType2 != -1)
+			return 1;
+		else if (iAmmoType1 != -1 && iAmmoType2 == -1)
+			return -1;
+		else if (iAmmoType1 < iAmmoType2)
+			return -1;
+		else if (iAmmoType1 > iAmmoType2)
+			return 1;
+	}
+	
+	//Sort by def index
+	int iIndex1 = Weapons_GetReskinIndex(GetEntProp(hudWeapon1.iRef, Prop_Send, "m_iItemDefinitionIndex"));
+	int iIndex2 = Weapons_GetReskinIndex(GetEntProp(hudWeapon2.iRef, Prop_Send, "m_iItemDefinitionIndex"));
+	if (iIndex1 < iIndex2)
+		return -1;
+	else if (iIndex1 > iIndex2)
+		return 1;
+	
+	//Literally exact same weapon bro
+	return hudWeapon1.iRef < hudWeapon2.iRef ? -1 : 1;
+}
+
+public Action Huds_ClientDisplayText(Handle hTimer, int iClient)
 {
 	if (g_hTimerClientHud[iClient] != hTimer)
 		return Plugin_Stop;
 	
-	if (!g_cvHuds.BoolValue)	//ConVar dont want us to do anything
+	Huds_ClientDisplayMenu(iClient); //TODO remove me
+	
+	if (g_cvHuds.IntValue != HudMode_Text)
 		return Plugin_Continue;
 	
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon <= MaxClients)
-		return Plugin_Continue;
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+		iActiveWeapon = EntIndexToEntRef(iActiveWeapon);
 	
 	char sDisplay[512];
 	
-	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_PDA2; iSlot++)
+	int iLength = g_aHudWeapon[iClient].Length;
+	for (int i = 0; i < iLength; i++)
 	{
-		int iWeapon = EntRefToEntIndex(g_hudWeapon[iClient][iSlot].iRef);
-		if (iWeapon <= MaxClients)
+		HudWeapon hudWeapon;
+		g_aHudWeapon[iClient].GetArray(i, hudWeapon);
+		
+		char sBuffer[256];
+		if (!hudWeapon.GetText(iClient, sBuffer, sizeof(sBuffer)))
 			continue;
 		
-		//Break line
-		if (sDisplay[0] != '\0')
-			StrCat(sDisplay, sizeof(sDisplay), "\n");
+		if (iActiveWeapon == hudWeapon.iRef)
+			Format(sBuffer, sizeof(sBuffer), "> %s", sBuffer);
 		
-		StrCat(sDisplay, sizeof(sDisplay), g_hudWeapon[iClient][iSlot].sName);
-		
-		//Go through every netprops to display
-		if (g_hudWeapon[iClient][iSlot].aHudInfo)
-		{
-			int iLength = g_hudWeapon[iClient][iSlot].aHudInfo.Length;
-			for (int i = 0; i < iLength; i++)
-			{
-				HudInfo hudInfo;
-				g_hudWeapon[iClient][iSlot].aHudInfo.GetArray(i, hudInfo);
-				int iEntity = hudInfo.GetEntity(iClient, iWeapon);
-				
-				float flVal;
-				
-				switch (hudInfo.nType)
-				{
-					case HudType_Int:
-					{
-						int iVal = GetEntProp(iEntity, Prop_Send, hudInfo.sNetprop, _, hudInfo.iElement);
-						if (hudInfo.CalculateIntValue(iVal))
-						{
-							char sText[64];
-							if (hudInfo.GetDynamicText(iVal, sText, sizeof(sText)))
-								Format(sDisplay, sizeof(sDisplay), "%s: %T", sDisplay, sText, iClient);
-							else
-								Format(sDisplay, sizeof(sDisplay), "%s: %T", sDisplay, hudInfo.sText, iClient, iVal);
-						}
-						
-						continue;	//Don't do float stuff below
-					}
-					case HudType_Float:
-					{
-						flVal = GetEntPropFloat(iEntity, Prop_Send, hudInfo.sNetprop, hudInfo.iElement);
-					}
-					case HudType_Time:
-					{
-						flVal = GetEntPropFloat(iEntity, Prop_Send, hudInfo.sNetprop, hudInfo.iElement) - GetGameTime();
-					}
-					case HudType_RageMeter:
-					{
-						TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
-						flVal = Rage_GetClassMeter(iClient, nClass);
-					}
-				}
-				
-				if (hudInfo.CalculateFloatValue(flVal))
-					Format(sDisplay, sizeof(sDisplay), "%s: %T", sDisplay, hudInfo.sText, iClient, flVal);
-			}
-			
-			char sBuffer[64];
-			if (Controls_GetPassiveInfo(iClient, iWeapon, sBuffer, sizeof(sBuffer)))
-				Format(sDisplay, sizeof(sDisplay), "%s (%s)", sDisplay, sBuffer);
-		}
+		if (sDisplay[0])
+			Format(sDisplay, sizeof(sDisplay), "%s\n%s", sDisplay, sBuffer);
+		else
+			strcopy(sDisplay, sizeof(sDisplay), sBuffer);
 	}
 	
 	SetHudTextParams(0.2, 1.0, 0.5, 255, 255, 255, 255);
 	ShowHudText(iClient, 0, sDisplay);
 	
 	return Plugin_Continue;
+}
+
+void Huds_ClientDisplayMenu(int iClient)
+{
+	if (g_cvHuds.IntValue != HudMode_Menu)
+		return;
+	
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+		iActiveWeapon = EntIndexToEntRef(iActiveWeapon);
+	
+	Menu hMenu = new Menu(Huds_MenuAction);
+	int iCount;
+	
+	int iLength = g_aHudWeapon[iClient].Length;
+	for (int i = 0; i < iLength; i++)
+	{
+		HudWeapon hudWeapon;
+		g_aHudWeapon[iClient].GetArray(i, hudWeapon);
+		
+		char sBuffer[256];
+		if (!hudWeapon.GetText(iClient, sBuffer, sizeof(sBuffer)))
+			continue;
+		
+		if (iActiveWeapon == hudWeapon.iRef)
+			Format(sBuffer, sizeof(sBuffer), "> %s", sBuffer);
+		
+		char sValue[16];
+		IntToString(hudWeapon.iRef, sValue, sizeof(sValue));
+		bool bSwitch = iActiveWeapon == hudWeapon.iRef || TF2_CanSwitchTo(iClient, hudWeapon.iRef);
+		hMenu.AddItem(sValue, sBuffer, bSwitch ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+		iCount++;
+	}
+	
+	if (iCount <= 9)
+		hMenu.Pagination = MENU_NO_PAGINATION;
+	
+	hMenu.OptionFlags |= MENUFLAG_NO_SOUND;
+	hMenu.Display(iClient, MENU_TIME_FOREVER);
+}
+
+public int Huds_MenuAction(Menu hMenu, MenuAction action, int iClient, int iChoice)
+{
+	switch (action)
+	{
+		case MenuAction_End:
+		{
+			delete hMenu;
+		}
+		case MenuAction_Select:
+		{
+			char sValue[16];
+			hMenu.GetItem(iChoice, sValue, sizeof(sValue));
+			int iRef = StringToInt(sValue);
+			if (IsValidEntity(iRef))
+				TF2_SwitchToWeapon(iClient, EntRefToEntIndex(iRef));
+		}
+	}
+}
+
+int Huds_GetPositionFromWeapon(int iClient, int iWeapon)
+{
+	return g_aHudWeapon[iClient].FindValue(EntIndexToEntRef(iWeapon), HudWeapon::iRef);
+}
+
+int Huds_GetWeaponFromPosition(int iClient, int iPos)
+{
+	int iLength = g_aHudWeapon[iClient].Length;
+	if (iPos < 0 || iPos >= iLength)
+		return INVALID_ENT_REFERENCE;
+	
+	return g_aHudWeapon[iClient].Get(iPos, HudWeapon::iRef);
+}
+
+int Huds_GetPositionCount(int iClient)
+{
+	return g_aHudWeapon[iClient].Length;
 }

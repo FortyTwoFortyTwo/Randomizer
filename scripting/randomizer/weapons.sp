@@ -1,7 +1,8 @@
 #define FILEPATH_CONFIG_WEAPONS "configs/randomizer/weapons.cfg"
 #define FILEPATH_CONFIG_RESKINS "configs/randomizer/reskins.cfg"
 
-static ArrayList g_aWeapons[CLASS_MAX+1][WeaponSlot_Building+1];
+static ArrayList g_aWeapons[CLASS_MAX+1];
+static ArrayList g_aWeaponsFromSlot[CLASS_MAX+1][WeaponSlot_Building+1];
 static StringMap g_mWeaponsName;
 static StringMap g_mWeaponsReskins;
 
@@ -18,8 +19,11 @@ public void Weapons_Refresh()
 		return;
 	
 	for (int i = 0; i < sizeof(g_aWeapons); i++)
-		for (int j = 0; j < sizeof(g_aWeapons[]); j++)
-			delete g_aWeapons[i][j];
+		delete g_aWeapons[i];
+	
+	for (int i = 0; i < sizeof(g_aWeaponsFromSlot); i++)
+		for (int j = 0; j < sizeof(g_aWeaponsFromSlot[]); j++)
+			delete g_aWeaponsFromSlot[i][j];
 	
 	g_mWeaponsName.Clear();
 	
@@ -93,19 +97,31 @@ void Weapons_LoadSlot(KeyValues kv, char[] sSection, int iSlot)
 					continue;
 				}
 				
-				if (!g_aWeapons[CLASS_ALL][iSlot])
-					g_aWeapons[CLASS_ALL][iSlot] = new ArrayList();
+				if (!g_aWeapons[TFClass_Unknown])
+					g_aWeapons[0] = new ArrayList();	//lol sourcepawn compiler
 				
-				g_aWeapons[CLASS_ALL][iSlot].Push(iIndex);
+				if (g_aWeapons[0].FindValue(iIndex) == -1)	//Dont put multiple same index from different slots
+					g_aWeapons[0].Push(iIndex);
+				
+				if (!g_aWeaponsFromSlot[TFClass_Unknown][iSlot])
+					g_aWeaponsFromSlot[TFClass_Unknown][iSlot] = new ArrayList();
+				
+				g_aWeaponsFromSlot[TFClass_Unknown][iSlot].Push(iIndex);
 				
 				for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 				{
 					if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) == iSlot)
 					{
-						if (!g_aWeapons[iClass][iSlot])
-							g_aWeapons[iClass][iSlot] = new ArrayList();
+						if (!g_aWeapons[iClass])
+							g_aWeapons[iClass] = new ArrayList();
 						
-						g_aWeapons[iClass][iSlot].Push(iIndex);
+						if (g_aWeapons[iClass].FindValue(iIndex) == -1)
+							g_aWeapons[iClass].Push(iIndex);
+						
+						if (!g_aWeaponsFromSlot[iClass][iSlot])
+							g_aWeaponsFromSlot[iClass][iSlot] = new ArrayList();
+						
+						g_aWeaponsFromSlot[iClass][iSlot].Push(iIndex);
 					}
 				}
 				
@@ -122,13 +138,22 @@ void Weapons_LoadSlot(KeyValues kv, char[] sSection, int iSlot)
 	}
 }
 
-int Weapons_GetRandomIndex(int iSlot, TFClassType nClass)
+int Weapons_GetRandomIndex(TFClassType nClass)
 {
-	if (!g_aWeapons[nClass][iSlot])
+	if (!g_aWeapons[nClass])
 		return -1;
 	
-	int iLength = g_aWeapons[nClass][iSlot].Length;
-	return g_aWeapons[nClass][iSlot].Get(GetRandomInt(0, iLength - 1));
+	int iLength = g_aWeapons[nClass].Length;
+	return g_aWeapons[nClass].Get(GetRandomInt(0, iLength - 1));
+}
+
+int Weapons_GetRandomIndexFromSlot(int iSlot, TFClassType nClass)
+{
+	if (!g_aWeaponsFromSlot[nClass][iSlot])
+		return -1;
+	
+	int iLength = g_aWeaponsFromSlot[nClass][iSlot].Length;
+	return g_aWeaponsFromSlot[nClass][iSlot].Get(GetRandomInt(0, iLength - 1));
 }
 
 bool Weapons_GetName(int iIndex, char[] sBuffer, int iLength)

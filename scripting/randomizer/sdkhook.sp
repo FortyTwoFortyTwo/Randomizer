@@ -8,6 +8,10 @@ void SDKHook_HookClient(int iClient)
 	SDKHook(iClient, SDKHook_PreThinkPost, Client_PreThinkPost);
 	SDKHook(iClient, SDKHook_WeaponEquip, Client_WeaponEquip);
 	SDKHook(iClient, SDKHook_WeaponEquipPost, Client_WeaponEquipPost);
+	SDKHook(iClient, SDKHook_WeaponSwitch, Client_WeaponSwitch);
+	SDKHook(iClient, SDKHook_WeaponSwitchPost, Client_WeaponSwitchPost);
+	SDKHook(iClient, SDKHook_WeaponCanSwitchTo, Client_WeaponCanSwitchTo);
+	SDKHook(iClient, SDKHook_WeaponCanSwitchToPost, Client_WeaponCanSwitchToPost);
 }
 
 void SDKHook_UnhookClient(int iClient)
@@ -16,19 +20,18 @@ void SDKHook_UnhookClient(int iClient)
 	SDKUnhook(iClient, SDKHook_PreThinkPost, Client_PreThinkPost);
 	SDKUnhook(iClient, SDKHook_WeaponEquip, Client_WeaponEquip);
 	SDKUnhook(iClient, SDKHook_WeaponEquipPost, Client_WeaponEquipPost);
+	SDKUnhook(iClient, SDKHook_WeaponSwitch, Client_WeaponSwitch);
+	SDKUnhook(iClient, SDKHook_WeaponSwitchPost, Client_WeaponSwitchPost);
+	SDKUnhook(iClient, SDKHook_WeaponCanSwitchTo, Client_WeaponCanSwitchTo);
+	SDKUnhook(iClient, SDKHook_WeaponCanSwitchToPost, Client_WeaponCanSwitchToPost);
 }
 
 void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 {
 	if (StrContains(sClassname, "tf_weapon_") == 0)
-	{
-		SDKHook(iEntity, SDKHook_SpawnPost, Weapon_SpawnPost);
 		SDKHook(iEntity, SDKHook_Reload, Weapon_Reload);
-	}
 	else if (StrEqual(sClassname, "item_healthkit_small"))
-	{
 		SDKHook(iEntity, SDKHook_SpawnPost, HealthKit_SpawnPost);
-	}
 }
 
 public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &flDamage, int &iDamageType, int &iWeapon, float vecDamageForce[3], float vecDamagePosition[3], int iDamageCustom)
@@ -148,16 +151,41 @@ public void Client_WeaponEquipPost(int iClient, int iWeapon)
 	Huds_RefreshClient(iClient);
 }
 
-public void Client_WeaponSwitchPost(int iClient, int iWeapon)
+public Action Client_WeaponSwitch(int iClient, int iWeapon)
 {
-	TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
-	if (nClass != TFClass_Unknown)
-		Rage_LoadRageProps(iClient, nClass);
+	//Save current active weapon ammo before potentally switched out
+	Ammo_SaveActiveWeapon(iClient);
 }
 
-public void Weapon_SpawnPost(int iWeapon)
+public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 {
-	Ammo_OnWeaponSpawned(iWeapon);
+	//Update ammo for new active weapon
+	Ammo_UpdateActiveWeapon(iClient);
+	
+	if (iWeapon != INVALID_ENT_REFERENCE)
+		Properties_LoadRageProps(iClient, iWeapon);
+}
+
+public Action Client_WeaponCanSwitchTo(int iClient, int iWeapon)
+{
+	if (iWeapon == INVALID_ENT_REFERENCE)
+		return;
+	
+	Ammo_SaveActiveWeapon(iClient);
+	
+	//Set ammo to weapon wanting to switch, see if allow or deny
+	int iAmmoIndex = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
+	if (iAmmoIndex != -1)
+		SetEntProp(iClient, Prop_Send, "m_iAmmo", Ammo_GetWeaponAmmo(iWeapon), _, iAmmoIndex);
+}
+
+public void Client_WeaponCanSwitchToPost(int iClient, int iWeapon)
+{
+	if (iWeapon == INVALID_ENT_REFERENCE)
+		return;
+	
+	//Update ammo back to whatever active weapon is
+	Ammo_UpdateActiveWeapon(iClient);
 }
 
 public Action Weapon_Reload(int iWeapon)

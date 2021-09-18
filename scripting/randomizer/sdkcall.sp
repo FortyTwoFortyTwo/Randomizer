@@ -1,4 +1,5 @@
 static Handle g_hSDKGetBaseEntity;
+static Handle g_hSDKGetMaxAmmo;
 static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
@@ -6,6 +7,7 @@ static Handle g_hSDKEndClassSpecialSkill;
 static Handle g_hSDKGetLoadoutItem;
 static Handle g_hSDKUpdateRageBuffsAndRage;
 static Handle g_hSDKHandleRageGain;
+static Handle g_hSDKWeaponCanSwitchTo;
 static Handle g_hSDKGetSlot;
 static Handle g_hSDKEquipWearable;
 static Handle g_hSDKGiveNamedItem;
@@ -18,6 +20,15 @@ public void SDKCall_Init(GameData hGameData)
 	g_hSDKGetBaseEntity = EndPrepSDKCall();
 	if (!g_hSDKGetBaseEntity)
 		LogError("Failed to create call: CBaseEntity::GetBaseEntity");
+	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+	g_hSDKGetMaxAmmo = EndPrepSDKCall();
+	if (!g_hSDKGetMaxAmmo)
+		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::AddObject");
@@ -73,6 +84,14 @@ public void SDKCall_Init(GameData hGameData)
 	if (!g_hSDKHandleRageGain)
 		LogError("Failed to create call: HandleRageGain");
 	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseCombatCharacter::Weapon_CanSwitchTo");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
+	g_hSDKWeaponCanSwitchTo = EndPrepSDKCall();
+	if (!g_hSDKWeaponCanSwitchTo)
+		LogError("Failed to create call: CBaseCombatCharacter::Weapon_CanSwitchTo");
+	
 	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseCombatWeapon::GetSlot");
 	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
@@ -102,6 +121,11 @@ public void SDKCall_Init(GameData hGameData)
 int SDKCall_GetBaseEntity(Address pEntity)
 {
 	return SDKCall(g_hSDKGetBaseEntity, pEntity);
+}
+
+int SDKCall_GetMaxAmmo(int iClient, int iAmmoIndex, TFClassType nClass = view_as<TFClassType>(-1))
+{
+	return SDKCall(g_hSDKGetMaxAmmo, iClient, iAmmoIndex, nClass);
 }
 
 void SDKCall_AddObject(int iClient, int iObject)
@@ -137,6 +161,11 @@ void SDKCall_UpdateRageBuffsAndRage(Address pPlayerShared)
 void SDKCall_HandleRageGain(int iClient, int iRequiredBuffFlags, float flDamage, float fInverseRageGainScale)
 {
 	SDKCall(g_hSDKHandleRageGain, iClient, iRequiredBuffFlags, flDamage, fInverseRageGainScale);
+}
+
+bool SDKCall_WeaponCanSwitchTo(int iClient, int iWeapon)
+{
+	return SDKCall(g_hSDKWeaponCanSwitchTo, iClient, iWeapon);
 }
 
 int SDKCall_GetSlot(int iWeapon)

@@ -1,111 +1,97 @@
-static StringMap g_mDefaultAmmoType;
-static int g_iGiveAmmoSlot = -1;
+static StringMap g_mWeaponCurrentAmmo;
+static int g_iAmmoForceWeapon = INVALID_ENT_REFERENCE;
 
 void Ammo_Init()
 {
-	g_mDefaultAmmoType = new StringMap();
+	g_mWeaponCurrentAmmo = new StringMap();
 }
 
-void Ammo_OnWeaponSpawned(int iWeapon)
+int Ammo_GetWeaponAmmo(int iWeapon)
 {
+	char sRef[16];
+	IntToString(EntIndexToEntRef(iWeapon), sRef, sizeof(sRef));
+	
+	int iValue;
+	g_mWeaponCurrentAmmo.GetValue(sRef, iValue);
+	return iValue;
+}
+
+void Ammo_SetWeaponAmmo(int iWeapon, int iAmmo)
+{
+	char sRef[16];
+	IntToString(EntIndexToEntRef(iWeapon), sRef, sizeof(sRef));
+	
+	g_mWeaponCurrentAmmo.SetValue(sRef, iAmmo);
+}
+
+void Ammo_SaveActiveWeapon(int iClient)
+{
+	if (g_iAmmoForceWeapon != INVALID_ENT_REFERENCE)
+		ThrowError("Ammo_SaveActiveWeapon called unexpected when g_iAmmoForceWeapon '%d' is active", g_iAmmoForceWeapon);
+	
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iWeapon == INVALID_ENT_REFERENCE || !HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
+		return;
+	
 	int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-	if (iAmmoType != TF_AMMO_GRENADES1 && iAmmoType != TF_AMMO_GRENADES2)
+	if (iAmmoType == -1)
 		return;
 	
-	//Its possible that client can have 2 weapons with same ammotype (TF_AMMO_GRENADES).
-	// To prevent this, secondary weapons always use TF_AMMO_GRENADES2 slot, and melee
-	// weapon at TF_AMMO_GRENADES1
-	int iNewAmmoType = TF_AMMO_DUMMY;
-	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+	int iAmmo = GetEntProp(iClient, Prop_Send, "m_iAmmo", _, iAmmoType);
 	
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-	{
-		int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-		if (iSlot == WeaponSlot_Secondary)
-		{
-			iNewAmmoType = TF_AMMO_GRENADES2;
-			break;
-		}
-		else if (iSlot == WeaponSlot_Melee)
-		{
-			iNewAmmoType = TF_AMMO_GRENADES1;
-			break;
-		}
-	}
-	
-	if (iNewAmmoType == TF_AMMO_DUMMY || iAmmoType == iNewAmmoType)
+	char sRef[16];
+	IntToString(EntIndexToEntRef(iWeapon), sRef, sizeof(sRef));
+	g_mWeaponCurrentAmmo.SetValue(sRef, iAmmo);
+}
+
+void Ammo_UpdateActiveWeapon(int iClient)
+{
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iWeapon == INVALID_ENT_REFERENCE || !HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
 		return;
 	
-	//Store old ammotype using classname
-	char sClassname[256];
-	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-	g_mDefaultAmmoType.SetValue(sClassname, iAmmoType);
+	int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
+	if (iAmmoType == -1)
+		return;
 	
-	//Set new ammotype location to weapon
-	SetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType", iNewAmmoType);
+	char sRef[16];
+	IntToString(EntIndexToEntRef(iWeapon), sRef, sizeof(sRef));
 	
-	float flVal;
-	if (iAmmoType == TF_AMMO_GRENADES1 && TF2_IndexFindAttribute(iIndex, "grenades1_resupply_denied", flVal))
-		TF2Attrib_RemoveByName(iWeapon, "grenades1_resupply_denied");
-	else if (iAmmoType == TF_AMMO_GRENADES2 && TF2_IndexFindAttribute(iIndex, "grenades2_resupply_denied", flVal))
-		TF2Attrib_RemoveByName(iWeapon, "grenades2_resupply_denied");
+	int iValue;
+	if (!g_mWeaponCurrentAmmo.GetValue(sRef, iValue))
+		return;
 	
-	if (flVal > 0.0)
-	{
-		if (iNewAmmoType == TF_AMMO_GRENADES1)
-			TF2Attrib_SetByName(iWeapon, "grenades1_resupply_denied", flVal);
-		else if (iNewAmmoType == TF_AMMO_GRENADES2)
-			TF2Attrib_SetByName(iWeapon, "grenades2_resupply_denied", flVal);
-	}
+	SetEntProp(iClient, Prop_Send, "m_iAmmo", iValue, _, iAmmoType);
 }
 
-bool Ammo_GetDefaultType(int iClient, int &iAmmoType, TFClassType &nClass = TFClass_Unknown)
+void Ammo_RemoveWeapon(int iWeapon)
 {
-	if (iAmmoType == TF_AMMO_METAL)
-	{
-		//Metal works differently, engineer have max metal 200 while others have 100
-		nClass = TFClass_Engineer;
-		return true;
-	}
-	
-	if (g_iGiveAmmoSlot >= WeaponSlot_Primary)
-	{
-		int iWeapon = GetPlayerWeaponSlot(iClient, g_iGiveAmmoSlot);
-		if (iWeapon > MaxClients)
-		{
-			Ammo_GetDefaultTypeFromWeapon(iWeapon, iAmmoType, nClass);
-			return true;
-		}
-		
-		return false;
-	}
-	
-	int iWeapon = TF2_GetItemFromAmmoType(iClient, iAmmoType);
-	if (iWeapon > MaxClients)
-	{
-		Ammo_GetDefaultTypeFromWeapon(iWeapon, iAmmoType, nClass);
-		return true;
-	}
-	
-	return false;
+	char sRef[16];
+	IntToString(EntIndexToEntRef(iWeapon), sRef, sizeof(sRef));
+	g_mWeaponCurrentAmmo.Remove(sRef);
 }
 
-void Ammo_GetDefaultTypeFromWeapon(int iWeapon, int &iAmmoType, TFClassType &nClass = TFClass_Unknown)
+void Ammo_SetForceWeapon(int iWeapon)
 {
-	char sClassname[256];
-	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-	g_mDefaultAmmoType.GetValue(sClassname, iAmmoType);
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	Ammo_SaveActiveWeapon(iClient);
 	
-	//Get new ammotype and default class
-	nClass = TF2_GetDefaultClassFromItem(iWeapon);
+	int iAmmo = Ammo_GetWeaponAmmo(iWeapon);
+	int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
+	SetEntProp(iClient, Prop_Send, "m_iAmmo", iAmmo, _, iAmmoType);
+	
+	g_iAmmoForceWeapon = iWeapon;
 }
 
-void Ammo_SetGiveAmmoSlot(int iSlot)
+void Ammo_ResetForceWeapon()
 {
-	g_iGiveAmmoSlot = iSlot;
+	if (g_iAmmoForceWeapon != INVALID_ENT_REFERENCE)
+		Ammo_UpdateActiveWeapon(GetEntPropEnt(g_iAmmoForceWeapon, Prop_Send, "m_hOwnerEntity"));
+	
+	g_iAmmoForceWeapon = INVALID_ENT_REFERENCE;
 }
 
-int Ammo_GetGiveAmmoSlot()
+int Ammo_GetForceWeapon()
 {
-	return g_iGiveAmmoSlot;
+	return g_iAmmoForceWeapon;
 }

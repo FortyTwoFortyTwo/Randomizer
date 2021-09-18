@@ -112,6 +112,12 @@
 		}
 		"Signatures"
 		{
+			"CTFPlayer::GiveAmmo"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer8GiveAmmoEiib11EAmmoSource"
+				"windows"	"\x55\x8B\xEC\x51\x53\x56\x8B\x75\x08\x8B\xD9\x89\x75\xFC"
+			}
 			"CTFPlayer::GetMaxAmmo"
 			{
 				"library"	"server"
@@ -270,11 +276,6 @@
 				"linux"		"6"
 				"windows"	"5"
 			}
-			"CBaseCombatCharacter::GiveAmmo"
-			{
-				"linux"		"257"
-				"windows"	"256"
-			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"linux"		"287"
@@ -284,6 +285,11 @@
 			{
 				"linux"		"333"
 				"windows"	"327"
+			}
+			"CTFWeaponBase::GetEffectBarAmmo"
+			{
+				"linux"		"462"
+				"windows"	"455"
 			}
 			"CTFWeaponBaseMelee::Swing"
 			{
@@ -320,6 +326,16 @@
 				"linux"		"432"
 				"windows"	"431"
 			}
+			"CBaseCombatCharacter::GetAmmoCount"
+			{
+				"linux"		"260"
+				"windows"	"259"
+			}
+			"CBaseCombatCharacter::Weapon_CanSwitchTo"
+			{
+				"linux"		"271"
+				"windows"	"270"
+			}
 			"CTFPlayer::GiveNamedItem"
 			{
 				"linux"		"485"
@@ -343,6 +359,32 @@
 		}
 		"Functions"
 		{
+			"CTFPlayer::GiveAmmo"
+			{
+				"signature"	"CTFPlayer::GiveAmmo"
+				"callconv"	"thiscall"
+				"return"	"int"
+				"this"		"entity"
+				"arguments"
+				{
+					"iCount"
+					{
+						"type"	"int"
+					}
+					"iAmmoIndex"
+					{
+						"type"	"int"
+					}
+					"bSuppressSound"
+					{
+						"type"	"bool"
+					}
+					"eAmmoSource"
+					{
+						"type"	"int"
+					}
+				}
+			}
 			"CTFPlayer::GetMaxAmmo"
 			{
 				"signature"	"CTFPlayer::GetMaxAmmo"
@@ -643,33 +685,18 @@
 					}
 				}
 			}
-			"CBaseCombatCharacter::GiveAmmo"
-			{
-				"offset"	"CBaseCombatCharacter::GiveAmmo"
-				"hooktype"	"entity"
-				"return"	"int"
-				"this"		"entity"
-				"arguments"
-				{
-					"iCount"
-					{
-						"type"	"int"
-					}
-					"iAmmoIndex"
-					{
-						"type"	"int"
-					}
-					"bSuppressSound"
-					{
-						"type"	"bool"
-					}
-				}
-			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"offset"	"CBaseCombatWeapon::SecondaryAttack"
 				"hooktype"	"entity"
 				"return"	"void"
+				"this"		"entity"
+			}
+			"CTFWeaponBase::GetEffectBarAmmo"
+			{
+				"offset"	"CTFWeaponBase::GetEffectBarAmmo"
+				"hooktype"	"entity"
+				"return"	"int"
 				"this"		"entity"
 			}
 			"CTFWeaponBaseMelee::Swing"
@@ -760,6 +787,20 @@
 					"pItem"
 					{
 						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CBaseCombatCharacter::GetAmmoCount"
+			{
+				"offset"	"CBaseCombatCharacter::GetAmmoCount"
+				"hooktype"	"entity"
+				"return"	"int"
+				"this"		"entity"
+				"arguments"
+				{
+					"iAmmoIndex"
+					{
+						"type"	"int"
 					}
 				}
 			}

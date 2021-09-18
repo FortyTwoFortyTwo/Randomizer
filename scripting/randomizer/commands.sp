@@ -5,6 +5,7 @@ void Commands_Init()
 	RegAdminCmd("sm_rndclass", Command_Class, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndweapon", Command_Weapon, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndgenerate", Command_Generate, ADMFLAG_CHANGEMAP);
+	RegAdminCmd("sm_rndgiveweapon", Command_GiveWeapon, ADMFLAG_CHANGEMAP);
 }
 
 public Action Command_CantSee(int iClient, int iArgs)
@@ -105,7 +106,8 @@ public Action Command_Class(int iClient, int iArgs)
 				}
 			}
 			
-			g_iTeamClass[TEAM_ALL] = nClass;	 
+			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
+				g_iTeamClass[iTeam] = nClass;	 
 		}
 	}
 	
@@ -167,7 +169,7 @@ public Action Command_Weapon(int iClient, int iArgs)
 		case Mode_Normal, Mode_NormalRound:
 		{
 			for (int i = 0; i < iTargetCount; i++)
-				SetRandomizedWeaponIndex(g_iClientWeaponIndex[iTargetList[i]], iSlot, iIndex);
+				SetRandomizedWeaponBySlot(g_eClientWeapon[iTargetList[i]], iIndex, iSlot);
 		}
 		case Mode_Team:
 		{
@@ -190,7 +192,7 @@ public Action Command_Weapon(int iClient, int iArgs)
 			
 			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
 				if (bTargetTeam[iTeam])
-					SetRandomizedWeaponIndex(g_iTeamWeaponIndex[iTeam], iSlot, iIndex);
+					SetRandomizedWeaponBySlot(g_eTeamWeapon[iTeam], iIndex, iSlot);
 		}
 		case Mode_All:
 		{
@@ -203,7 +205,8 @@ public Action Command_Weapon(int iClient, int iArgs)
 				}
 			}
 			
-			SetRandomizedWeaponIndex(g_iTeamWeaponIndex[TEAM_ALL], iSlot, iIndex);
+			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
+				SetRandomizedWeaponBySlot(g_eTeamWeapon[iTeam], iIndex, iSlot);
 		}
 	}
 	
@@ -296,6 +299,85 @@ public Action Command_Generate(int iClient, int iArgs)
 			TF2_RespawnPlayer(iTargetList[i]);
 	
 	ReplyToCommand(iClient, "Regenerated %s class and weapons", sTargetName);
+	return Plugin_Handled;
+}
+
+public Action Command_GiveWeapon(int iClient, int iArgs)
+{
+	if (!g_bEnabled)
+		return Plugin_Continue;
+	
+	if (iArgs < 3)
+	{
+		ReplyToCommand(iClient, "Format: sm_rndgiveweapon <@target> <slot> <weapon def index>");
+		return Plugin_Handled;
+	}
+	
+	int iSlot, iIndex;
+	char sTarget[32], sSlot[12], sIndex[12];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	GetCmdArg(2, sSlot, sizeof(sSlot));
+	GetCmdArg(3, sIndex, sizeof(sIndex));
+	
+	if (!StringToIntEx(sSlot, iSlot) || iSlot < 0 || iSlot > WeaponSlot_Building)
+	{
+		ReplyToCommand(iClient, "Invalid slot '%s'", sSlot);
+		return Plugin_Handled;
+	}
+	
+	if (!StringToIntEx(sIndex, iIndex))
+	{
+		ReplyToCommand(iClient, "Invalid weapon def index '%s'", sIndex);
+		return Plugin_Handled;
+	}
+	
+	int[] iTargetList = new int[MaxClients];
+	char sTargetName[MAX_TARGET_LENGTH];
+	bool bIsML;
+	
+	int iTargetCount = ProcessTargetString(sTarget, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sTargetName, sizeof(sTargetName), bIsML);
+	if (iTargetCount <= 0)
+	{
+		ReplyToCommand(iClient, "Could not find anyone to set weapon def index");
+		return Plugin_Handled;
+	}
+	
+	for (int i = 0; i < iTargetCount; i++)
+	{
+		int iWeapon;
+		
+		Address pItem = TF2_FindReskinItem(iTargetList[i], iIndex);
+		if (pItem)
+			iWeapon = TF2_GiveNamedItem(iTargetList[i], pItem, iSlot);
+		else
+			iWeapon = TF2_CreateWeapon(iTargetList[i], iIndex, iSlot);
+		
+		if (iWeapon == INVALID_ENT_REFERENCE)
+		{
+			PrintToChat(iTargetList[i], "Unable to create weapon! index (%d)", iIndex);
+			LogError("Unable to create weapon! index (%d)", iIndex);
+		}
+		
+		//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
+		if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
+			SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
+		
+		TF2_EquipWeapon(iTargetList[i], iWeapon);
+		
+		if (ViewModels_ShouldBeInvisible(iWeapon, TF2_GetPlayerClass(iTargetList[i])))
+			ViewModels_EnableInvisible(iWeapon);
+		
+		g_eClientWeapon[iTargetList[i]][TF2_GetPlayerClass(iTargetList[i])].Add(iIndex, iSlot, iWeapon);
+		
+		//TODO remove this, gas passer...
+		if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") && GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") != -1)
+		{
+			Ammo_SetForceWeapon(iWeapon);
+			GivePlayerAmmo(iTargetList[i], 1000, GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"));
+		}
+	}
+	
+	ReplyToCommand(iClient, "Gave %s weapon def index at slot '%d' to '%d'", sTargetName, iSlot, iIndex);
 	return Plugin_Handled;
 }
 
