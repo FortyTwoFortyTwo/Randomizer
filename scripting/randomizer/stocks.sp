@@ -143,7 +143,7 @@ stock bool TF2_IsWearable(int iWeapon)
 {
 	char sClassname[256];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-	return StrContains(sClassname, "tf_wearable") == 0;
+	return StrContains(sClassname, "tf_wearable") == 0 || StrEqual(sClassname, "tf_powerup_bottle");
 }
 
 stock bool TF2_WeaponFindAttribute(int iWeapon, char[] sAttrib, float &flVal)
@@ -192,33 +192,47 @@ stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos, bool bCosmetic = fa
 		iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iPos);
 		iPos++;
 		
-		if (iWeapon > MaxClients)
+		if (iWeapon != INVALID_ENT_REFERENCE)
 			return true;
 		
 		//Reset iWeapon for wearable loop below
 		if (iPos == iMaxWeapons)
-			iWeapon = MaxClients+1;
+			iWeapon = INVALID_ENT_REFERENCE;
 	}
 	
-	//Loop through all wearables
-	while ((iWeapon = FindEntityByClassname(iWeapon, "tf_wearable*")) > MaxClients)
+	if (iPos == iMaxWeapons)
 	{
-		if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") == iClient || GetEntPropEnt(iWeapon, Prop_Send, "moveparent") == iClient)
+		//Loop through all wearables
+		while ((iWeapon = FindEntityByClassname(iWeapon, "tf_wearable*")) != INVALID_ENT_REFERENCE)
 		{
-			if (bCosmetic)
-				return true;
-			
-			//Check if it not cosmetic
-			int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") == iClient || GetEntPropEnt(iWeapon, Prop_Send, "moveparent") == iClient)
 			{
-				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-				if (0 <= iSlot <= WeaponSlot_Building)
+				if (bCosmetic)
 					return true;
+				
+				//Check if it not cosmetic
+				int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+				for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+				{
+					int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+					if (0 <= iSlot <= WeaponSlot_Building)
+						return true;
+				}
 			}
 		}
+		
+		//Reset iWeapon for canteen loop below
+		iWeapon = INVALID_ENT_REFERENCE;
+		iPos = iMaxWeapons + 1;
 	}
 	
+	//Loop through all canteens
+	if (bCosmetic)
+		while ((iWeapon = FindEntityByClassname(iWeapon, "tf_powerup_bottle")) != INVALID_ENT_REFERENCE)
+			if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") == iClient || GetEntPropEnt(iWeapon, Prop_Send, "moveparent") == iClient)
+				return true;
+	
+	//No more weapons to loop
 	iWeapon = -1;
 	iPos = 0;
 	return false;
