@@ -238,19 +238,13 @@ stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos, bool bCosmetic = fa
 	return false;
 }
 
-stock int TF2_GetItemFromClassname(int iClient, const char[] sClassname)
+stock bool TF2_GetItemFromClassname(int iClient, const char[] sClassname, int &iWeapon, int &iPos)
 {
-	int iWeapon;
-	int iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		char sBuffer[256];
-		GetEntityClassname(iWeapon, sBuffer, sizeof(sBuffer));
-		if (StrEqual(sBuffer, sClassname))
-			return iWeapon;
-	}
+		if (IsClassname(iWeapon, sClassname))
+			return true;
 	
-	return -1;
+	return false;
 }
 
 stock bool TF2_GetItemFromLoadoutSlot(int iClient, int iSlot, int &iWeapon, int &iPos)
@@ -443,6 +437,13 @@ stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 	
 	//Return ref of entity
 	return EntIndexToEntRef(iParticle);
+}
+
+stock bool IsClassname(int iEntity, const char[] sClassname)
+{
+	char sBuffer[256];
+	GetEntityClassname(iEntity, sBuffer, sizeof(sBuffer));
+	return StrEqual(sBuffer, sClassname);
 }
 
 stock bool ItemIsAllowed(int iIndex)

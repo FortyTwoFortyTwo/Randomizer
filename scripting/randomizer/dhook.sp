@@ -59,6 +59,8 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::IsPlayerClass", DHook_IsPlayerClassPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetLoadoutItem", DHook_GetLoadoutItemPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetEntityForLoadoutSlot", DHook_GetEntityForLoadoutSlotPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxHealthForBuffing", DHook_GetMaxHealthForBuffingPre, DHook_GetMaxHealthForBuffingPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::TeamFortress_CalculateMaxSpeed", DHook_CalculateMaxSpeedPre, DHook_CalculateMaxSpeedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::TakeHealth", DHook_TakeHealthPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
 	DHook_CreateDetour(hGameData, "CTFKnife::DisguiseOnKill", DHook_DisguiseOnKillPre, DHook_DisguiseOnKillPost);
@@ -608,6 +610,50 @@ public MRESReturn DHook_GetEntityForLoadoutSlotPre(int iClient, Handle hReturn, 
 	
 	DHookSetReturn(hReturn, 0);
 	return MRES_Supercede;
+}
+
+public MRESReturn DHook_GetMaxHealthForBuffingPre(int iClient, Handle hReturn)
+{
+	if (g_bWeaponDecap[iClient])
+		return;
+	
+	//Set decap to any eyelanders, all should have same value
+	int iWeapon, iPos;
+	if (TF2_GetItemFromClassname(iClient, "tf_weapon_sword", iWeapon, iPos))
+		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iDecapitations");
+}
+
+public MRESReturn DHook_GetMaxHealthForBuffingPost(int iClient, Handle hReturn)
+{
+	if (g_bWeaponDecap[iClient])
+		return;
+	
+	//Set back to active weapon
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iDecapitations");
+}
+
+public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, Handle hReturn, Handle hParams)
+{
+	if (g_bWeaponDecap[iClient])
+		return;
+	
+	//Set decap to any eyelanders, all should have same value
+	int iWeapon, iPos;
+	if (TF2_GetItemFromClassname(iClient, "tf_weapon_sword", iWeapon, iPos))
+		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iDecapitations");
+}
+
+public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, Handle hReturn, Handle hParams)
+{
+	if (g_bWeaponDecap[iClient])
+		return;
+	
+	//Set back to active weapon
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iDecapitations");
 }
 
 public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, Handle hReturn, Handle hParams)

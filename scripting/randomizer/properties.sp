@@ -128,6 +128,14 @@ int Properties_GetWeaponPropInt(int iWeapon, const char[] sProp)
 	return iValue;
 }
 
+void Properties_SetWeaponPropInt(int iWeapon, const char[] sProp, int iValue)
+{
+	if (!g_mPropertiesWeaponSend[iWeapon])
+		g_mPropertiesWeaponSend[iWeapon] = new StringMap();
+	
+	g_mPropertiesWeaponSend[iWeapon].SetValue(sProp, iValue);
+}
+
 float Properties_GetWeaponPropFloat(int iWeapon, const char[] sProp)
 {
 	if (!g_mPropertiesWeaponSend[iWeapon])

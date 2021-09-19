@@ -16,6 +16,8 @@ void SDKHook_HookClient(int iClient)
 
 void SDKHook_UnhookClient(int iClient)
 {
+	SDKUnhook(iClient, SDKHook_OnTakeDamage, Client_OnTakeDamage);
+	SDKUnhook(iClient, SDKHook_OnTakeDamagePost, Client_OnTakeDamagePost);
 	SDKUnhook(iClient, SDKHook_PreThink, Client_PreThink);
 	SDKUnhook(iClient, SDKHook_PreThinkPost, Client_PreThinkPost);
 	SDKUnhook(iClient, SDKHook_WeaponEquip, Client_WeaponEquip);
@@ -29,9 +31,14 @@ void SDKHook_UnhookClient(int iClient)
 void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 {
 	if (StrContains(sClassname, "tf_weapon_") == 0)
+	{
+		SDKHook(iEntity, SDKHook_SpawnPost, Weapon_SpawnPost);
 		SDKHook(iEntity, SDKHook_Reload, Weapon_Reload);
+	}
 	else if (StrEqual(sClassname, "item_healthkit_small"))
+	{
 		SDKHook(iEntity, SDKHook_SpawnPost, HealthKit_SpawnPost);
+	}
 }
 
 public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &flDamage, int &iDamageType, int &iWeapon, float vecDamageForce[3], float vecDamagePosition[3], int iDamageCustom)
@@ -39,7 +46,15 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 	g_iAllowPlayerClass[iVictim]++;
 	
 	if (0 < iAttacker <= MaxClients)
+	{
 		g_iAllowPlayerClass[iAttacker]++;
+		
+		if (iWeapon != INVALID_ENT_REFERENCE)
+		{
+			Properties_LoadWeaponPropInt(iAttacker, iWeapon, "m_iDecapitations");
+			g_bWeaponDecap[iAttacker] = true;
+		}
+	}
 }
 
 public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, float flDamage, int iDamageType, int iWeapon, const float vecDamageForce[3], const float vecDamagePosition[3], int iDamageCustom)
@@ -48,7 +63,25 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 	g_bFeignDeath[iVictim] = false;
 	
 	if (0 < iAttacker <= MaxClients)
+	{
 		g_iAllowPlayerClass[iAttacker]--;
+		
+		if (iWeapon != INVALID_ENT_REFERENCE)
+		{
+			Properties_SaveWeaponPropInt(iAttacker, iWeapon, "m_iDecapitations");
+			g_bWeaponDecap[iAttacker] = false;
+			
+			if (IsClassname(iWeapon, "tf_weapon_sword"))
+			{
+				//Set same value to all eyelanders
+				int iDecap = Properties_GetWeaponPropInt(iWeapon, "m_iDecapitations");
+				
+				int iTempWeapon, iPos;
+				while (TF2_GetItemFromClassname(iAttacker, "tf_weapon_sword", iTempWeapon, iPos))
+					Properties_SetWeaponPropInt(iTempWeapon, "m_iDecapitations", iDecap);
+			}
+		}
+	}
 }
 
 public void Client_PreThink(int iClient)
@@ -87,38 +120,38 @@ public void Client_PreThink(int iClient)
 		PARTICLE_BEAM_BLU,
 	};
 	
-	int iMedigun = TF2_GetItemFromClassname(iClient, "tf_weapon_medigun");
-	if (iMedigun < MaxClients)
-		return;
-	
-	if (!IsValidEntity(g_iMedigunBeamRef[iClient]))
-		g_iMedigunBeamRef[iClient] = TF2_SpawnParticle(sParticle[TF2_GetClientTeam(iClient)], iMedigun);
-	
-	int iPatient = GetEntPropEnt(iMedigun, Prop_Send, "m_hHealingTarget");
-	int iControlPoint = GetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", 0);
-	
-	if (0 < iPatient <= MaxClients)
+	int iMedigun, iPos;
+	while (TF2_GetItemFromClassname(iClient, "tf_weapon_medigun", iMedigun, iPos))
 	{
-		//Using active weapon so beam connects to nice spot
-		int iWeapon = GetEntPropEnt(iPatient, Prop_Send, "m_hActiveWeapon");
-		if (iWeapon != iControlPoint)
-		{
-			//We just started healing someone
-			SetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", iWeapon, 0);
-			SetEntProp(g_iMedigunBeamRef[iClient], Prop_Send, "m_iControlPointParents", iWeapon, _, 0);
-			
-			ActivateEntity(g_iMedigunBeamRef[iClient]);
-			AcceptEntityInput(g_iMedigunBeamRef[iClient], "Start");
-		}
-	}
-	
-	if (iPatient <= 0 && iControlPoint > 0)
-	{
-		//We just stopped healing someone
-		SetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", -1, 0);
-		SetEntProp(g_iMedigunBeamRef[iClient], Prop_Send, "m_iControlPointParents", -1, _, 0);
+		if (!IsValidEntity(g_iMedigunBeamRef[iClient]))
+			g_iMedigunBeamRef[iClient] = TF2_SpawnParticle(sParticle[TF2_GetClientTeam(iClient)], iMedigun);
 		
-		AcceptEntityInput(g_iMedigunBeamRef[iClient], "Stop");
+		int iPatient = GetEntPropEnt(iMedigun, Prop_Send, "m_hHealingTarget");
+		int iControlPoint = GetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", 0);
+		
+		if (0 < iPatient <= MaxClients)
+		{
+			//Using active weapon so beam connects to nice spot
+			int iWeapon = GetEntPropEnt(iPatient, Prop_Send, "m_hActiveWeapon");
+			if (iWeapon != iControlPoint)
+			{
+				//We just started healing someone
+				SetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", iWeapon, 0);
+				SetEntProp(g_iMedigunBeamRef[iClient], Prop_Send, "m_iControlPointParents", iWeapon, _, 0);
+				
+				ActivateEntity(g_iMedigunBeamRef[iClient]);
+				AcceptEntityInput(g_iMedigunBeamRef[iClient], "Start");
+			}
+		}
+		
+		if (iPatient <= 0 && iControlPoint > 0)
+		{
+			//We just stopped healing someone
+			SetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", -1, 0);
+			SetEntProp(g_iMedigunBeamRef[iClient], Prop_Send, "m_iControlPointParents", -1, _, 0);
+			
+			AcceptEntityInput(g_iMedigunBeamRef[iClient], "Stop");
+		}
 	}
 }
 
@@ -127,8 +160,13 @@ public void Client_PreThinkPost(int iClient)
 	g_iAllowPlayerClass[iClient]--;
 	
 	//m_flEnergyDrinkMeter meant to be used for scout drinks, but TFCond_CritCola shared Buffalo Steak and Cleaner's Carbine
-	if (TF2_IsPlayerInCondition(iClient, TFCond_CritCola) && TF2_GetItemFromClassname(iClient, "tf_weapon_lunchbox_drink") <= MaxClients)
-		SetEntPropFloat(iClient, Prop_Send, "m_flEnergyDrinkMeter", 100.0);
+	//TODO fix this when player have multiple weapons
+	if (TF2_IsPlayerInCondition(iClient, TFCond_CritCola))
+	{
+		int iWeapon, iPos;
+		if (TF2_GetItemFromClassname(iClient, "tf_weapon_lunchbox_drink", iWeapon, iPos))
+			SetEntPropFloat(iClient, Prop_Send, "m_flEnergyDrinkMeter", 100.0);
+	}
 }
 
 public Action Client_WeaponEquip(int iClient, int iWeapon)
@@ -163,7 +201,10 @@ public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 	Ammo_UpdateActiveWeapon(iClient);
 	
 	if (iWeapon != INVALID_ENT_REFERENCE)
+	{
 		Properties_LoadRageProps(iClient, iWeapon);
+		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iDecapitations");
+	}
 }
 
 public Action Client_WeaponCanSwitchTo(int iClient, int iWeapon)
@@ -186,6 +227,12 @@ public void Client_WeaponCanSwitchToPost(int iClient, int iWeapon)
 	
 	//Update ammo back to whatever active weapon is
 	Ammo_UpdateActiveWeapon(iClient);
+}
+
+public void Weapon_SpawnPost(int iWeapon)
+{
+	//Set properties so huds know that this is a thing
+	Properties_SetWeaponPropInt(iWeapon, "m_iDecapitations", 0);
 }
 
 public Action Weapon_Reload(int iWeapon)

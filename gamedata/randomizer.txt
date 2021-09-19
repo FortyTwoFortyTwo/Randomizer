@@ -549,6 +549,27 @@
 					}
 				}
 			}
+			"CTFPlayer::GetMaxHealthForBuffing"
+			{
+				"signature"	"CTFPlayer::GetMaxHealthForBuffing"
+				"callconv"	"thiscall"
+				"return"	"int"
+				"this"		"entity"
+			}
+			"CTFPlayer::TeamFortress_CalculateMaxSpeed"
+			{
+				"signature"	"CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"callconv"	"thiscall"
+				"return"	"float"
+				"this"		"entity"
+				"arguments"
+				{
+					"bIgnoreSpecialAbility"
+					{
+						"type"	"bool"
+					}
+				}
+			}
 			"CTFPlayer::TakeHealth"
 			{
 				"signature"	"CTFPlayer::TakeHealth"
