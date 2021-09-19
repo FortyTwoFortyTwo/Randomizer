@@ -14,6 +14,7 @@ static Handle g_hDHookSwing;
 static Handle g_hDHookMyTouch;
 static Handle g_hDHookPipebombTouch;
 static Handle g_hDHookOnDecapitation;
+static Handle g_hDHookKilled;
 static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookForceRespawn;
 static Handle g_hDHookEquipWearable;
@@ -77,6 +78,7 @@ public void DHook_Init(GameData hGameData)
 	g_hDHookMyTouch = DHook_CreateVirtual(hGameData, "CItem::MyTouch");
 	g_hDHookPipebombTouch = DHook_CreateVirtual(hGameData, "CTFGrenadePipebombProjectile::PipebombTouch");
 	g_hDHookOnDecapitation = DHook_CreateVirtual(hGameData, "CTFDecapitationMeleeWeaponBase::OnDecapitation");
+	g_hDHookKilled = DHook_CreateVirtual(hGameData, "CBaseObject::Killed");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
 	g_hDHookForceRespawn = DHook_CreateVirtual(hGameData, "CBasePlayer::ForceRespawn");
 	g_hDHookEquipWearable = DHook_CreateVirtual(hGameData, "CBasePlayer::EquipWearable");
@@ -240,6 +242,8 @@ void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 	}
 	else if (StrContains(sClassname, "obj_") == 0)
 	{
+		DHookEntity(g_hDHookKilled, false, iEntity, _, DHook_KilledPre);
+		DHookEntity(g_hDHookKilled, true, iEntity, _, DHook_KilledPost);
 		DHookEntity(g_hDHookCanBeUpgraded, false, iEntity, _, DHook_CanBeUpgradedPre);
 		DHookEntity(g_hDHookCanBeUpgraded, true, iEntity, _, DHook_CanBeUpgradedPost);
 	}
@@ -968,6 +972,81 @@ public MRESReturn DHook_OnDecapitationPost(int iSword, Handle hParams)
 {
 	int iClient = GetEntPropEnt(iSword, Prop_Send, "m_hOwnerEntity");
 	RevertClientClass(iClient);
+}
+
+public MRESReturn DHook_KilledPre(int iObject, Handle hParams)
+{
+	//Save current revenge count, then set to 0 for both builder and attacker
+	
+	int iClient = GetEntPropEnt(iObject, Prop_Send, "m_hBuilder");
+	if (0 < iClient <= MaxClients)
+	{
+		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+		if (iActiveWeapon != INVALID_ENT_REFERENCE)
+			Properties_SaveWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
+		
+		SetEntProp(iClient, Prop_Send, "m_iRevengeCrits", 0);
+	}
+	
+	int iSapper = DHookGetParamObjectPtrVar(hParams, 1, 40, ObjectValueType_Ehandle);	//m_hAttacker
+	if (iSapper != INVALID_ENT_REFERENCE && IsClassname(iSapper, "obj_attachment_sapper"))
+	{
+		int iAttacker = GetEntPropEnt(iSapper, Prop_Send, "m_hBuilder");
+		if (0 < iAttacker <= MaxClients)
+		{
+			int iActiveWeapon = GetEntPropEnt(iAttacker, Prop_Send, "m_hActiveWeapon");
+			if (iActiveWeapon != INVALID_ENT_REFERENCE)
+				Properties_SaveWeaponPropInt(iAttacker, iActiveWeapon, "m_iRevengeCrits");
+			
+			SetEntProp(iAttacker, Prop_Send, "m_iRevengeCrits", 0);
+		}
+	}
+}
+
+public MRESReturn DHook_KilledPost(int iObject, Handle hParams)
+{
+	int iClient = GetEntPropEnt(iObject, Prop_Send, "m_hBuilder");
+	if (0 < iClient <= MaxClients)
+	{
+		//Increase count for sentry_killed_revenge
+		int iCount = GetEntProp(iClient, Prop_Send, "m_iRevengeCrits");
+		if (iCount > 0)
+		{
+			int iTempWeapon, iPos;
+			while (TF2_GetItemFromAttribute(iClient, "mod sentry killed revenge", iTempWeapon, iPos))
+				Properties_AddWeaponPropInt(iTempWeapon, "m_iRevengeCrits", iCount);
+		}
+		
+		//Set back to active weapon
+		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+		if (iActiveWeapon != INVALID_ENT_REFERENCE)
+			Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
+	}
+	
+	//Revenge collected is from any reason building is removed (CBaseObject::UpdateOnRemove) instead from fancy destroyed (CBaseObject::Killed)
+	// Is it worth hooking UpdateOnRemove? meh...
+	
+	int iSapper = DHookGetParamObjectPtrVar(hParams, 1, 40, ObjectValueType_Ehandle);	//m_hAttacker
+	if (iSapper != INVALID_ENT_REFERENCE && IsClassname(iSapper, "obj_attachment_sapper"))
+	{
+		int iAttacker = GetEntPropEnt(iSapper, Prop_Send, "m_hBuilder");
+		if (0 < iAttacker <= MaxClients)
+		{
+			//Increase count for sapper_kills_collect_crits
+			int iCount = GetEntProp(iAttacker, Prop_Send, "m_iRevengeCrits");
+			if (iCount > 0)
+			{
+				int iTempWeapon, iPos;
+				while (TF2_GetItemFromAttribute(iAttacker, "sapper kills collect crits", iTempWeapon, iPos))
+					Properties_AddWeaponPropInt(iTempWeapon, "m_iRevengeCrits", iCount);
+			}
+			
+			//Set back to active weapon
+			int iActiveWeapon = GetEntPropEnt(iAttacker, Prop_Send, "m_hActiveWeapon");
+			if (iActiveWeapon != INVALID_ENT_REFERENCE)
+				Properties_LoadWeaponPropInt(iAttacker, iActiveWeapon, "m_iRevengeCrits");
+		}
+	}
 }
 
 public MRESReturn DHook_CanBeUpgradedPre(int iObject, Handle hReturn, Handle hParams)

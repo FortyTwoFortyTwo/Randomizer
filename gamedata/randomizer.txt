@@ -311,6 +311,11 @@
 				"linux"		"483"
 				"windows"	"476"
 			}
+			"CBaseObject::Killed"
+			{
+				"linux"		"350"
+				"windows"	"349"
+			}
 			"CBaseObject::CanBeUpgraded"
 			{
 				"linux"		"377"
@@ -773,6 +778,20 @@
 					"pPlayer"
 					{
 						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CBaseObject::Killed"
+			{
+				"offset"	"CBaseObject::Killed"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"info"
+					{
+						"type"	"objectptr"
 					}
 				}
 			}

@@ -22,7 +22,7 @@ void Properties_SaveWeaponPropInt(int iClient, int iWeapon, const char[] sProp, 
 	
 	//Revert back to active weapon
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+	if (iActiveWeapon != INVALID_ENT_REFERENCE && iActiveWeapon != iWeapon)
 		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, sProp, iElement);
 }
 
@@ -45,7 +45,7 @@ void Properties_SaveWeaponPropFloat(int iClient, int iWeapon, const char[] sProp
 	
 	//Revert back to active weapon
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+	if (iActiveWeapon != INVALID_ENT_REFERENCE && iActiveWeapon != iWeapon)
 		Properties_LoadWeaponPropFloat(iClient, iActiveWeapon, sProp, iElement);
 }
 
@@ -75,7 +75,7 @@ void Properties_SaveWeaponDataInt(int iClient, int iWeapon, int iOffset)
 	
 	//Revert back to active weapon
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+	if (iActiveWeapon != INVALID_ENT_REFERENCE && iActiveWeapon != iWeapon)
 		Properties_LoadWeaponDataInt(iClient, iActiveWeapon, iOffset);
 }
 
@@ -103,7 +103,7 @@ void Properties_SaveWeaponDataFloat(int iClient, int iWeapon, int iOffset)
 	
 	//Revert back to active weapon
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+	if (iActiveWeapon != INVALID_ENT_REFERENCE && iActiveWeapon != iWeapon)
 		Properties_LoadWeaponDataFloat(iClient, iActiveWeapon, iOffset);
 }
 
@@ -134,6 +134,16 @@ void Properties_SetWeaponPropInt(int iWeapon, const char[] sProp, int iValue)
 		g_mPropertiesWeaponSend[iWeapon] = new StringMap();
 	
 	g_mPropertiesWeaponSend[iWeapon].SetValue(sProp, iValue);
+}
+
+void Properties_AddWeaponPropInt(int iWeapon, const char[] sProp, int iValue)
+{
+	if (!g_mPropertiesWeaponSend[iWeapon])
+		g_mPropertiesWeaponSend[iWeapon] = new StringMap();
+	
+	int iAdd = 0;
+	g_mPropertiesWeaponSend[iWeapon].GetValue(sProp, iAdd);
+	g_mPropertiesWeaponSend[iWeapon].SetValue(sProp, iAdd + iValue);
 }
 
 float Properties_GetWeaponPropFloat(int iWeapon, const char[] sProp)

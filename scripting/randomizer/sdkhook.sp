@@ -54,6 +54,13 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 			Properties_LoadWeaponPropInt(iAttacker, iWeapon, "m_iDecapitations");
 			g_bWeaponDecap[iAttacker] = true;
 		}
+		
+		//Setup collecting revenge crits for diamondback
+		int iActiveWeapon = GetEntPropEnt(iAttacker, Prop_Send, "m_hActiveWeapon");
+		if (iActiveWeapon != INVALID_ENT_REFERENCE)
+			Properties_SaveWeaponPropInt(iAttacker, iActiveWeapon, "m_iRevengeCrits");
+		
+		SetEntProp(iAttacker, Prop_Send, "m_iRevengeCrits", 0);
 	}
 }
 
@@ -81,6 +88,20 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 					Properties_SetWeaponPropInt(iTempWeapon, "m_iDecapitations", iDecap);
 			}
 		}
+		
+		int iRevengeCrits = GetEntProp(iAttacker, Prop_Send, "m_iRevengeCrits");
+		if (iRevengeCrits > 0)
+		{
+			//Add revenge crit to all diamondbacks
+			int iTempWeapon, iPos;
+			while (TF2_GetItemFromAttribute(iAttacker, "sapper kills collect crits", iTempWeapon, iPos))	//This is not a sapper kill...
+				Properties_AddWeaponPropInt(iTempWeapon, "m_iRevengeCrits", iRevengeCrits);
+		}
+		
+		//Set it back
+		int iActiveWeapon = GetEntPropEnt(iAttacker, Prop_Send, "m_hActiveWeapon");
+		if (iActiveWeapon != INVALID_ENT_REFERENCE)
+			Properties_LoadWeaponPropInt(iAttacker, iActiveWeapon, "m_iRevengeCrits");
 	}
 }
 
@@ -167,6 +188,13 @@ public void Client_PreThinkPost(int iClient)
 		if (TF2_GetItemFromClassname(iClient, "tf_weapon_lunchbox_drink", iWeapon, iPos))
 			SetEntPropFloat(iClient, Prop_Send, "m_flEnergyDrinkMeter", 100.0);
 	}
+	
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+	{
+		//Save revenge crits from weapons fired or manmelter crit collected
+		Properties_SaveWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
+	}
 }
 
 public Action Client_WeaponEquip(int iClient, int iWeapon)
@@ -191,8 +219,14 @@ public void Client_WeaponEquipPost(int iClient, int iWeapon)
 
 public Action Client_WeaponSwitch(int iClient, int iWeapon)
 {
-	//Save current active weapon ammo before potentally switched out
+	//Save current active weapon properties before potentally switched out
 	Ammo_SaveActiveWeapon(iClient);
+	
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+	{
+		Properties_SaveWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
+	}
 }
 
 public void Client_WeaponSwitchPost(int iClient, int iWeapon)
@@ -200,10 +234,19 @@ public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 	//Update ammo for new active weapon
 	Ammo_UpdateActiveWeapon(iClient);
 	
-	if (iWeapon != INVALID_ENT_REFERENCE)
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
 	{
-		Properties_LoadRageProps(iClient, iWeapon);
-		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iDecapitations");
+		Properties_LoadRageProps(iClient, iActiveWeapon);
+		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iDecapitations");
+		
+		int iRevengeCrits = GetEntProp(iClient, Prop_Send, "m_iRevengeCrits");
+		if (iRevengeCrits > 0 && Properties_GetWeaponPropInt(iActiveWeapon, "m_iRevengeCrits") == 0)
+			TF2_RemoveCondition(iClient, TFCond_Kritzkrieged);
+		else if (iRevengeCrits == 0 && Properties_GetWeaponPropInt(iActiveWeapon, "m_iRevengeCrits") > 0)
+			TF2_AddCondition(iClient, TFCond_Kritzkrieged, TFCondDuration_Infinite);
+		
+		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
 	}
 }
 
@@ -233,6 +276,7 @@ public void Weapon_SpawnPost(int iWeapon)
 {
 	//Set properties so huds know that this is a thing
 	Properties_SetWeaponPropInt(iWeapon, "m_iDecapitations", 0);
+	Properties_SetWeaponPropInt(iWeapon, "m_iRevengeCrits", 0);
 }
 
 public Action Weapon_Reload(int iWeapon)

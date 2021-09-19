@@ -240,7 +240,7 @@ stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos, bool bCosmetic = fa
 
 stock bool TF2_GetItemFromClassname(int iClient, const char[] sClassname, int &iWeapon, int &iPos)
 {
-	while (TF2_GetItem(iClient, iWeapon, iPos))
+	while (TF2_GetItem(iClient, iWeapon, iPos, true))
 		if (IsClassname(iWeapon, sClassname))
 			return true;
 	
@@ -258,6 +258,17 @@ stock bool TF2_GetItemFromLoadoutSlot(int iClient, int iSlot, int &iWeapon, int 
 				return true;
 		}
 	}
+	
+	return false;
+}
+
+stock bool TF2_GetItemFromAttribute(int iClient, char[] sAttrib, int &iWeapon, int &iPos)
+{
+	float flVal;
+	
+	while (TF2_GetItem(iClient, iWeapon, iPos, true))
+		if (TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal))
+			return true;
 	
 	return false;
 }
