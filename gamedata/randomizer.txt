@@ -787,13 +787,6 @@
 				"hooktype"	"entity"
 				"return"	"void"
 				"this"		"entity"
-				"arguments"
-				{
-					"info"
-					{
-						"type"	"objectptr"
-					}
-				}
 			}
 			"CBaseObject::CanBeUpgraded"
 			{

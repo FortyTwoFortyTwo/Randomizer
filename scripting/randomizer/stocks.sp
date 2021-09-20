@@ -355,6 +355,14 @@ stock TFClassType TF2_GetRandomClass()
 	return view_as<TFClassType>(GetRandomInt(CLASS_MIN, CLASS_MAX));
 }
 
+stock int TF2_GetSapper(int iObject)
+{
+	if (!GetEntProp(iObject, Prop_Send, "m_bHasSapper"))
+		return INVALID_ENT_REFERENCE;
+	
+	return GetEntPropEnt(iObject, Prop_Data, "m_hMoveChild");
+}
+
 stock bool TF2_CanSwitchTo(int iClient, int iWeapon)
 {
 	char sClassname[32];

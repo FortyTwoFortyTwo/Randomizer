@@ -28,8 +28,9 @@ static bool g_bSkipHandleRageGain;
 static int g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 static bool g_bSkipUpdateRageBuffsAndRage = false;
 static int g_iClientGetChargeEffectBeingProvided;
-static int g_iWeaponGetLoadoutItem = -1;
+static int g_iWeaponGetLoadoutItem = INVALID_ENT_REFERENCE;
 static bool g_bManageBuilderWeapons;
+static int g_iBuildingKilledSapper = INVALID_ENT_REFERENCE;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS];
 static int g_iHookIdClientCommand[TF_MAXPLAYERS];
@@ -240,7 +241,7 @@ void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 		DHookEntity(g_hDHookOnDecapitation, false, iEntity, _, DHook_OnDecapitationPre);
 		DHookEntity(g_hDHookOnDecapitation, true, iEntity, _, DHook_OnDecapitationPost);
 	}
-	else if (StrContains(sClassname, "obj_") == 0)
+	else if (StrContains(sClassname, "obj_") == 0 && !StrEqual(sClassname, "obj_attachment_sapper"))
 	{
 		DHookEntity(g_hDHookKilled, false, iEntity, _, DHook_KilledPre);
 		DHookEntity(g_hDHookKilled, true, iEntity, _, DHook_KilledPost);
@@ -974,8 +975,9 @@ public MRESReturn DHook_OnDecapitationPost(int iSword, Handle hParams)
 	RevertClientClass(iClient);
 }
 
-public MRESReturn DHook_KilledPre(int iObject, Handle hParams)
+public MRESReturn DHook_KilledPre(int iObject)
 {
+	//There is 1 Param, CTakeDamageInfo ref, but not listed as it gives windows crashes
 	//Save current revenge count, then set to 0 for both builder and attacker
 	
 	int iClient = GetEntPropEnt(iObject, Prop_Send, "m_hBuilder");
@@ -988,10 +990,10 @@ public MRESReturn DHook_KilledPre(int iObject, Handle hParams)
 		SetEntProp(iClient, Prop_Send, "m_iRevengeCrits", 0);
 	}
 	
-	int iSapper = DHookGetParamObjectPtrVar(hParams, 1, 40, ObjectValueType_Ehandle);	//m_hAttacker
-	if (iSapper != INVALID_ENT_REFERENCE && IsClassname(iSapper, "obj_attachment_sapper"))
+	g_iBuildingKilledSapper = TF2_GetSapper(iObject);
+	if (g_iBuildingKilledSapper != INVALID_ENT_REFERENCE)
 	{
-		int iAttacker = GetEntPropEnt(iSapper, Prop_Send, "m_hBuilder");
+		int iAttacker = GetEntPropEnt(g_iBuildingKilledSapper, Prop_Send, "m_hBuilder");
 		if (0 < iAttacker <= MaxClients)
 		{
 			int iActiveWeapon = GetEntPropEnt(iAttacker, Prop_Send, "m_hActiveWeapon");
@@ -1003,7 +1005,7 @@ public MRESReturn DHook_KilledPre(int iObject, Handle hParams)
 	}
 }
 
-public MRESReturn DHook_KilledPost(int iObject, Handle hParams)
+public MRESReturn DHook_KilledPost(int iObject)
 {
 	int iClient = GetEntPropEnt(iObject, Prop_Send, "m_hBuilder");
 	if (0 < iClient <= MaxClients)
@@ -1023,13 +1025,14 @@ public MRESReturn DHook_KilledPost(int iObject, Handle hParams)
 			Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
 	}
 	
+	//Sapper is detached in post hook as object is being removed
+	
 	//Revenge collected is from any reason building is removed (CBaseObject::UpdateOnRemove) instead from fancy destroyed (CBaseObject::Killed)
 	// Is it worth hooking UpdateOnRemove? meh...
 	
-	int iSapper = DHookGetParamObjectPtrVar(hParams, 1, 40, ObjectValueType_Ehandle);	//m_hAttacker
-	if (iSapper != INVALID_ENT_REFERENCE && IsClassname(iSapper, "obj_attachment_sapper"))
+	if (g_iBuildingKilledSapper != INVALID_ENT_REFERENCE)
 	{
-		int iAttacker = GetEntPropEnt(iSapper, Prop_Send, "m_hBuilder");
+		int iAttacker = GetEntPropEnt(g_iBuildingKilledSapper, Prop_Send, "m_hBuilder");
 		if (0 < iAttacker <= MaxClients)
 		{
 			//Increase count for sapper_kills_collect_crits
@@ -1047,6 +1050,8 @@ public MRESReturn DHook_KilledPost(int iObject, Handle hParams)
 				Properties_LoadWeaponPropInt(iAttacker, iActiveWeapon, "m_iRevengeCrits");
 		}
 	}
+	
+	g_iBuildingKilledSapper = INVALID_ENT_REFERENCE;
 }
 
 public MRESReturn DHook_CanBeUpgradedPre(int iObject, Handle hReturn, Handle hParams)
