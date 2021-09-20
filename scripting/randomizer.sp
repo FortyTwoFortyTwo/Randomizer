@@ -497,65 +497,7 @@ public void OnClientDisconnect(int iClient)
 	DHook_UnhookGiveNamedItem(iClient);
 	DHook_UnhookClient(iClient);
 }
-/*
-public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float vecVel[3], float vecAngles[3], int &iWeapon, int &iSubtype, int &iCmdNum, int &iTickCount, int &iSeed, int iMouse[2])
-{
-	if (!g_bEnabled)
-		return Plugin_Continue;
-	
-	if (iWeapon)	//Client want to switch weapon
-	{
-		if (GetEntPropEnt(iClient, Prop_Send, "m_hLastWeapon") == iWeapon)
-			return Plugin_Continue;
-		
-		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-		if (iActiveWeapon == INVALID_ENT_REFERENCE)
-			return Plugin_Continue;
-		
-		int iSlot = TF2_GetSlot(iWeapon);
-		int iActiveSlot = TF2_GetSlot(iActiveWeapon);
-		
-		if (iActiveSlot + 1 == iSlot)
-		{
-			//Go to next weapon
-			int iPos = Huds_GetPositionFromWeapon(iClient, iActiveWeapon);
-			do
-			{
-				iPos++;
-				iWeapon = Huds_GetWeaponFromPosition(iClient, iPos);
-				
-				if (iWeapon == INVALID_ENT_REFERENCE)
-					iPos = 0;	//Reset loop
-				else if (TF2_CanSwitchTo(iClient, iWeapon))
-					return Plugin_Changed;
-			}
-			while (iActiveWeapon != iWeapon);
-			return Plugin_Continue;
-		}
-		else if (iActiveSlot - 1 == iSlot)
-		{
-			//Go to previous weapon
-			int iPos = Huds_GetPositionFromWeapon(iClient, iActiveWeapon);
-			do
-			{
-				iPos--;
-				iWeapon = Huds_GetWeaponFromPosition(iClient, iPos);
-				
-				if (iWeapon == INVALID_ENT_REFERENCE)
-					iPos = Huds_GetPositionCount(iClient);	//Reset loop
-				else if (TF2_CanSwitchTo(iClient, iWeapon))
-					return Plugin_Changed;
-			}
-			while (iActiveWeapon != iWeapon);
-			return Plugin_Continue;
-		}
-		
-		
-	}
-	
-	return Plugin_Continue;
-}
-*/
+
 public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const float vecVel[3], const float vecAngles[3], int iWeapon, int iSubtype, int iCmdNum, int iTickCount, int iSeed, const int iMouse[2]) 
 {
 	if (!g_bEnabled)

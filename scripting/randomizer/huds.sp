@@ -477,22 +477,3 @@ public int Huds_MenuAction(Menu hMenu, MenuAction action, int iClient, int iChoi
 		}
 	}
 }
-
-int Huds_GetPositionFromWeapon(int iClient, int iWeapon)
-{
-	return g_aHudWeapon[iClient].FindValue(EntIndexToEntRef(iWeapon), HudWeapon::iRef);
-}
-
-int Huds_GetWeaponFromPosition(int iClient, int iPos)
-{
-	int iLength = g_aHudWeapon[iClient].Length;
-	if (iPos < 0 || iPos >= iLength)
-		return INVALID_ENT_REFERENCE;
-	
-	return g_aHudWeapon[iClient].Get(iPos, HudWeapon::iRef);
-}
-
-int Huds_GetPositionCount(int iClient)
-{
-	return g_aHudWeapon[iClient].Length;
-}
