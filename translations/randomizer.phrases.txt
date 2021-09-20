@@ -459,11 +459,6 @@
 		"en"		"Hitman's Heatmaker"
 	}
 	
-	"Weapon_FortifiedCompound"
-	{
-		"en"		"Fortified Compound"
-	}
-	
 	"Weapon_Classic"
 	{
 		"en"		"Classic"
@@ -822,11 +817,6 @@
 	"Weapon_SharpenedVolcanoFragment"
 	{
 		"en"		"Sharpened Volcano Fragment"
-	}
-	
-	"Weapon_PostalPummeler"
-	{
-		"en"		"Postal Pummeler"
 	}
 	
 	"Weapon_ThirdDegree"
