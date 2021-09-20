@@ -170,3 +170,23 @@ int Weapons_GetReskinIndex(int iIndex)
 	g_mWeaponsReskins.GetValue(sIndex, iIndex);
 	return iIndex;
 }
+
+int Weapons_GetIndexFromName(const char[] sName)
+{
+	if (!g_aWeapons[TFClass_Unknown])
+		return -1;
+	
+	int iLength = g_aWeapons[0].Length;
+	for (int i = 0; i < iLength; i++)
+	{
+		int iIndex = g_aWeapons[0].Get(i);
+		
+		char sBuffer[64];
+		Weapons_GetName(iIndex, sBuffer, sizeof(sBuffer));
+		Format(sBuffer, sizeof(sBuffer), "%T", sBuffer, LANG_SERVER);
+		if (StrContains(sBuffer, sName, false) != -1)
+			return iIndex;
+	}
+	
+	return -1;
+}
