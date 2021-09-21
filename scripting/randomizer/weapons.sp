@@ -1,8 +1,11 @@
 #define FILEPATH_CONFIG_WEAPONS "configs/randomizer/weapons.cfg"
 #define FILEPATH_CONFIG_RESKINS "configs/randomizer/reskins.cfg"
 
-static ArrayList g_aWeapons[CLASS_MAX+1];
-static ArrayList g_aWeaponsFromSlot[CLASS_MAX+1][WeaponSlot_Building+1];
+static ArrayList g_aWeapons;
+static ArrayList g_aWeaponsClass[CLASS_MAX+1];
+static ArrayList g_aWeaponsSlot[WeaponSlot_Building+1];
+static ArrayList g_aWeaponsClassSlot[CLASS_MAX+1][WeaponSlot_Building+1];
+
 static StringMap g_mWeaponsName;
 static StringMap g_mWeaponsReskins;
 
@@ -18,23 +21,22 @@ public void Weapons_Refresh()
 	if (!kv)
 		return;
 	
-	for (int i = 0; i < sizeof(g_aWeapons); i++)
-		delete g_aWeapons[i];
+	delete g_aWeapons;
 	
-	for (int i = 0; i < sizeof(g_aWeaponsFromSlot); i++)
-		for (int j = 0; j < sizeof(g_aWeaponsFromSlot[]); j++)
-			delete g_aWeaponsFromSlot[i][j];
+	for (int i = 0; i < sizeof(g_aWeaponsClass); i++)
+		delete g_aWeaponsClass[i];
+	
+	for (int i = 0; i < sizeof(g_aWeaponsSlot); i++)
+		delete g_aWeaponsSlot[i];
+	
+	for (int i = 0; i < sizeof(g_aWeaponsClassSlot); i++)
+		for (int j = 0; j < sizeof(g_aWeaponsClassSlot[]); j++)
+			delete g_aWeaponsClassSlot[i][j];
 	
 	g_mWeaponsName.Clear();
 	
-	Weapons_LoadSlot(kv, "Primary", WeaponSlot_Primary);
-	Weapons_LoadSlot(kv, "Secondary", WeaponSlot_Secondary);
-	Weapons_LoadSlot(kv, "Melee", WeaponSlot_Melee);
-	Weapons_LoadSlot(kv, "PDABuild", WeaponSlot_PDA);
-	Weapons_LoadSlot(kv, "PDADestroy", WeaponSlot_PDA2);
-	Weapons_LoadSlot(kv, "Toolbox", WeaponSlot_Building);
-	Weapons_LoadSlot(kv, "DisguiseKit", WeaponSlot_PDA);
-	Weapons_LoadSlot(kv, "InvisWatch", WeaponSlot_PDA2);
+	Weapons_LoadList(kv, "AllClass", true);
+	Weapons_LoadList(kv, "DefaultClass", false);
 	
 	delete kv;
 	
@@ -72,7 +74,7 @@ public void Weapons_Refresh()
 	delete kv;
 }
 
-void Weapons_LoadSlot(KeyValues kv, char[] sSection, int iSlot)
+void Weapons_LoadList(KeyValues kv, const char[] sSection, bool bAllClass)
 {
 	if (kv.JumpToKey(sSection))
 	{
@@ -97,31 +99,21 @@ void Weapons_LoadSlot(KeyValues kv, char[] sSection, int iSlot)
 					continue;
 				}
 				
-				if (!g_aWeapons[TFClass_Unknown])
-					g_aWeapons[0] = new ArrayList();	//lol sourcepawn compiler
-				
-				if (g_aWeapons[0].FindValue(iIndex) == -1)	//Dont put multiple same index from different slots
-					g_aWeapons[0].Push(iIndex);
-				
-				if (!g_aWeaponsFromSlot[TFClass_Unknown][iSlot])
-					g_aWeaponsFromSlot[TFClass_Unknown][iSlot] = new ArrayList();
-				
-				g_aWeaponsFromSlot[TFClass_Unknown][iSlot].Push(iIndex);
+				if (bAllClass)
+					Weapons_AddList(g_aWeapons, iIndex);
 				
 				for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 				{
-					if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) == iSlot)
+					int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+					if (WeaponSlot_Primary <= iSlot <= WeaponSlot_Building)
 					{
-						if (!g_aWeapons[iClass])
-							g_aWeapons[iClass] = new ArrayList();
+						Weapons_AddList(g_aWeaponsClassSlot[iClass][iSlot], iIndex);
 						
-						if (g_aWeapons[iClass].FindValue(iIndex) == -1)
-							g_aWeapons[iClass].Push(iIndex);
-						
-						if (!g_aWeaponsFromSlot[iClass][iSlot])
-							g_aWeaponsFromSlot[iClass][iSlot] = new ArrayList();
-						
-						g_aWeaponsFromSlot[iClass][iSlot].Push(iIndex);
+						if (bAllClass)
+						{
+							Weapons_AddList(g_aWeaponsClass[iClass], iIndex);
+							Weapons_AddList(g_aWeaponsSlot[iSlot], iIndex);
+						}
 					}
 				}
 				
@@ -134,26 +126,43 @@ void Weapons_LoadSlot(KeyValues kv, char[] sSection, int iSlot)
 	}
 	else
 	{
-		LogError("Randomizer Weapons config does not have this slot section: %s", sSection);
+		LogError("Randomizer Weapons config does not have section '%s'", sSection);
 	}
 }
 
-int Weapons_GetRandomIndex(TFClassType nClass)
+void Weapons_AddList(ArrayList &aList, int iIndex)
 {
-	if (!g_aWeapons[nClass])
-		return -1;
+	if (!aList)
+		aList = new ArrayList();
 	
-	int iLength = g_aWeapons[nClass].Length;
-	return g_aWeapons[nClass].Get(GetRandomInt(0, iLength - 1));
+	if (aList.FindValue(iIndex) == -1)	//Dont put multiple same index
+		aList.Push(iIndex);
 }
 
-int Weapons_GetRandomIndexFromSlot(int iSlot, TFClassType nClass)
+int Weapons_GetRandomIndex(TFClassType nClass = TFClass_Unknown, int iSlot = -1)
 {
-	if (!g_aWeaponsFromSlot[nClass][iSlot])
+	ArrayList aList;
+	
+	if (nClass == TFClass_Unknown)
+	{
+		if (iSlot == -1)
+			aList = g_aWeapons;
+		else
+			aList = g_aWeaponsSlot[iSlot];
+	}
+	else
+	{
+		if (iSlot == -1)
+			aList = g_aWeaponsClass[nClass];
+		else
+			aList = g_aWeaponsClassSlot[nClass][iSlot];
+	}
+	
+	if (!aList)
 		return -1;
 	
-	int iLength = g_aWeaponsFromSlot[nClass][iSlot].Length;
-	return g_aWeaponsFromSlot[nClass][iSlot].Get(GetRandomInt(0, iLength - 1));
+	int iLength = aList.Length;
+	return aList.Get(GetRandomInt(0, iLength - 1));
 }
 
 bool Weapons_GetName(int iIndex, char[] sBuffer, int iLength)
@@ -173,19 +182,26 @@ int Weapons_GetReskinIndex(int iIndex)
 
 int Weapons_GetIndexFromName(const char[] sName)
 {
-	if (!g_aWeapons[TFClass_Unknown])
-		return -1;
-	
-	int iLength = g_aWeapons[0].Length;
-	for (int i = 0; i < iLength; i++)
+	//Only g_aWeaponsClassSlot have all weapons listed
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
-		int iIndex = g_aWeapons[0].Get(i);
-		
-		char sBuffer[64];
-		Weapons_GetName(iIndex, sBuffer, sizeof(sBuffer));
-		Format(sBuffer, sizeof(sBuffer), "%T", sBuffer, LANG_SERVER);
-		if (StrContains(sBuffer, sName, false) != -1)
-			return iIndex;
+		for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_Building; iSlot++)
+		{
+			if (!g_aWeaponsClassSlot[iClass][iSlot])
+				continue;
+			
+			int iLength = g_aWeaponsClassSlot[iClass][iSlot].Length;
+			for (int i = 0; i < iLength; i++)
+			{
+				int iIndex = g_aWeaponsClassSlot[iClass][iSlot].Get(i);
+				
+				char sBuffer[64];
+				Weapons_GetName(iIndex, sBuffer, sizeof(sBuffer));
+				Format(sBuffer, sizeof(sBuffer), "%T", sBuffer, LANG_SERVER);
+				if (StrContains(sBuffer, sName, false) != -1)
+					return iIndex;
+			}
+		}
 	}
 	
 	return -1;

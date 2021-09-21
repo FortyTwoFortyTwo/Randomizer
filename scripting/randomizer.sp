@@ -659,12 +659,12 @@ void RandomizeTeamWeapon(TFTeam iForceTeam = TFTeam_Unassigned)
 		{
 			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
 				if (iForceTeam == TFTeam_Unassigned || iForceTeam == view_as<TFTeam>(iTeam))
-					RandomizeWeaponIndex(g_eTeamWeapon[iTeam]);
+					RandomizeWeapon(g_eTeamWeapon[iTeam]);
 		}
 		case Mode_All:
 		{
 			RandomizedWeapon eWeapon[CLASS_MAX + 1];
-			RandomizeWeaponIndex(eWeapon);
+			RandomizeWeapon(eWeapon);
 			
 			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
 				CopyRandomizedWeapon(eWeapon, g_eTeamWeapon[iTeam]);
@@ -683,9 +683,22 @@ void RandomizeClientWeapon(int iClient)
 	
 	switch (g_cvRandomWeapons.IntValue)
 	{
-		case Mode_Normal, Mode_NormalRound: RandomizeWeaponIndex(g_eClientWeapon[iClient]);
+		case Mode_Normal, Mode_NormalRound: RandomizeWeapon(g_eClientWeapon[iClient]);
 		case Mode_Team, Mode_All: CopyRandomizedWeapon(g_eTeamWeapon[TF2_GetClientTeam(iClient)], g_eClientWeapon[iClient]);
 		default: ResetWeaponIndex(g_eClientWeapon[iClient]);
+	}
+}
+
+void UpdateClientWeapon(int iClient)
+{
+	switch (g_cvRandomClass.IntValue)
+	{
+		case Mode_Team, Mode_All: g_iClientClass[iClient] = g_iTeamClass[TF2_GetClientTeam(iClient)];
+	}
+	
+	switch (g_cvRandomWeapons.IntValue)
+	{
+		case Mode_Team, Mode_All: CopyRandomizedWeapon(g_eTeamWeapon[TF2_GetClientTeam(iClient)], g_eClientWeapon[iClient]);
 	}
 }
 
@@ -761,26 +774,36 @@ void SetRandomizedWeaponBySlot(RandomizedWeapon eRandomized[CLASS_MAX+1], int iI
 	AddRandomizedWeapon(eRandomized, iIndex, iSlot);
 }
 
-void RandomizeWeaponIndex(RandomizedWeapon eRandomized[CLASS_MAX+1])
+void RandomizeWeapon(RandomizedWeapon eRandomized[CLASS_MAX+1])
 {
 	for (int iClass = 0; iClass < sizeof(eRandomized); iClass++)
 		eRandomized[iClass].Reset();
 	
-	if (g_cvWeaponsFromClass.BoolValue)
+	bool bWeaponsFromClass = g_cvWeaponsFromClass.BoolValue;
+	int iWeaponsCount = g_cvWeaponsCount.IntValue;
+	
+	if (bWeaponsFromClass && iWeaponsCount > -1)
 	{
-		//Randomize for each classes
 		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-			for (int iSlot = 0; iSlot <= WeaponSlot_Building; iSlot++)
-				eRandomized[iClass].Add(Weapons_GetRandomIndexFromSlot(iSlot, view_as<TFClassType>(iClass)), iSlot);
-	}
-	else if (g_cvWeaponsCount.IntValue > -1)
-	{
-		int iCount = g_cvWeaponsCount.IntValue;
-		
-		for (int i = 0; i < iCount; i++)
 		{
-			//Randomize same index for all classes
-			int iIndex = Weapons_GetRandomIndex(TFClass_Unknown);
+			for (int i = 0; i < iWeaponsCount; i++)
+			{
+				int iIndex = Weapons_GetRandomIndex(view_as<TFClassType>(iClass));
+				eRandomized[iClass].Add(iIndex, TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)));
+			}
+		}
+	}
+	else if (bWeaponsFromClass)
+	{
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_Melee; iSlot++)
+				eRandomized[iClass].Add(Weapons_GetRandomIndex(view_as<TFClassType>(iClass), iSlot), iSlot);
+	}
+	else if (iWeaponsCount > -1)
+	{
+		for (int i = 0; i < iWeaponsCount; i++)
+		{
+			int iIndex = Weapons_GetRandomIndex();
 			
 			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 			{
@@ -801,20 +824,19 @@ void RandomizeWeaponIndex(RandomizedWeapon eRandomized[CLASS_MAX+1])
 	}
 	else
 	{
-		//Randomize same index for all classes
-		for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
+		for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_Melee; iSlot++)
 		{
-			int iIndex = Weapons_GetRandomIndexFromSlot(iSlot, TFClass_Unknown);
+			int iIndex = Weapons_GetRandomIndex(TFClass_Unknown, iSlot);
 			
 			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 				eRandomized[iClass].Add(iIndex, iSlot);
 		}
-		
-		//Randomize PDAs based on class (engineer & spy)
-		for (int iSlot = WeaponSlot_PDA; iSlot <= WeaponSlot_Building; iSlot++)
-			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-				eRandomized[iClass].Add(Weapons_GetRandomIndexFromSlot(iSlot, view_as<TFClassType>(iClass)), iSlot);
 	}
+	
+	//Randomize PDAs based on class (engineer & spy)
+	for (int iSlot = WeaponSlot_PDA; iSlot <= WeaponSlot_Building; iSlot++)
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			eRandomized[iClass].Add(Weapons_GetRandomIndex(view_as<TFClassType>(iClass), iSlot), iSlot);
 }
 
 void ResetWeaponIndex(RandomizedWeapon eRandomized[CLASS_MAX+1])

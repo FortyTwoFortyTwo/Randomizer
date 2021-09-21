@@ -1069,6 +1069,9 @@ public MRESReturn DHook_CanBeUpgradedPost(int iObject, Handle hReturn, Handle hP
 
 public MRESReturn DHook_ForceRespawnPre(int iClient)
 {
+	//Update incase of changes from team randomization
+	UpdateClientWeapon(iClient);
+	
 	//Detach client's object so it doesnt get destroyed on class change
 	int iBuilding = MaxClients+1;
 	while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
