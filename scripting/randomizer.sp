@@ -766,13 +766,10 @@ void AddRandomizedWeapon(RandomizedWeapon eRandomized[CLASS_MAX+1], int iIndex, 
 	}
 }
 
-void SetRandomizedWeaponBySlot(RandomizedWeapon eRandomized[CLASS_MAX+1], int iIndex, int iSlot)
+void RemoveRandomizedWeaponBySlot(RandomizedWeapon eRandomized[CLASS_MAX+1], int iSlot)
 {
-	//Clear all weapons by given slot, then add to list
 	for (int iClass = 0; iClass < sizeof(eRandomized); iClass++)
 		eRandomized[iClass].RemoveBySlot(iSlot);
-	
-	AddRandomizedWeapon(eRandomized, iIndex, iSlot);
 }
 
 void RandomizeWeapon(RandomizedWeapon eRandomized[CLASS_MAX+1])

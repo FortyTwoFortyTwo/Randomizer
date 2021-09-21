@@ -13,6 +13,7 @@ void Commands_Init()
 	
 	RegAdminCmd("sm_rndclass", Command_Class, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndsetweapon", Command_SetWeapon, ADMFLAG_CHANGEMAP);
+	RegAdminCmd("sm_rndsetslotweapon", Command_SetSlotWeapon, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndgiveweapon", Command_GiveWeapon, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndgenerate", Command_Generate, ADMFLAG_CHANGEMAP);
 }
@@ -150,6 +151,99 @@ public Action Command_SetWeapon(int iClient, int iArgs)
 					
 					for (int i = 0; i < iCount; i++)
 						AddRandomizedWeapon(g_eTeamWeapon[iTeam], eWeapon.iIndex[i], eWeapon.iSlot[i]);
+				}
+			}
+		}
+	}
+	
+	for (int i = 0; i < iTargetCount; i++)
+		if (IsPlayerAlive(iTargetList[i]) && IsWeaponRandomized(iTargetList[i]))
+			TF2_RespawnPlayer(iTargetList[i]);
+	
+	if (iCount == 1)
+	{
+		char sName[256];
+		Weapons_GetName(eWeapon.iIndex[0], sName, sizeof(sName));
+		Format(sName, sizeof(sName), "%T", sName, LANG_SERVER);
+		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sTargetName, sName, g_sSlotName[eWeapon.iSlot[0]]);
+	}
+	else
+	{
+		ReplyToCommand(iClient, "Set %s %d weapons", sTargetName, iCount);
+	}
+	
+	return Plugin_Handled;
+}
+
+public Action Command_SetSlotWeapon(int iClient, int iArgs)
+{
+	if (!g_bEnabled)
+		return Plugin_Continue;
+	
+	if (iArgs < 2)
+	{
+		ReplyToCommand(iClient, "Format: sm_rndsetweapon <@target> <weapon name/defindex and slot>");
+		return Plugin_Handled;
+	}
+	
+	char sTarget[32];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	
+	int[] iTargetList = new int[MaxClients];
+	char sTargetName[MAX_TARGET_LENGTH];
+	bool bIsML;
+	
+	int iTargetCount = ProcessTargetString(sTarget, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sTargetName, sizeof(sTargetName), bIsML);
+	if (iTargetCount <= 0)
+	{
+		ReplyToCommand(iClient, "Could not find anyone to set weapons");
+		return Plugin_Handled;
+	}
+	
+	if (!CanTargetClients(iClient, g_cvRandomWeapons, iTargetList, iTargetCount))
+		return Plugin_Handled;
+	
+	RandomizedWeapon eWeapon;
+	int iCount = GetWeaponsFromCommand(iClient, eWeapon);
+	if (iCount == 0)
+		return Plugin_Handled;
+	
+	bool bSlot[WeaponSlot_Building+1];
+	
+	switch (g_cvRandomWeapons.IntValue)
+	{
+		case Mode_Normal, Mode_NormalRound:
+		{
+			for (int i = 0; i < iTargetCount; i++)
+			{
+				for (int j = 0; j < iCount; j++)
+				{
+					if (!bSlot[eWeapon.iSlot[j]])
+					{
+						RemoveRandomizedWeaponBySlot(g_eClientWeapon[iTargetList[i]], eWeapon.iSlot[j]);
+						bSlot[eWeapon.iSlot[j]] = true;
+					}
+					
+					AddRandomizedWeapon(g_eClientWeapon[iTargetList[i]], eWeapon.iIndex[j], eWeapon.iSlot[j]);
+				}
+			}
+		}
+		case Mode_Team, Mode_All:
+		{
+			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
+			{
+				if (CanTargetTeam(view_as<TFTeam>(iTeam), iTargetList, iTargetCount))
+				{
+					for (int i = 0; i < iCount; i++)
+					{
+						if (!bSlot[eWeapon.iSlot[i]])
+						{
+							RemoveRandomizedWeaponBySlot(g_eClientWeapon[iTargetList[i]], eWeapon.iSlot[i]);
+							bSlot[eWeapon.iSlot[i]] = true;
+						}
+						
+						AddRandomizedWeapon(g_eTeamWeapon[iTeam], eWeapon.iIndex[i], eWeapon.iSlot[i]);
+					}
 				}
 			}
 		}
