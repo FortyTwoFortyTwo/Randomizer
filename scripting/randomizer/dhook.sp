@@ -287,6 +287,7 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 		return MRES_Ignored;
 	
 	bool bSuppressSound = DHookGetParam(hParams, 3);
+	EAmmoSource eAmmoSource = DHookGetParam(hParams, 4);
 	
 	Ammo_SaveActiveWeapon(iClient);
 	g_bSkipGetMaxAmmo = true;
@@ -320,13 +321,10 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 			SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapons[i]));	//Could've made GetMaxAmmo detour return correct class, meh
 			
 			int iMaxAmmo = SDKCall_GetMaxAmmo(iClient, iAmmoIndex);
-			
-			int iAdd = iCount;
-			if (iAmmoIndex == TF_AMMO_PRIMARY || iAmmoIndex == TF_AMMO_SECONDARY)	//based from DEFAULT_MAX_AMMO
-				iAdd = RoundToFloor(float(iCount) / float(DEFAULT_MAX_AMMO) * float(iMaxAmmo));
+			int iAdd = RoundToFloor(float(iCount) / float(DEFAULT_MAX_AMMO) * float(iMaxAmmo));	//based from DEFAULT_MAX_AMMO at GetMaxAmmo
 			
 			int iCurrent = Ammo_GetWeaponAmmo(iWeapons[i]);
-			iAdd = TF2_GiveAmmo(iClient, iCurrent, iAdd, iAmmoIndex, bSuppressSound);
+			iAdd = TF2_GiveAmmo(iClient, iWeapons[i], iCurrent, iAdd, iAmmoIndex, bSuppressSound, eAmmoSource);
 			Ammo_SetWeaponAmmo(iWeapons[i], iCurrent + iAdd);
 			iTotalAdded += iAdd;
 			
@@ -365,22 +363,15 @@ public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParam
 		return MRES_ChangedHandled;
 	}
 	
-	switch (DHookGetParam(hParams, 1))
+	if (DHookGetParam(hParams, 1) == TF_AMMO_METAL)
 	{
-		case TF_AMMO_PRIMARY, TF_AMMO_SECONDARY:
-		{
-			DHookSetReturn(hReturn, DEFAULT_MAX_AMMO);
-			return MRES_Supercede;
-		}
-		case TF_AMMO_METAL:
-		{
-			//Engineer have max metal 200 while others have 100
-			DHookSetParam(hParams, 2, TFClass_Engineer);
-			return MRES_ChangedHandled;
-		}
+		//Engineer have max metal 200 while others have 100
+		DHookSetParam(hParams, 2, TFClass_Engineer);
+		return MRES_ChangedHandled;
 	}
 	
-	return MRES_Ignored;
+	DHookSetReturn(hReturn, DEFAULT_MAX_AMMO);
+	return MRES_Supercede;
 }
 
 public MRESReturn DHook_TauntPre(int iClient, Handle hParams)

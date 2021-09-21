@@ -87,7 +87,15 @@ enum
 	TF_AMMO_METAL,		//Engineer's metal
 	TF_AMMO_GRENADES1,	//Weapon misc ammo 1, in randomizer we force all melee weapon misc ammo to this
 	TF_AMMO_GRENADES2,	//Weapon misc ammo 2, in randomizer we force all secondary weapon misc ammo to this
+	TF_AMMO_GRENADES3,
 	TF_AMMO_COUNT
+};
+
+enum EAmmoSource
+{
+	kAmmoSource_Pickup,					// this came from either a box of ammo or a player's dropped weapon
+	kAmmoSource_Resupply,				// resupply cabinet and/or full respawn
+	kAmmoSource_DispenserOrCart,		// the player is standing next to an engineer's dispenser or pushing the cart in a payload game
 };
 
 enum

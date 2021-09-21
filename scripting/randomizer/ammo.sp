@@ -46,22 +46,47 @@ void Ammo_SaveActiveWeapon(int iClient)
 
 void Ammo_UpdateActiveWeapon(int iClient)
 {
-	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iWeapon == INVALID_ENT_REFERENCE || !HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
-		return;
+	//Update ammo to use active weapon and any other weapons that doesn't use same ammotype
+	int iMaxWeapons = GetMaxWeapons();
+	int[] iWeapons = new int[iMaxWeapons];
+	int iAmmoTypeWeapon[TF_AMMO_COUNT];
 	
-	int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-	if (iAmmoType == -1)
-		return;
+	for (int i = 0; i < iMaxWeapons; i++)
+	{
+		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		if (iWeapons[i] == INVALID_ENT_REFERENCE)
+			continue;
+		
+		int iAmmoType = GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType");
+		if (iAmmoType == -1)
+			continue;
+		
+		if (!iAmmoTypeWeapon[iAmmoType])	//Ammotype not used yet
+			iAmmoTypeWeapon[iAmmoType] = iWeapons[i];
+		else if (iAmmoTypeWeapon[iAmmoType])	//More than 1 weapon use same ammotype, forget it
+			iAmmoTypeWeapon[iAmmoType] = INVALID_ENT_REFERENCE;
+	}
 	
-	char sRef[16];
-	IntToString(EntIndexToEntRef(iWeapon), sRef, sizeof(sRef));
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+	{
+		int iAmmoType = GetEntProp(iActiveWeapon, Prop_Send, "m_iPrimaryAmmoType");
+		if (iAmmoType != -1)
+			iAmmoTypeWeapon[iAmmoType] = iActiveWeapon;
+	}
 	
-	int iValue;
-	if (!g_mWeaponCurrentAmmo.GetValue(sRef, iValue))
-		return;
-	
-	SetEntProp(iClient, Prop_Send, "m_iAmmo", iValue, _, iAmmoType);
+	for (int iAmmoType = 0; iAmmoType < TF_AMMO_COUNT; iAmmoType++)
+	{
+		if (iAmmoTypeWeapon[iAmmoType] <= 0)
+			continue;
+		
+		char sRef[16];
+		IntToString(EntIndexToEntRef(iAmmoTypeWeapon[iAmmoType]), sRef, sizeof(sRef));
+		
+		int iValue;
+		if (g_mWeaponCurrentAmmo.GetValue(sRef, iValue))
+			SetEntProp(iClient, Prop_Send, "m_iAmmo", iValue, _, iAmmoType);
+	}
 }
 
 void Ammo_RemoveWeapon(int iWeapon)

@@ -394,11 +394,35 @@ stock bool TF2_SwitchToWeapon(int iClient, int iWeapon)
 		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
 }
 
-stock int TF2_GiveAmmo(int iClient, int iCurrent, int iAdd, int iAmmoIndex, bool bSuppressSound)
+stock int TF2_GiveAmmo(int iClient, int iWeapon, int iCurrent, int iAdd, int iAmmoIndex, bool bSuppressSound, EAmmoSource eAmmoSource)
 {
-	//Basically CTFPlayer::GiveAmmo but without interfering m_iAmmo
+	//Basically CTFPlayer::GiveAmmo but without interfering m_iAmmo and other weapons
 	if (iAdd <= 0 || iAmmoIndex < 0 || iAmmoIndex >= TF_AMMO_COUNT)	//TF2 using MAX_AMMO_SLOTS (32) instead of TF_AMMO_COUNT...
 		return 0;
+	
+	if (eAmmoSource == kAmmoSource_Resupply)
+	{
+		float flVal;
+		
+		switch (iAmmoIndex)
+		{
+			case TF_AMMO_GRENADES1:
+			{
+				if (TF2_WeaponFindAttribute(iWeapon, "grenades1_resupply_denied", flVal) && flVal > 0.0)
+					return 0;
+			}
+			case TF_AMMO_GRENADES2:
+			{
+				if (TF2_WeaponFindAttribute(iWeapon, "grenades2_resupply_denied", flVal) && flVal > 0.0)
+					return 0;
+			}
+			case TF_AMMO_GRENADES3:
+			{
+				if (TF2_WeaponFindAttribute(iWeapon, "grenades3_resupply_denied", flVal) && flVal > 0.0)
+					return 0;
+			}
+		}
+	}
 	
 	//There metal_pickup_decreased attrib stuffs in CTFPlayer::GiveAmmo, but shouldn't be needed here as metal wont be used here
 	
