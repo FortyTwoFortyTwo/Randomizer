@@ -244,6 +244,16 @@
 		"en"		"Reserve Shooter"
 	}
 	
+	"Weapon_PainTrain"
+	{
+		"en"		"Pain Train"
+	}
+	
+	"Weapon_HalfZatoichi"
+	{
+		"en"		"Half-Zatoichi"
+	}
+	
 	"Weapon_Scattergun"
 	{
 		"en"		"Scattergun"
@@ -274,226 +284,6 @@
 		"en"		"Back Scatter"
 	}
 	
-	"Weapon_RocketLauncher"
-	{
-		"en"		"Rocket Launcher"
-	}
-	
-	"Weapon_DirectHit"
-	{
-		"en"		"Direct Hit"
-	}
-	
-	"Weapon_BlackBox"
-	{
-		"en"		"Black Box"
-	}
-	
-	"Weapon_RocketJumper"
-	{
-		"en"		"Rocket Jumper"
-	}
-	
-	"Weapon_LibertyLauncher"
-	{
-		"en"		"Liberty Launcher"
-	}
-	
-	"Weapon_CowMangler5000"
-	{
-		"en"		"Cow Mangler 5000"
-	}
-	
-	"Weapon_Original"
-	{
-		"en"		"Original"
-	}
-	
-	"Weapon_BeggarBazooka"
-	{
-		"en"		"Beggar's Bazooka"
-	}
-	
-	"Weapon_AirStrike"
-	{
-		"en"		"Air Strike"
-	}
-	
-	"Weapon_FlameThrower"
-	{
-		"en"		"Flame Thrower"
-	}
-	
-	"Weapon_Backburner"
-	{
-		"en"		"Backburner"
-	}
-	
-	"Weapon_Degreaser"
-	{
-		"en"		"Degreaser"
-	}
-	
-	"Weapon_Phlogistinator"
-	{
-		"en"		"Phlogistinator"
-	}
-	
-	"Weapon_DragonFury"
-	{
-		"en"		"Dragon's Fury"
-	}
-	
-	"Weapon_GrenadeLauncher"
-	{
-		"en"		"Grenade Launcher"
-	}
-	
-	"Weapon_LochnLoad"
-	{
-		"en"		"Loch-n-Load"
-	}
-	
-	"Weapon_AliBabaWeeBooties"
-	{
-		"en"		"Ali Baba's Wee Booties"
-	}
-	
-	"Weapon_LooseCannon"
-	{
-		"en"		"Loose Cannon"
-	}
-	
-	"Weapon_IronBomber"
-	{
-		"en"		"Iron Bomber"
-	}
-	
-	"Weapon_Minigun"
-	{
-		"en"		"Minigun"
-	}
-	
-	"Weapon_Natascha"
-	{
-		"en"		"Natascha"
-	}
-	
-	"Weapon_BrassBeast"
-	{
-		"en"		"Brass Beast"
-	}
-	
-	"Weapon_Tomislav"
-	{
-		"en"		"Tomislav"
-	}
-	
-	"Weapon_HuoLongHeater"
-	{
-		"en"		"Huo-Long Heater"
-	}
-	
-	"Weapon_FrontierJustice"
-	{
-		"en"		"Frontier Justice"
-	}
-	
-	"Weapon_Widowmaker"
-	{
-		"en"		"Widowmaker"
-	}
-	
-	"Weapon_Pomson6000"
-	{
-		"en"		"Pomson 6000"
-	}
-	
-	"Weapon_RescueRanger"
-	{
-		"en"		"Rescue Ranger"
-	}
-	
-	"Weapon_SyringeGun"
-	{
-		"en"		"Syringe Gun"
-	}
-	
-	"Weapon_Blutsauger"
-	{
-		"en"		"Blutsauger"
-	}
-	
-	"Weapon_CrusaderCrossbow"
-	{
-		"en"		"Crusader's Crossbow"
-	}
-	
-	"Weapon_Overdose"
-	{
-		"en"		"Overdose"
-	}
-	
-	"Weapon_SniperRifle"
-	{
-		"en"		"Sniper Rifle"
-	}
-	
-	"Weapon_Huntsman"
-	{
-		"en"		"Huntsman"
-	}
-	
-	"Weapon_SydneySleeper"
-	{
-		"en"		"Sydney Sleeper"
-	}
-	
-	"Weapon_BazaarBargain"
-	{
-		"en"		"Bazaar Bargain"
-	}
-	
-	"Weapon_Machina"
-	{
-		"en"		"Machina"
-	}
-	
-	"Weapon_HitmanHeatmaker"
-	{
-		"en"		"Hitman's Heatmaker"
-	}
-	
-	"Weapon_Classic"
-	{
-		"en"		"Classic"
-	}
-	
-	"Weapon_Revolver"
-	{
-		"en"		"Revolver"
-	}
-	
-	"Weapon_Ambassador"
-	{
-		"en"		"Ambassador"
-	}
-	
-	"Weapon_LEtranger"
-	{
-		"en"		"L'Etranger"
-	}
-	
-	"Weapon_Enforcer"
-	{
-		"en"		"Enforcer"
-	}
-	
-	"Weapon_Diamondback"
-	{
-		"en"		"Diamondback"
-	}
-	
 	"Weapon_BonkAtomicPunch"
 	{
 		"en"		"Bonk! Atomic Punch"
@@ -522,196 +312,6 @@
 	"Weapon_FlyingGuillotine"
 	{
 		"en"		"Flying Guillotine"
-	}
-		
-	"Weapon_BuffBanner"
-	{
-		"en"		"Buff Banner"
-	}
-	
-	"Weapon_Gunboats"
-	{
-		"en"		"Gunboats"
-	}
-	
-	"Weapon_BattalionBackup"
-	{
-		"en"		"Battalion's Backup"
-	}
-	
-	"Weapon_Concheror"
-	{
-		"en"		"Concheror"
-	}
-	
-	"Weapon_RighteousBison"
-	{
-		"en"		"Righteous Bison"
-	}
-	
-	"Weapon_Mantreads"
-	{
-		"en"		"Mantreads"
-	}
-		
-	"Weapon_FlareGun"
-	{
-		"en"		"Flare Gun"
-	}
-	
-	"Weapon_Detonator"
-	{
-		"en"		"Detonator"
-	}
-	
-	"Weapon_Manmelter"
-	{
-		"en"		"Manmelter"
-	}
-	
-	"Weapon_ScorchShot"
-	{
-		"en"		"Scorch Shot"
-	}
-		
-	"Weapon_ThermalThruster"
-	{
-		"en"		"Thermal Thruster"
-	}
-	
-	"Weapon_GasPasser"
-	{
-		"en"		"Gas Passer"
-	}
-	
-	"Weapon_StickybombLauncher"
-	{
-		"en"		"Stickybomb Launcher"
-	}
-	
-	"Weapon_ScottishResistance"
-	{
-		"en"		"Scottish Resistance"
-	}
-	
-	"Weapon_CharginTarge"
-	{
-		"en"		"Chargin' Targe"
-	}
-	
-	"Weapon_StickyJumper"
-	{
-		"en"		"Sticky Jumper"
-	}
-	
-	"Weapon_SplendidScreen"
-	{
-		"en"		"Splendid Screen"
-	}
-	
-	"Weapon_TideTurner"
-	{
-		"en"		"Tide Turner"
-	}
-	
-	"Weapon_QuickiebombLauncher"
-	{
-		"en"		"Quickiebomb Launcher"
-	}
-		
-	"Weapon_Sandvich"
-	{
-		"en"		"Sandvich"
-	}
-	
-	"Weapon_DalokohsBar"
-	{
-		"en"		"Dalokohs Bar"
-	}
-	
-	"Weapon_BuffaloSteakSandvich"
-	{
-		"en"		"Buffalo Steak Sandvich"
-	}
-	
-	"Weapon_FamilyBusiness"
-	{
-		"en"		"Family Business"
-	}
-		
-	"Weapon_SecondBanana"
-	{
-		"en"		"Second Banana"
-	}
-	
-	"Weapon_Wrangler"
-	{
-		"en"		"Wrangler"
-	}
-	
-	"Weapon_ShortCircuit"
-	{
-		"en"		"Short Circuit"
-	}
-	
-	"Weapon_MediGun"
-	{
-		"en"		"Medi Gun"
-	}
-	
-	"Weapon_Kritzkrieg"
-	{
-		"en"		"Kritzkrieg"
-	}
-	
-	"Weapon_QuickFix"
-	{
-		"en"		"Quick-Fix"
-	}
-	
-	"Weapon_Vaccinator"
-	{
-		"en"		"Vaccinator"
-	}
-	
-	"Weapon_SMG"
-	{
-		"en"		"SMG"
-	}
-	
-	"Weapon_Razorback"
-	{
-		"en"		"Razorback"
-	}
-	
-	"Weapon_Jarate"
-	{
-		"en"		"Jarate"
-	}
-	
-	"Weapon_DarwinDangerShield"
-	{
-		"en"		"Darwin's Danger Shield"
-	}
-	
-	"Weapon_CozyCamper"
-	{
-		"en"		"Cozy Camper"
-	}
-	
-	"Weapon_CleanerCarbine"
-	{
-		"en"		"Cleaner's Carbine"
-	}
-	
-	"Weapon_Sapper"
-	{
-		"en"		"Sapper"
-	}
-	
-	"Weapon_RedTapeRecorder"
-	{
-		"en"		"Red-Tape Recorder"
 	}
 	
 	"Weapon_Bat"
@@ -759,6 +359,81 @@
 		"en"		"Wrap Assassin"
 	}
 	
+	"Weapon_RocketLauncher"
+	{
+		"en"		"Rocket Launcher"
+	}
+	
+	"Weapon_DirectHit"
+	{
+		"en"		"Direct Hit"
+	}
+	
+	"Weapon_BlackBox"
+	{
+		"en"		"Black Box"
+	}
+	
+	"Weapon_RocketJumper"
+	{
+		"en"		"Rocket Jumper"
+	}
+	
+	"Weapon_LibertyLauncher"
+	{
+		"en"		"Liberty Launcher"
+	}
+	
+	"Weapon_CowMangler5000"
+	{
+		"en"		"Cow Mangler 5000"
+	}
+	
+	"Weapon_Original"
+	{
+		"en"		"Original"
+	}
+	
+	"Weapon_BeggarBazooka"
+	{
+		"en"		"Beggar's Bazooka"
+	}
+	
+	"Weapon_AirStrike"
+	{
+		"en"		"Air Strike"
+	}
+	
+	"Weapon_BuffBanner"
+	{
+		"en"		"Buff Banner"
+	}
+	
+	"Weapon_Gunboats"
+	{
+		"en"		"Gunboats"
+	}
+	
+	"Weapon_BattalionBackup"
+	{
+		"en"		"Battalion's Backup"
+	}
+	
+	"Weapon_Concheror"
+	{
+		"en"		"Concheror"
+	}
+	
+	"Weapon_RighteousBison"
+	{
+		"en"		"Righteous Bison"
+	}
+	
+	"Weapon_Mantreads"
+	{
+		"en"		"Mantreads"
+	}
+	
 	"Weapon_Shovel"
 	{
 		"en"		"Shovel"
@@ -767,16 +442,6 @@
 	"Weapon_Equalizer"
 	{
 		"en"		"Equalizer"
-	}
-	
-	"Weapon_PainTrain"
-	{
-		"en"		"Pain Train"
-	}
-	
-	"Weapon_HalfZatoichi"
-	{
-		"en"		"Half-Zatoichi"
 	}
 	
 	"Weapon_MarketGardener"
@@ -792,6 +457,61 @@
 	"Weapon_EscapePlan"
 	{
 		"en"		"Escape Plan"
+	}
+	
+	"Weapon_FlameThrower"
+	{
+		"en"		"Flame Thrower"
+	}
+	
+	"Weapon_Backburner"
+	{
+		"en"		"Backburner"
+	}
+	
+	"Weapon_Degreaser"
+	{
+		"en"		"Degreaser"
+	}
+	
+	"Weapon_Phlogistinator"
+	{
+		"en"		"Phlogistinator"
+	}
+	
+	"Weapon_DragonFury"
+	{
+		"en"		"Dragon's Fury"
+	}
+	
+	"Weapon_FlareGun"
+	{
+		"en"		"Flare Gun"
+	}
+	
+	"Weapon_Detonator"
+	{
+		"en"		"Detonator"
+	}
+	
+	"Weapon_Manmelter"
+	{
+		"en"		"Manmelter"
+	}
+	
+	"Weapon_ScorchShot"
+	{
+		"en"		"Scorch Shot"
+	}
+		
+	"Weapon_ThermalThruster"
+	{
+		"en"		"Thermal Thruster"
+	}
+	
+	"Weapon_GasPasser"
+	{
+		"en"		"Gas Passer"
 	}
 	
 	"Weapon_FireAxe"
@@ -839,6 +559,66 @@
 		"en"		"Hot Hand"
 	}
 	
+	"Weapon_GrenadeLauncher"
+	{
+		"en"		"Grenade Launcher"
+	}
+	
+	"Weapon_LochnLoad"
+	{
+		"en"		"Loch-n-Load"
+	}
+	
+	"Weapon_AliBabaWeeBooties"
+	{
+		"en"		"Ali Baba's Wee Booties"
+	}
+	
+	"Weapon_LooseCannon"
+	{
+		"en"		"Loose Cannon"
+	}
+	
+	"Weapon_IronBomber"
+	{
+		"en"		"Iron Bomber"
+	}
+	
+	"Weapon_StickybombLauncher"
+	{
+		"en"		"Stickybomb Launcher"
+	}
+	
+	"Weapon_ScottishResistance"
+	{
+		"en"		"Scottish Resistance"
+	}
+	
+	"Weapon_CharginTarge"
+	{
+		"en"		"Chargin' Targe"
+	}
+	
+	"Weapon_StickyJumper"
+	{
+		"en"		"Sticky Jumper"
+	}
+	
+	"Weapon_SplendidScreen"
+	{
+		"en"		"Splendid Screen"
+	}
+	
+	"Weapon_TideTurner"
+	{
+		"en"		"Tide Turner"
+	}
+	
+	"Weapon_QuickiebombLauncher"
+	{
+		"en"		"Quickiebomb Launcher"
+	}
+	
 	"Weapon_Bottle"
 	{
 		"en"		"Bottle"
@@ -847,11 +627,6 @@
 	"Weapon_Eyelander"
 	{
 		"en"		"Eyelander"
-	}
-	
-	"Weapon_PainTrain"
-	{
-		"en"		"Pain Train"
 	}
 	
 	"Weapon_ScotsmanSkullcutter"
@@ -869,14 +644,59 @@
 		"en"		"Claidheamh Mòr"
 	}
 	
-	"Weapon_HalfZatoichi"
-	{
-		"en"		"Half-Zatoichi"
-	}
-	
 	"Weapon_PersianPersuader"
 	{
 		"en"		"Persian Persuader"
+	}
+	
+	"Weapon_Minigun"
+	{
+		"en"		"Minigun"
+	}
+	
+	"Weapon_Natascha"
+	{
+		"en"		"Natascha"
+	}
+	
+	"Weapon_BrassBeast"
+	{
+		"en"		"Brass Beast"
+	}
+	
+	"Weapon_Tomislav"
+	{
+		"en"		"Tomislav"
+	}
+	
+	"Weapon_HuoLongHeater"
+	{
+		"en"		"Huo-Long Heater"
+	}
+	
+	"Weapon_Sandvich"
+	{
+		"en"		"Sandvich"
+	}
+	
+	"Weapon_DalokohsBar"
+	{
+		"en"		"Dalokohs Bar"
+	}
+	
+	"Weapon_BuffaloSteakSandvich"
+	{
+		"en"		"Buffalo Steak Sandvich"
+	}
+	
+	"Weapon_FamilyBusiness"
+	{
+		"en"		"Family Business"
+	}
+		
+	"Weapon_SecondBanana"
+	{
+		"en"		"Second Banana"
 	}
 	
 	"Weapon_Fists"
@@ -914,6 +734,36 @@
 		"en"		"Holiday Punch"
 	}
 	
+	"Weapon_FrontierJustice"
+	{
+		"en"		"Frontier Justice"
+	}
+	
+	"Weapon_Widowmaker"
+	{
+		"en"		"Widowmaker"
+	}
+	
+	"Weapon_Pomson6000"
+	{
+		"en"		"Pomson 6000"
+	}
+	
+	"Weapon_RescueRanger"
+	{
+		"en"		"Rescue Ranger"
+	}
+	
+	"Weapon_Wrangler"
+	{
+		"en"		"Wrangler"
+	}
+	
+	"Weapon_ShortCircuit"
+	{
+		"en"		"Short Circuit"
+	}
+	
 	"Weapon_Wrench"
 	{
 		"en"		"Wrench"
@@ -937,6 +787,46 @@
 	"Weapon_EurekaEffect"
 	{
 		"en"		"Eureka Effect"
+	}
+	
+	"Weapon_SyringeGun"
+	{
+		"en"		"Syringe Gun"
+	}
+	
+	"Weapon_Blutsauger"
+	{
+		"en"		"Blutsauger"
+	}
+	
+	"Weapon_CrusaderCrossbow"
+	{
+		"en"		"Crusader's Crossbow"
+	}
+	
+	"Weapon_Overdose"
+	{
+		"en"		"Overdose"
+	}
+	
+	"Weapon_MediGun"
+	{
+		"en"		"Medi Gun"
+	}
+	
+	"Weapon_Kritzkrieg"
+	{
+		"en"		"Kritzkrieg"
+	}
+	
+	"Weapon_QuickFix"
+	{
+		"en"		"Quick-Fix"
+	}
+	
+	"Weapon_Vaccinator"
+	{
+		"en"		"Vaccinator"
 	}
 	
 	"Weapon_Bonesaw"
@@ -964,6 +854,71 @@
 		"en"		"Solemn Vow"
 	}
 	
+	"Weapon_SniperRifle"
+	{
+		"en"		"Sniper Rifle"
+	}
+	
+	"Weapon_Huntsman"
+	{
+		"en"		"Huntsman"
+	}
+	
+	"Weapon_SydneySleeper"
+	{
+		"en"		"Sydney Sleeper"
+	}
+	
+	"Weapon_BazaarBargain"
+	{
+		"en"		"Bazaar Bargain"
+	}
+	
+	"Weapon_Machina"
+	{
+		"en"		"Machina"
+	}
+	
+	"Weapon_HitmanHeatmaker"
+	{
+		"en"		"Hitman's Heatmaker"
+	}
+	
+	"Weapon_Classic"
+	{
+		"en"		"Classic"
+	}
+	
+	"Weapon_SMG"
+	{
+		"en"		"SMG"
+	}
+	
+	"Weapon_Razorback"
+	{
+		"en"		"Razorback"
+	}
+	
+	"Weapon_Jarate"
+	{
+		"en"		"Jarate"
+	}
+	
+	"Weapon_DarwinDangerShield"
+	{
+		"en"		"Darwin's Danger Shield"
+	}
+	
+	"Weapon_CozyCamper"
+	{
+		"en"		"Cozy Camper"
+	}
+	
+	"Weapon_CleanerCarbine"
+	{
+		"en"		"Cleaner's Carbine"
+	}
+	
 	"Weapon_Kukri"
 	{
 		"en"		"Kukri"
@@ -982,6 +937,41 @@
 	"Weapon_Shahanshah"
 	{
 		"en"		"Shahanshah"
+	}
+	
+	"Weapon_Revolver"
+	{
+		"en"		"Revolver"
+	}
+	
+	"Weapon_Ambassador"
+	{
+		"en"		"Ambassador"
+	}
+	
+	"Weapon_LEtranger"
+	{
+		"en"		"L'Etranger"
+	}
+	
+	"Weapon_Enforcer"
+	{
+		"en"		"Enforcer"
+	}
+	
+	"Weapon_Diamondback"
+	{
+		"en"		"Diamondback"
+	}
+	
+	"Weapon_Sapper"
+	{
+		"en"		"Sapper"
+	}
+	
+	"Weapon_RedTapeRecorder"
+	{
+		"en"		"Red-Tape Recorder"
 	}
 	
 	"Weapon_Knife"
