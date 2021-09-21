@@ -1,5 +1,8 @@
 #define FILEPATH_CONFIG_HUDS "configs/randomizer/huds.cfg"
 
+#define MENU_MAX_ITEM_SINGLE	9	//Can display 9 items in single page
+#define MENU_MAX_ITEM_MULTIPLE	7	//Can display 7 items for each page
+
 enum HudEntity
 {
 	HudEntity_Client,
@@ -84,12 +87,9 @@ enum struct HudWeapon
 	char sName[64];				//Translated name of weapon to display
 	ArrayList aHudInfo;			//Arrays of HudInfo to display
 	
-	bool GetText(int iClient, char[] sDisplay, int iLength)
+	void GetText(int iClient, char[] sDisplay, int iLength)
 	{
 		int iWeapon = EntRefToEntIndex(this.iRef);
-		if (iWeapon == INVALID_ENT_REFERENCE)
-			return false;
-		
 		strcopy(sDisplay, iLength, this.sName);
 		
 		//Go through every netprops to display
@@ -149,13 +149,13 @@ enum struct HudWeapon
 			if (Controls_GetPassiveInfo(iClient, iWeapon, sBuffer, sizeof(sBuffer)))
 				Format(sDisplay, iLength, "%s (%s)", sDisplay, sBuffer);
 		}
-		
-		return true;
 	}
 }
 
 static ArrayList g_aHuds;	//Arrays of HudInfo
 static ArrayList g_aHudWeapon[TF_MAXPLAYERS];	//Arrays of HudWeapon
+static Menu g_iHudClientMenu[TF_MAXPLAYERS];
+static int g_iHudClientPage[TF_MAXPLAYERS];	//Current page client is at
 
 void Huds_Init()
 {
@@ -283,6 +283,7 @@ void Huds_RefreshClient(int iClient)
 		delete view_as<ArrayList>(g_aHudWeapon[iClient].Get(i, HudWeapon::aHudInfo));
 	
 	g_aHudWeapon[iClient].Clear();
+	g_iHudClientPage[iClient] = 0;	//Restart current page
 	
 	if (g_cvHuds.IntValue == HudMode_None)	//ConVar dont want us to do anything
 		return;
@@ -379,15 +380,34 @@ public int Huds_SortWeapons(int iPos1, int iPos2, Handle hMap, Handle hHandle)
 	return hudWeapon1.iRef < hudWeapon2.iRef ? -1 : 1;
 }
 
-public Action Huds_ClientDisplayText(Handle hTimer, int iClient)
+public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 {
-	if (g_hTimerClientHud[iClient] != hTimer)
-		return Plugin_Stop;
+	if (g_hTimerClientHud[iClient] != hTimer || !IsClientInGame(iClient))
+		return;
 	
-	Huds_ClientDisplayMenu(iClient); //TODO remove me
+	//Remove any deleted weapons
+	int iLength = g_aHudWeapon[iClient].Length;
+	for (int i = iLength - 1; i >= 0 ; i--)
+	{
+		HudWeapon hudWeapon;
+		g_aHudWeapon[iClient].GetArray(i, hudWeapon);
+		if (!IsValidEntity(hudWeapon.iRef))
+			g_aHudWeapon[iClient].Erase(i);
+	}
 	
-	if (g_cvHuds.IntValue != HudMode_Text)
-		return Plugin_Continue;
+	switch (g_cvHuds.IntValue)
+	{
+		case HudMode_Text: Huds_ClientDisplayText(iClient);
+		case HudMode_Menu: Huds_ClientDisplayMenu(iClient);
+	}
+}
+
+void Huds_ClientDisplayText(int iClient)
+{
+	g_hTimerClientHud[iClient] = CreateTimer(0.2, Huds_ClientDisplay, iClient);
+	
+	if (!IsPlayerAlive(iClient))
+		return;
 	
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon != INVALID_ENT_REFERENCE)
@@ -402,8 +422,7 @@ public Action Huds_ClientDisplayText(Handle hTimer, int iClient)
 		g_aHudWeapon[iClient].GetArray(i, hudWeapon);
 		
 		char sBuffer[256];
-		if (!hudWeapon.GetText(iClient, sBuffer, sizeof(sBuffer)))
-			continue;
+		hudWeapon.GetText(iClient, sBuffer, sizeof(sBuffer));
 		
 		if (iActiveWeapon == hudWeapon.iRef)
 			Format(sBuffer, sizeof(sBuffer), "> %s", sBuffer);
@@ -416,34 +435,66 @@ public Action Huds_ClientDisplayText(Handle hTimer, int iClient)
 	
 	SetHudTextParams(0.2, 1.0, 0.5, 255, 255, 255, 255);
 	ShowHudText(iClient, 0, sDisplay);
-	
-	return Plugin_Continue;
 }
 
 void Huds_ClientDisplayMenu(int iClient)
 {
-	if (g_cvHuds.IntValue != HudMode_Menu)
+	g_hTimerClientHud[iClient] = CreateTimer(1.0, Huds_ClientDisplay, iClient);
+	
+	if (!IsPlayerAlive(iClient))
 		return;
+	
+	if (GetClientMenu(iClient) != MenuSource_None && !g_iHudClientMenu[iClient])
+		return;	//Client currently have menu opened thats not this, don't disturb active menu
 	
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon != INVALID_ENT_REFERENCE)
 		iActiveWeapon = EntIndexToEntRef(iActiveWeapon);
 	
 	Menu hMenu = new Menu(Huds_MenuAction);
+	
+	char sTitle[64];
+	Format(sTitle, sizeof(sTitle), "%T\n ", "Huds_Title", iClient);
+	hMenu.SetTitle(sTitle);
+	
 	int iCount;
 	
+	bool bPrevious, bNext;
 	int iLength = g_aHudWeapon[iClient].Length;
-	for (int i = 0; i < iLength; i++)
+	int iStart = 0;
+	int iEnd = iLength;
+	int iMaxDisplay = MENU_MAX_ITEM_SINGLE;
+	
+	if (iLength > MENU_MAX_ITEM_SINGLE)
+	{
+		//Too many weapons to fit in one page, work through which page to display
+		
+		iStart = g_iHudClientPage[iClient] * MENU_MAX_ITEM_MULTIPLE;
+		iMaxDisplay = MENU_MAX_ITEM_MULTIPLE;
+		
+		if (g_iHudClientPage[iClient] > 0)
+			bPrevious = true;
+		
+		if ((g_iHudClientPage[iClient] + 1) * MENU_MAX_ITEM_MULTIPLE < iLength)
+		{
+			bNext = true;
+			iEnd = iStart + MENU_MAX_ITEM_MULTIPLE;
+		}
+	}
+	
+	for (int i = iStart; i < iEnd; i++)
 	{
 		HudWeapon hudWeapon;
 		g_aHudWeapon[iClient].GetArray(i, hudWeapon);
 		
 		char sBuffer[256];
-		if (!hudWeapon.GetText(iClient, sBuffer, sizeof(sBuffer)))
-			continue;
+		hudWeapon.GetText(iClient, sBuffer, sizeof(sBuffer));
 		
-		if (iActiveWeapon == hudWeapon.iRef)
+		if (iActiveWeapon == hudWeapon.iRef)	//Active weapon
 			Format(sBuffer, sizeof(sBuffer), "> %s", sBuffer);
+		
+		if (iMaxDisplay == MENU_MAX_ITEM_MULTIPLE && i + 1 == iEnd)	//Add spaces above previous & next button
+			StrCat(sBuffer, sizeof(sBuffer), "\n ");
 		
 		char sValue[16];
 		IntToString(hudWeapon.iRef, sValue, sizeof(sValue));
@@ -452,11 +503,38 @@ void Huds_ClientDisplayMenu(int iClient)
 		iCount++;
 	}
 	
-	if (iCount <= 9)
-		hMenu.Pagination = MENU_NO_PAGINATION;
+	//If multi-page, fill remaining items as nothing for previous & next button
+	if (iLength > MENU_MAX_ITEM_SINGLE)
+		for (int i = iEnd - iStart; i < iMaxDisplay; i++)
+			hMenu.AddItem("", "", ITEMDRAW_NOTEXT|ITEMDRAW_SPACER);
 	
+	if (bPrevious)
+	{
+		char sPrevious[64];
+		Format(sPrevious, sizeof(sPrevious), "%T", "Previous", iClient);
+		hMenu.AddItem("previous", sPrevious);
+	}
+	else if (iLength > MENU_MAX_ITEM_SINGLE)
+	{
+		hMenu.AddItem("", "", ITEMDRAW_NOTEXT|ITEMDRAW_SPACER);
+	}
+	
+	if (bNext)
+	{
+		char sNext[64];
+		Format(sNext, sizeof(sNext), "%T", "Next", iClient);
+		hMenu.AddItem("next", sNext);
+	}
+	else if (iLength > MENU_MAX_ITEM_SINGLE)
+	{
+		hMenu.AddItem("", "", ITEMDRAW_NOTEXT|ITEMDRAW_SPACER);
+	}
+	
+	hMenu.Pagination = MENU_NO_PAGINATION;
+	hMenu.ExitButton = false;
 	hMenu.OptionFlags |= MENUFLAG_NO_SOUND;
-	hMenu.Display(iClient, MENU_TIME_FOREVER);
+	hMenu.Display(iClient, 5);
+	g_iHudClientMenu[iClient] = hMenu;
 }
 
 public int Huds_MenuAction(Menu hMenu, MenuAction action, int iClient, int iChoice)
@@ -465,15 +543,33 @@ public int Huds_MenuAction(Menu hMenu, MenuAction action, int iClient, int iChoi
 	{
 		case MenuAction_End:
 		{
+			for (int i = 1; i <= MaxClients; i++)
+				if (g_iHudClientMenu[i] == hMenu)
+					g_iHudClientMenu[i] = null;
+			
 			delete hMenu;
 		}
 		case MenuAction_Select:
 		{
 			char sValue[16];
 			hMenu.GetItem(iChoice, sValue, sizeof(sValue));
-			int iRef = StringToInt(sValue);
-			if (IsValidEntity(iRef))
-				TF2_SwitchToWeapon(iClient, EntRefToEntIndex(iRef));
+			
+			if (StrEqual(sValue, "previous"))
+			{
+				g_iHudClientPage[iClient]--;
+			}
+			else if (StrEqual(sValue, "next"))
+			{
+				g_iHudClientPage[iClient]++;
+			}
+			else
+			{
+				int iRef = StringToInt(sValue);
+				if (IsValidEntity(iRef))
+					TF2_SwitchToWeapon(iClient, EntRefToEntIndex(iRef));
+			}
+			
+			Huds_ClientDisplayMenu(iClient);
 		}
 	}
 }

@@ -354,6 +354,7 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+	LoadTranslations("core.phrases");
 	LoadTranslations("randomizer.phrases");
 	
 	//OnLibraryAdded dont always call TF2Items on plugin start
@@ -479,7 +480,7 @@ public void OnClientPutInServer(int iClient)
 	if (!g_bEnabled)
 		return;
 	
-	g_hTimerClientHud[iClient] = CreateTimer(0.2, Huds_ClientDisplayText, iClient, TIMER_REPEAT);
+	g_hTimerClientHud[iClient] = CreateTimer(0.2, Huds_ClientDisplay, iClient);
 	
 	DHook_HookGiveNamedItem(iClient);
 	DHook_HookClient(iClient);

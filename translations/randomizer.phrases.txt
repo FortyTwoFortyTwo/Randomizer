@@ -60,6 +60,11 @@
 		"en"		"unable to cloak"
 	}
 	
+	"Huds_Title"
+	{
+		"en"		"Weapons"
+	}
+	
 	"Huds_EffectBarRegenTime"
 	{
 		"#format"	"{1:.0f}"
