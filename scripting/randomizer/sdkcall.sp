@@ -87,7 +87,7 @@ public void SDKCall_Init(GameData hGameData)
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseCombatCharacter::Weapon_CanSwitchTo");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_ByValue);
 	g_hSDKWeaponCanSwitchTo = EndPrepSDKCall();
 	if (!g_hSDKWeaponCanSwitchTo)
 		LogError("Failed to create call: CBaseCombatCharacter::Weapon_CanSwitchTo");

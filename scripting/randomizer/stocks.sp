@@ -367,7 +367,7 @@ stock bool TF2_CanSwitchTo(int iClient, int iWeapon)
 {
 	char sClassname[32];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-	if (StrContains(sClassname, "tf_weapon") != 0 || StrContains(sClassname, "tf_weapon_parachute") == 0)
+	if (StrContains(sClassname, "tf_weapon") != 0)
 		return false;
 	
 	return SDKCall_WeaponCanSwitchTo(iClient, iWeapon);
