@@ -85,8 +85,8 @@ enum
 	TF_AMMO_PRIMARY,	//General primary weapon ammo
 	TF_AMMO_SECONDARY,	//General secondary weapon ammo
 	TF_AMMO_METAL,		//Engineer's metal
-	TF_AMMO_GRENADES1,	//Weapon misc ammo 1, in randomizer we force all melee weapon misc ammo to this
-	TF_AMMO_GRENADES2,	//Weapon misc ammo 2, in randomizer we force all secondary weapon misc ammo to this
+	TF_AMMO_GRENADES1,	//Weapon misc ammo 1
+	TF_AMMO_GRENADES2,	//Weapon misc ammo 2
 	TF_AMMO_GRENADES3,
 	TF_AMMO_COUNT
 };
