@@ -28,7 +28,7 @@
 #define TEAM_MAX	3	//Last valid TFTeam, TFTeam_Blue
 
 #define DEFAULT_MAX_AMMO	1000	//Used for cases when 2 weapons use same ammotype, number only matters when diving for ammo pickups
-#define MAX_WEAPONS		56			//Max 48 tf_weapon and 8 tf_wearable from TF2
+#define MAX_WEAPONS		40			//Max 48 m_hMyWeapons, give 8 as a space for other weapons (PDA, action etc)
 
 #define PARTICLE_BEAM_BLU	"medicgun_beam_blue"
 #define PARTICLE_BEAM_RED	"medicgun_beam_red"
