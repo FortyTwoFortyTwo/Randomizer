@@ -341,7 +341,6 @@ int g_iClientEurekaTeleporting;
 #include "randomizer/viewmodels.sp"
 #include "randomizer/weapons.sp"
 
-#include "randomizer/ammo.sp"
 #include "randomizer/commands.sp"
 #include "randomizer/dhook.sp"
 #include "randomizer/event.sp"
@@ -380,7 +379,6 @@ public void OnPluginStart()
 	
 	delete hGameData;
 	
-	Ammo_Init();
 	Commands_Init();
 	Controls_Init();
 	Event_Init();
@@ -532,10 +530,7 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 public void OnEntityDestroyed(int iEntity)
 {
 	if (0 <= iEntity < 2048)
-	{
-		Ammo_RemoveWeapon(iEntity);
 		Properties_RemoveWeapon(iEntity);
-	}
 }
 
 public void ConVar_EnableChanged(ConVar convar, const char[] oldValue, const char[] newValue)

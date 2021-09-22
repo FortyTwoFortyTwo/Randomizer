@@ -271,25 +271,25 @@ public void DHook_SpawnPost(int iWeapon)
 public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 {
 	//Detour is used instead of virtual because non-virtual CTFPlayer::GiveAmmo directly calls CBaseCombatCharacter::GiveAmmo in non-virtual way
-	int iWeapon = Ammo_GetForceWeapon();
+	int iWeapon = Properties_GetForceWeaponAmmo();
 	if (iWeapon != INVALID_ENT_REFERENCE)
-		Ammo_ResetForceWeapon();
+		Properties_ResetForceWeaponAmmo();
 	
 	if (g_bSkipGetMaxAmmo)
-		return MRES_Ignored;
-	
-	int iAmmoIndex = DHookGetParam(hParams, 2);
-	if (iAmmoIndex == TF_AMMO_METAL)	//Nothing fancy for metal
 		return MRES_Ignored;
 	
 	int iCount = DHookGetParam(hParams, 1);
 	if (iCount <= 0)
 		return MRES_Ignored;
 	
+	int iAmmoType = DHookGetParam(hParams, 2);
+	if (iAmmoType == TF_AMMO_METAL)	//Nothing fancy for metal
+		return MRES_Ignored;
+	
 	bool bSuppressSound = DHookGetParam(hParams, 3);
 	EAmmoSource eAmmoSource = DHookGetParam(hParams, 4);
 	
-	Ammo_SaveActiveWeapon(iClient);
+	Properties_SaveActiveWeaponAmmo(iClient);
 	g_bSkipGetMaxAmmo = true;
 	
 	int iTotalAdded;
@@ -301,7 +301,7 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 	for (int i = 0; i < iMaxWeapons; i++)
 	{
 		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
-		if (iWeapons[i] != INVALID_ENT_REFERENCE && GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType") == iAmmoIndex)
+		if (iWeapons[i] != INVALID_ENT_REFERENCE && GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
 			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
 	}
 	
@@ -309,7 +309,7 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 	for (int i = 0; i < iMaxWeapons; i++)
 	{
 		bool bGive;
-		if (iWeapon == INVALID_ENT_REFERENCE && iWeapons[i] != INVALID_ENT_REFERENCE && GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType") == iAmmoIndex)
+		if (iWeapon == INVALID_ENT_REFERENCE && iWeapons[i] != INVALID_ENT_REFERENCE && GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
 			bGive = true;
 		else if (iWeapon != INVALID_ENT_REFERENCE && iWeapon == iWeapons[i])
 			bGive = true;
@@ -320,12 +320,12 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 			
 			SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapons[i]));	//Could've made GetMaxAmmo detour return correct class, meh
 			
-			int iMaxAmmo = SDKCall_GetMaxAmmo(iClient, iAmmoIndex);
+			int iMaxAmmo = SDKCall_GetMaxAmmo(iClient, iAmmoType);
 			int iAdd = RoundToFloor(float(iCount) / float(DEFAULT_MAX_AMMO) * float(iMaxAmmo));	//based from DEFAULT_MAX_AMMO at GetMaxAmmo
 			
-			int iCurrent = Ammo_GetWeaponAmmo(iWeapons[i]);
-			iAdd = TF2_GiveAmmo(iClient, iWeapons[i], iCurrent, iAdd, iAmmoIndex, bSuppressSound, eAmmoSource);
-			Ammo_SetWeaponAmmo(iWeapons[i], iCurrent + iAdd);
+			int iCurrent = Properties_GetWeaponPropInt(iWeapons[i], "m_iAmmo");
+			iAdd = TF2_GiveAmmo(iClient, iWeapons[i], iCurrent, iAdd, iAmmoType, bSuppressSound, eAmmoSource);
+			Properties_SetWeaponPropInt(iWeapons[i], "m_iAmmo", iCurrent + iAdd);
 			iTotalAdded += iAdd;
 			
 			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
@@ -338,7 +338,7 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 	
 	//Set class and ammo back to what it was for active weapon
 	RevertClientClass(iClient);
-	Ammo_UpdateActiveWeapon(iClient);
+	Properties_UpdateActiveWeaponAmmo(iClient);
 	
 	g_bSkipGetMaxAmmo = false;
 	
@@ -348,9 +348,9 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 
 public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
 {
-	int iWeapon = Ammo_GetForceWeapon();
+	int iWeapon = Properties_GetForceWeaponAmmo();
 	if (iWeapon != INVALID_ENT_REFERENCE)
-		Ammo_ResetForceWeapon();	//Could add primary ammo type check, but it should always be true anyway
+		Properties_ResetForceWeaponAmmo();	//Could add primary ammo type check, but it should always be true anyway
 	
 	if (g_bSkipGetMaxAmmo)
 		return MRES_Ignored;
@@ -707,7 +707,7 @@ public MRESReturn DHook_UpdateRageBuffsAndRagePre(Address pPlayerShared)
 	if (g_bSkipUpdateRageBuffsAndRage || iClient <= 0 || iClient > MaxClients)
 		return MRES_Ignored;
 	
-	float flRageType = Properties_GetBuffTypeAttribute(iClient);
+	float flRageType = TF2_GetAttributeAdditive(iClient, "mod soldier buff type");
 	if (!flRageType) //We don't have any rage items, don't need to do anything
 		return MRES_Ignored;
 	
@@ -789,7 +789,7 @@ public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParam
 		return MRES_Ignored;
 	
 	int iBuffType = DHookGetParam(hParams, 2);
-	float flClientRageType = Properties_GetBuffTypeAttribute(iClient);
+	float flClientRageType = TF2_GetAttributeAdditive(iClient, "mod soldier buff type");
 	TF2Attrib_SetByName(iClient, "mod soldier buff type", view_as<float>(iBuffType) - flClientRageType);
 	
 	Properties_LoadRageProps(iClient, iWeapon);
@@ -920,7 +920,7 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 public MRESReturn DHook_GetEffectBarAmmoPost(int iWeapon, Handle hReturn)
 {
 	//This function is only called for GetAmmoCount, GetMaxAmmo and GiveAmmo
-	Ammo_SetForceWeapon(iWeapon);
+	Properties_SetForceWeaponAmmo(iWeapon);
 }
 
 public MRESReturn DHook_MyTouchPre(int iHealthKit, Handle hReturn, Handle hParams)
@@ -1095,11 +1095,11 @@ public MRESReturn DHook_EquipWearablePost(int iClient, Handle hParams)
 
 public MRESReturn DHook_GetAmmoCountPre(int iClient, Handle hReturn, Handle hParams)
 {
-	int iWeapon = Ammo_GetForceWeapon();
+	int iWeapon = Properties_GetForceWeaponAmmo();
 	if (iWeapon != INVALID_ENT_REFERENCE)
 	{
-		Ammo_ResetForceWeapon();
-		DHookSetReturn(hReturn, Ammo_GetWeaponAmmo(iWeapon));
+		Properties_ResetForceWeaponAmmo();
+		DHookSetReturn(hReturn, Properties_GetWeaponPropInt(iWeapon, "m_iAmmo"));
 		return MRES_Supercede;
 	}
 	

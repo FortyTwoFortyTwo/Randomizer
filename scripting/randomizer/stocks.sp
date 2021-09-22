@@ -181,6 +181,44 @@ stock bool TF2_IndexFindAttribute(int iIndex, const char[] sAttrib, float &flVal
 	return false;
 }
 
+float TF2_GetAttributePercentage(int iClient, char[] sAttrib)
+{
+	float flTotal = 1.0;
+	
+	Address pAttrib = TF2Attrib_GetByName(iClient, sAttrib);
+	if (pAttrib != Address_Null)
+		flTotal *= TF2Attrib_GetValue(pAttrib);
+	
+	int iWeapon, iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		float flVal;
+		TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal);
+		flTotal *= flVal;
+	}
+	
+	return flTotal;
+}
+
+float TF2_GetAttributeAdditive(int iClient, char[] sAttrib)
+{
+	float flTotal;
+	
+	Address pAttrib = TF2Attrib_GetByName(iClient, sAttrib);
+	if (pAttrib != Address_Null)
+		flTotal += TF2Attrib_GetValue(pAttrib);
+	
+	int iWeapon, iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		float flVal;
+		TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal);
+		flTotal += flVal;
+	}
+	
+	return flTotal;
+}
+
 stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos, bool bCosmetic = false)
 {
 	//Could be looped through client slots, but would cause issues with >1 weapons in same slot
@@ -423,8 +461,11 @@ stock int TF2_GiveAmmo(int iClient, int iWeapon, int iCurrent, int iAdd, int iAm
 			}
 		}
 	}
-	
-	//There metal_pickup_decreased attrib stuffs in CTFPlayer::GiveAmmo, but shouldn't be needed here as metal wont be used here
+	else if (iAmmoIndex == TF_AMMO_METAL)	//Must not be from kAmmoSource_Resupply
+	{
+		float flVal = TF2_GetAttributePercentage(iClient, "metal_pickup_decreased");
+		iAdd = RoundToFloor(flVal * float(iAdd));
+	}
 	
 	int iMaxAmmo = SDKCall_GetMaxAmmo(iClient, iAmmoIndex);
 	if (iAdd + iCurrent > iMaxAmmo)

@@ -1,6 +1,8 @@
 static StringMap g_mPropertiesWeaponSend[2048];
 static StringMap g_mPropertiesWeaponData[2048];
 
+static int g_iPropertiesForceWeaponAmmo = INVALID_ENT_REFERENCE;
+
 // Load & Save Send Prop
 
 void Properties_LoadWeaponPropInt(int iClient, int iWeapon, const char[] sProp, int iElement = 0)
@@ -109,15 +111,6 @@ void Properties_SaveWeaponDataFloat(int iClient, int iWeapon, int iOffset)
 
 // Other
 
-bool Properties_HasWeaponProp(int iWeapon, const char[] sProp)
-{
-	if (!g_mPropertiesWeaponSend[iWeapon])
-		return false;
-	
-	any value;
-	return g_mPropertiesWeaponSend[iWeapon].GetValue(sProp, value);
-}
-
 int Properties_GetWeaponPropInt(int iWeapon, const char[] sProp)
 {
 	if (!g_mPropertiesWeaponSend[iWeapon])
@@ -162,6 +155,84 @@ void Properties_RemoveWeapon(int iWeapon)
 	delete g_mPropertiesWeaponData[iWeapon];
 }
 
+// Ammos
+
+void Properties_SaveActiveWeaponAmmo(int iClient)
+{
+	if (g_iPropertiesForceWeaponAmmo != INVALID_ENT_REFERENCE)
+		ThrowError("Properties_SaveActiveWeaponAmmo called unexpected when g_iPropertiesForceWeaponAmmo '%d' is active", g_iPropertiesForceWeaponAmmo);
+	
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iWeapon == INVALID_ENT_REFERENCE)
+		return;
+	
+	int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
+	if (iAmmoType == -1 || iAmmoType == TF_AMMO_METAL)
+		return;
+	
+	Properties_SaveWeaponPropInt(iClient, iWeapon, "m_iAmmo", iAmmoType);
+}
+
+void Properties_UpdateActiveWeaponAmmo(int iClient)
+{
+	//Update ammo to use active weapon and any other weapons that doesn't use same ammotype
+	int iMaxWeapons = GetMaxWeapons();
+	int[] iWeapons = new int[iMaxWeapons];
+	int iAmmoTypeWeapon[TF_AMMO_COUNT];
+	
+	for (int i = 0; i < iMaxWeapons; i++)
+	{
+		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		if (iWeapons[i] == INVALID_ENT_REFERENCE)
+			continue;
+		
+		int iAmmoType = GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType");
+		if (iAmmoType == -1 || iAmmoType == TF_AMMO_METAL)
+			continue;
+		
+		if (!iAmmoTypeWeapon[iAmmoType])	//Ammotype not used yet
+			iAmmoTypeWeapon[iAmmoType] = iWeapons[i];
+		else if (iAmmoTypeWeapon[iAmmoType])	//More than 1 weapon use same ammotype, forget it
+			iAmmoTypeWeapon[iAmmoType] = INVALID_ENT_REFERENCE;
+	}
+	
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+	{
+		int iAmmoType = GetEntProp(iActiveWeapon, Prop_Send, "m_iPrimaryAmmoType");
+		if (iAmmoType != -1 && iAmmoType != TF_AMMO_METAL)
+			iAmmoTypeWeapon[iAmmoType] = iActiveWeapon;
+	}
+	
+	for (int iAmmoType = 0; iAmmoType < TF_AMMO_COUNT; iAmmoType++)
+		if (iAmmoTypeWeapon[iAmmoType] > 0)
+			Properties_LoadWeaponPropInt(iClient, iAmmoTypeWeapon[iAmmoType], "m_iAmmo", iAmmoType);
+}
+
+void Properties_SetForceWeaponAmmo(int iWeapon)
+{
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	Properties_SaveActiveWeaponAmmo(iClient);
+	
+	int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
+	Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iAmmo", iAmmoType);
+	
+	g_iPropertiesForceWeaponAmmo = iWeapon;
+}
+
+void Properties_ResetForceWeaponAmmo()
+{
+	if (g_iPropertiesForceWeaponAmmo != INVALID_ENT_REFERENCE)
+		Properties_UpdateActiveWeaponAmmo(GetEntPropEnt(g_iPropertiesForceWeaponAmmo, Prop_Send, "m_hOwnerEntity"));
+	
+	g_iPropertiesForceWeaponAmmo = INVALID_ENT_REFERENCE;
+}
+
+int Properties_GetForceWeaponAmmo()
+{
+	return g_iPropertiesForceWeaponAmmo;
+}
+
 //Next several functions work together to effectively seperate m_flRageMeter between weapons
 //Whenever it matters, we change the players m_flRageMeter and m_bRageDraining to whatever it should be for the weapon's class
 
@@ -185,19 +256,4 @@ void Properties_SaveRageProps(int iClient, int iWeapon)
 	Properties_SaveWeaponDataInt(iClient, iWeapon, iOffset + 4);	//RageBuff.m_iBuffTypeActive
 	Properties_SaveWeaponDataInt(iClient, iWeapon, iOffset + 8);	//RageBuff.m_iBuffPulseCount
 	Properties_SaveWeaponDataFloat(iClient, iWeapon, iOffset + 12);	//RageBuff.m_flNextBuffPulseTime
-}
-
-float Properties_GetBuffTypeAttribute(int iClient)
-{
-	float flTotal;
-	int iWeapon;
-	int iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		float flVal;
-		TF2_WeaponFindAttribute(iWeapon, "mod soldier buff type", flVal);
-		flTotal += flVal;
-	}
-	
-	return flTotal;
 }

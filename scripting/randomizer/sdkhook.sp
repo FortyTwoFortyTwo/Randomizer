@@ -220,7 +220,7 @@ public void Client_WeaponEquipPost(int iClient, int iWeapon)
 public Action Client_WeaponSwitch(int iClient, int iWeapon)
 {
 	//Save current active weapon properties before potentally switched out
-	Ammo_SaveActiveWeapon(iClient);
+	Properties_SaveActiveWeaponAmmo(iClient);
 	
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon != INVALID_ENT_REFERENCE)
@@ -232,7 +232,7 @@ public Action Client_WeaponSwitch(int iClient, int iWeapon)
 public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 {
 	//Update ammo for new active weapon
-	Ammo_UpdateActiveWeapon(iClient);
+	Properties_UpdateActiveWeaponAmmo(iClient);
 	
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon != INVALID_ENT_REFERENCE)
@@ -255,12 +255,12 @@ public Action Client_WeaponCanSwitchTo(int iClient, int iWeapon)
 	if (iWeapon == INVALID_ENT_REFERENCE)
 		return;
 	
-	Ammo_SaveActiveWeapon(iClient);
+	Properties_SaveActiveWeaponAmmo(iClient);
 	
 	//Set ammo to weapon wanting to switch, see if allow or deny
-	int iAmmoIndex = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-	if (iAmmoIndex != -1)
-		SetEntProp(iClient, Prop_Send, "m_iAmmo", Ammo_GetWeaponAmmo(iWeapon), _, iAmmoIndex);
+	int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
+	if (iAmmoType != -1 && iAmmoType != TF_AMMO_METAL)
+		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iAmmo", iAmmoType);
 }
 
 public void Client_WeaponCanSwitchToPost(int iClient, int iWeapon)
@@ -269,7 +269,7 @@ public void Client_WeaponCanSwitchToPost(int iClient, int iWeapon)
 		return;
 	
 	//Update ammo back to whatever active weapon is
-	Ammo_UpdateActiveWeapon(iClient);
+	Properties_UpdateActiveWeaponAmmo(iClient);
 }
 
 public void Weapon_SpawnPost(int iWeapon)

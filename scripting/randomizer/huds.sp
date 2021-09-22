@@ -5,8 +5,9 @@
 
 enum HudEntity
 {
-	HudEntity_Client,
 	HudEntity_Weapon,
+	HudEntity_Client,
+	HudEntity_ClientSeperate,
 }
 
 enum HudType
@@ -31,16 +32,6 @@ enum struct HudInfo
 	float flMax;		//Netprop max value inorder to display
 	char sText[64];		//Text to display next to value
 	StringMap mText;	//If not null, use this instead of sText to get text depending on netprop value
-	
-	int GetEntity(int iClient, int iWeapon)
-	{
-		switch (this.nEntity)
-		{
-			case HudEntity_Client: return iClient;
-			case HudEntity_Weapon: return iWeapon;
-			default: return -1;
-		}
-	}
 	
 	bool CalculateIntValue(int &iVal)
 	{
@@ -100,19 +91,20 @@ enum struct HudWeapon
 			{
 				HudInfo hudInfo;
 				this.aHudInfo.GetArray(j, hudInfo);
-				int iEntity = hudInfo.GetEntity(iClient, iWeapon);
-				
-				float flVal;
 				
 				switch (hudInfo.nType)
 				{
 					case HudType_Int:
 					{
 						int iVal;
-						if (hudInfo.nEntity == HudEntity_Client && Properties_HasWeaponProp(iWeapon, hudInfo.sNetprop))
-							iVal = Properties_GetWeaponPropInt(iWeapon, hudInfo.sNetprop);
-						else
-							iVal = GetEntProp(iEntity, Prop_Send, hudInfo.sNetprop, _, hudInfo.iElement);
+						
+						switch (hudInfo.nEntity)
+						{
+							case HudEntity_Weapon: iVal = GetEntProp(iWeapon, Prop_Send, hudInfo.sNetprop, _, hudInfo.iElement);
+							case HudEntity_Client: iVal = GetEntProp(iClient, Prop_Send, hudInfo.sNetprop, _, hudInfo.iElement);
+							case HudEntity_ClientSeperate: iVal = Properties_GetWeaponPropInt(iWeapon, hudInfo.sNetprop);
+							
+						}
 						
 						if (hudInfo.CalculateIntValue(iVal))
 						{
@@ -122,27 +114,25 @@ enum struct HudWeapon
 							else
 								Format(sDisplay, iLength, "%s: %T", sDisplay, hudInfo.sText, iClient, iVal);
 						}
+					}
+					case HudType_Float, HudType_Time:
+					{
+						float flVal;
 						
-						continue;	//Don't do float stuff below
-					}
-					case HudType_Float:
-					{
-						if (hudInfo.nEntity == HudEntity_Client && Properties_HasWeaponProp(iWeapon, hudInfo.sNetprop))
-							flVal = Properties_GetWeaponPropFloat(iWeapon, hudInfo.sNetprop);
-						else
-							flVal = GetEntPropFloat(iEntity, Prop_Send, hudInfo.sNetprop, hudInfo.iElement);
-					}
-					case HudType_Time:
-					{
-						if (hudInfo.nEntity == HudEntity_Client && Properties_HasWeaponProp(iWeapon, hudInfo.sNetprop))
-							flVal = Properties_GetWeaponPropFloat(iWeapon, hudInfo.sNetprop) - GetGameTime();
-						else
-							flVal = GetEntPropFloat(iEntity, Prop_Send, hudInfo.sNetprop, hudInfo.iElement) - GetGameTime();
+						switch (hudInfo.nEntity)
+						{
+							case HudEntity_Weapon: flVal = GetEntPropFloat(iWeapon, Prop_Send, hudInfo.sNetprop, hudInfo.iElement);
+							case HudEntity_Client: flVal = GetEntPropFloat(iClient, Prop_Send, hudInfo.sNetprop, hudInfo.iElement);
+							case HudEntity_ClientSeperate: flVal = Properties_GetWeaponPropFloat(iWeapon, hudInfo.sNetprop);
+						}
+						
+						if (hudInfo.nType == HudType_Time)
+							flVal -= GetGameTime();
+						
+						if (hudInfo.CalculateFloatValue(flVal))
+							Format(sDisplay, iLength, "%s: %T", sDisplay, hudInfo.sText, iClient, flVal);
 					}
 				}
-				
-				if (hudInfo.CalculateFloatValue(flVal))
-					Format(sDisplay, iLength, "%s: %T", sDisplay, hudInfo.sText, iClient, flVal);
 			}
 			
 			char sBuffer[64];
@@ -195,13 +185,17 @@ void Huds_Refresh()
 			hudInfo.flMultiply = kv.GetFloat("multiply", 1.0);
 			
 			kv.GetString("entity", sBuffer, sizeof(sBuffer));
-			if (StrEqual(sBuffer, "client"))
+			if (StrEqual(sBuffer, "weapon"))
+			{
+				hudInfo.nEntity = HudEntity_Weapon;
+			}
+			else if (StrEqual(sBuffer, "client"))
 			{
 				hudInfo.nEntity = HudEntity_Client;
 			}
-			else if (StrEqual(sBuffer, "weapon"))
+			else if (StrEqual(sBuffer, "client-seperate"))
 			{
-				hudInfo.nEntity = HudEntity_Weapon;
+				hudInfo.nEntity = HudEntity_ClientSeperate;
 			}
 			else
 			{
@@ -312,8 +306,7 @@ void Huds_RefreshClient(int iClient)
 			HudInfo hudInfo;
 			g_aHuds.GetArray(i, hudInfo);
 			
-			int iEntity = hudInfo.GetEntity(iClient, iWeapon);
-			if (!HasEntProp(iEntity, Prop_Send, hudInfo.sNetprop))
+			if (hudInfo.nEntity == HudEntity_Weapon && !HasEntProp(iWeapon, Prop_Send, hudInfo.sNetprop))
 				continue;
 			
 			if (!hudInfo.weaponWhitelist.IsEmpty() && !hudInfo.weaponWhitelist.IsIndexAllowed(iIndex))
