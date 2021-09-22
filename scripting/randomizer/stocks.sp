@@ -403,7 +403,7 @@ stock int TF2_GetSapper(int iObject)
 
 stock bool TF2_CanSwitchTo(int iClient, int iWeapon)
 {
-	char sClassname[32];
+	char sClassname[256];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
 	if (StrContains(sClassname, "tf_weapon") != 0)
 		return false;
@@ -424,7 +424,7 @@ stock bool TF2_SwitchToWeapon(int iClient, int iWeapon)
 			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
 	}
 	
-	char sClassname[32];
+	char sClassname[256];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
 	FakeClientCommand(iClient, "use %s", sClassname);
 	
