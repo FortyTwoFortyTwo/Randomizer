@@ -309,7 +309,10 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 		if (bGive)
 		{
 			int iMaxAmmo = TF2_GetMaxAmmo(iClient, iWeapon, iAmmoType);
-			int iAdd = RoundToFloor(float(iCount) / float(DEFAULT_MAX_AMMO) * float(iMaxAmmo));	//based from DEFAULT_MAX_AMMO at GetMaxAmmo
+			
+			int iAdd = iCount;
+			if (iForceWeapon == INVALID_ENT_REFERENCE)
+				iAdd = RoundToFloor(float(iCount) / float(DEFAULT_MAX_AMMO) * float(iMaxAmmo));	//based from DEFAULT_MAX_AMMO at GetMaxAmmo
 			
 			int iCurrent = Properties_GetWeaponPropInt(iWeapon, "m_iAmmo");
 			iAdd = TF2_GiveAmmo(iClient, iWeapon, iCurrent, iAdd, iAmmoType, bSuppressSound, eAmmoSource);
