@@ -155,7 +155,7 @@ stock bool TF2_WeaponFindAttribute(int iWeapon, char[] sAttrib, float &flVal)
 		return true;
 	}
 	
-	if (GetEntProp(iWeapon, Prop_Send, "m_bOnlyIterateItemViewAttributes") == 0) //Weapon is still using it's default attributes
+	if (!GetEntProp(iWeapon, Prop_Send, "m_bOnlyIterateItemViewAttributes")) //Weapon is still using it's default attributes
 	{
 		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
 		return TF2_IndexFindAttribute(iIndex, sAttrib, flVal);
@@ -193,8 +193,8 @@ float TF2_GetAttributePercentage(int iClient, char[] sAttrib)
 	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
 		float flVal;
-		TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal);
-		flTotal *= flVal;
+		if (TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal))
+			flTotal *= flVal;
 	}
 	
 	return flTotal;
@@ -212,8 +212,8 @@ float TF2_GetAttributeAdditive(int iClient, char[] sAttrib)
 	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
 		float flVal;
-		TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal);
-		flTotal += flVal;
+		if (TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal))
+			flTotal += flVal;
 	}
 	
 	return flTotal;
@@ -432,17 +432,17 @@ stock bool TF2_SwitchToWeapon(int iClient, int iWeapon)
 		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
 }
 
-stock int TF2_GiveAmmo(int iClient, int iWeapon, int iCurrent, int iAdd, int iAmmoIndex, bool bSuppressSound, EAmmoSource eAmmoSource)
+stock int TF2_GiveAmmo(int iClient, int iWeapon, int iCurrent, int iAdd, int iAmmoType, bool bSuppressSound, EAmmoSource eAmmoSource)
 {
 	//Basically CTFPlayer::GiveAmmo but without interfering m_iAmmo and other weapons
-	if (iAdd <= 0 || iAmmoIndex < 0 || iAmmoIndex >= TF_AMMO_COUNT)	//TF2 using MAX_AMMO_SLOTS (32) instead of TF_AMMO_COUNT...
+	if (iAdd <= 0 || iAmmoType < 0 || iAmmoType >= TF_AMMO_COUNT)	//TF2 using MAX_AMMO_SLOTS (32) instead of TF_AMMO_COUNT...
 		return 0;
 	
 	if (eAmmoSource == kAmmoSource_Resupply)
 	{
 		float flVal;
 		
-		switch (iAmmoIndex)
+		switch (iAmmoType)
 		{
 			case TF_AMMO_GRENADES1:
 			{
@@ -461,13 +461,13 @@ stock int TF2_GiveAmmo(int iClient, int iWeapon, int iCurrent, int iAdd, int iAm
 			}
 		}
 	}
-	else if (iAmmoIndex == TF_AMMO_METAL)	//Must not be from kAmmoSource_Resupply
+	else if (iAmmoType == TF_AMMO_METAL)	//Must not be from kAmmoSource_Resupply
 	{
 		float flVal = TF2_GetAttributePercentage(iClient, "metal_pickup_decreased");
 		iAdd = RoundToFloor(flVal * float(iAdd));
 	}
 	
-	int iMaxAmmo = SDKCall_GetMaxAmmo(iClient, iAmmoIndex);
+	int iMaxAmmo = TF2_GetMaxAmmo(iClient, iWeapon, iAmmoType);
 	if (iAdd + iCurrent > iMaxAmmo)
 		iAdd = iMaxAmmo - iCurrent;
 	
@@ -478,6 +478,76 @@ stock int TF2_GiveAmmo(int iClient, int iWeapon, int iCurrent, int iAdd, int iAm
 		EmitGameSoundToClient(iClient, "BaseCombatCharacter.AmmoPickup");
 	
 	return iAdd;
+}
+
+stock int TF2_GetMaxAmmo(int iClient, int iWeapon, int iAmmoType)
+{
+	//Same as CTFPlayer::GetMaxAmmo, this is made because of multiple weapons conflicts eachother on attributes
+	//TODO this function is so horrible with lots of hardcode, is there a better way to do this?
+	
+	int iClassMaxAmmo[CLASS_MAX+1][TF_AMMO_COUNT] = {
+		{0, 0, 0, 0, 0, 0, 0},		//Undefined
+		{0, 32, 36, 200, 1, 1, 1},	//Scout	
+		{0, 25, 75, 200, 1, 1, 1},	//Sniper
+		{0, 20, 32, 200, 1, 1, 1},	//Soldier
+		{0, 16, 24, 200, 1, 1, 1},	//Demoman
+		{0, 150, 0, 200, 1, 1, 1},	//Medic
+		{0, 200, 32, 200, 1, 1, 1},	//Heavy
+		{0, 200, 32, 200, 1, 1, 1},	//Pyro
+		{0, 0, 24, 200, 1, 1, 1},	//Spy
+		{0, 32, 200, 200, 1, 1, 1},	//Engineer
+	};
+	
+	int iMaxAmmo = iClassMaxAmmo[TF2_GetDefaultClassFromItem(iWeapon)][iAmmoType];
+	
+	//Remove all weapons using same ammo index so they don't interfere with max ammo attributes
+	//Don't remove weapons with different ammo index so they could interfere with max ammo attributes
+	int iMaxWeapons = GetMaxWeapons();
+	int[] iWeapons = new int[iMaxWeapons];
+	
+	for (int i = 0; i < iMaxWeapons; i++)
+	{
+		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		if (iWeapons[i] != INVALID_ENT_REFERENCE && iWeapons[i] != iWeapon && GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
+			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
+	}
+	
+	float flVal = 1.0;
+	switch (iAmmoType)
+	{
+		case TF_AMMO_PRIMARY:
+		{
+			flVal *= TF2_GetAttributePercentage(iClient, "hidden primary max ammo bonus");
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo primary increased");
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo primary reduced");
+			
+		}
+		case TF_AMMO_SECONDARY:
+		{
+			flVal *= TF2_GetAttributePercentage(iClient, "hidden secondary max ammo penalty");
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo secondary increased");
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo secondary reduced");
+			
+		}
+		case TF_AMMO_METAL:
+		{
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo metal increased");
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo metal reduced");
+		}
+		case TF_AMMO_GRENADES1:
+		{
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo grenades1 increased");
+		}
+	}
+	
+	if (TF2_IsPlayerInCondition(iClient, TFCond_RuneHaste))
+		flVal *= 2.0;
+	
+	//Set it back
+	for (int i = 0; i < iMaxWeapons; i++)
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
+	
+	return RoundToFloor(float(iMaxAmmo) * flVal);
 }
 
 stock void TF2_RemoveItem(int iClient, int iWeapon)

@@ -271,8 +271,8 @@ public void DHook_SpawnPost(int iWeapon)
 public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 {
 	//Detour is used instead of virtual because non-virtual CTFPlayer::GiveAmmo directly calls CBaseCombatCharacter::GiveAmmo in non-virtual way
-	int iWeapon = Properties_GetForceWeaponAmmo();
-	if (iWeapon != INVALID_ENT_REFERENCE)
+	int iForceWeapon = Properties_GetForceWeaponAmmo();
+	if (iForceWeapon != INVALID_ENT_REFERENCE)
 		Properties_ResetForceWeaponAmmo();
 	
 	if (g_bSkipGetMaxAmmo)
@@ -293,51 +293,32 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 	g_bSkipGetMaxAmmo = true;
 	
 	int iTotalAdded;
+	
+	//Give the ammo to each weapons by ammotype
 	int iMaxWeapons = GetMaxWeapons();
-	int[] iWeapons = new int[iMaxWeapons];
-	
-	//Remove all weapons using same ammo index so they don't interfere with max ammo attributes
-	//Don't remove weapons with different ammo index so they could interfere with max ammo attributes
 	for (int i = 0; i < iMaxWeapons; i++)
 	{
-		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
-		if (iWeapons[i] != INVALID_ENT_REFERENCE && GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
-			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
-	}
-	
-	//Now actually give the ammo
-	for (int i = 0; i < iMaxWeapons; i++)
-	{
+		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		
 		bool bGive;
-		if (iWeapon == INVALID_ENT_REFERENCE && iWeapons[i] != INVALID_ENT_REFERENCE && GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
+		if (iForceWeapon == INVALID_ENT_REFERENCE && iWeapon != INVALID_ENT_REFERENCE && GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
 			bGive = true;
-		else if (iWeapon != INVALID_ENT_REFERENCE && iWeapon == iWeapons[i])
+		else if (iForceWeapon != INVALID_ENT_REFERENCE && iForceWeapon == iWeapon)
 			bGive = true;
 		
 		if (bGive)
 		{
-			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
-			
-			SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapons[i]));	//Could've made GetMaxAmmo detour return correct class, meh
-			
-			int iMaxAmmo = SDKCall_GetMaxAmmo(iClient, iAmmoType);
+			int iMaxAmmo = TF2_GetMaxAmmo(iClient, iWeapon, iAmmoType);
 			int iAdd = RoundToFloor(float(iCount) / float(DEFAULT_MAX_AMMO) * float(iMaxAmmo));	//based from DEFAULT_MAX_AMMO at GetMaxAmmo
 			
-			int iCurrent = Properties_GetWeaponPropInt(iWeapons[i], "m_iAmmo");
-			iAdd = TF2_GiveAmmo(iClient, iWeapons[i], iCurrent, iAdd, iAmmoType, bSuppressSound, eAmmoSource);
-			Properties_SetWeaponPropInt(iWeapons[i], "m_iAmmo", iCurrent + iAdd);
+			int iCurrent = Properties_GetWeaponPropInt(iWeapon, "m_iAmmo");
+			iAdd = TF2_GiveAmmo(iClient, iWeapon, iCurrent, iAdd, iAmmoType, bSuppressSound, eAmmoSource);
+			Properties_SetWeaponPropInt(iWeapon, "m_iAmmo", iCurrent + iAdd);
 			iTotalAdded += iAdd;
-			
-			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
 		}
 	}
 	
-	//Set it back
-	for (int i = 0; i < iMaxWeapons; i++)
-		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
-	
-	//Set class and ammo back to what it was for active weapon
-	RevertClientClass(iClient);
+	//Set ammo back to what it was for active weapon
 	Properties_UpdateActiveWeaponAmmo(iClient);
 	
 	g_bSkipGetMaxAmmo = false;

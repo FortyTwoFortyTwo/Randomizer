@@ -1,5 +1,4 @@
 static Handle g_hSDKGetBaseEntity;
-static Handle g_hSDKGetMaxAmmo;
 static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
@@ -20,15 +19,6 @@ public void SDKCall_Init(GameData hGameData)
 	g_hSDKGetBaseEntity = EndPrepSDKCall();
 	if (!g_hSDKGetBaseEntity)
 		LogError("Failed to create call: CBaseEntity::GetBaseEntity");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-	g_hSDKGetMaxAmmo = EndPrepSDKCall();
-	if (!g_hSDKGetMaxAmmo)
-		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::AddObject");
@@ -121,11 +111,6 @@ public void SDKCall_Init(GameData hGameData)
 int SDKCall_GetBaseEntity(Address pEntity)
 {
 	return SDKCall(g_hSDKGetBaseEntity, pEntity);
-}
-
-int SDKCall_GetMaxAmmo(int iClient, int iAmmoIndex, TFClassType nClass = view_as<TFClassType>(-1))
-{
-	return SDKCall(g_hSDKGetMaxAmmo, iClient, iAmmoIndex, nClass);
 }
 
 void SDKCall_AddObject(int iClient, int iObject)
