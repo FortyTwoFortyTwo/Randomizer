@@ -208,14 +208,14 @@ public Action Command_SetSlotWeapon(int iClient, int iArgs)
 	if (iCount == 0)
 		return Plugin_Handled;
 	
-	bool bSlot[WeaponSlot_Building+1];
-	
 	switch (g_cvRandomWeapons.IntValue)
 	{
 		case Mode_Normal, Mode_NormalRound:
 		{
 			for (int i = 0; i < iTargetCount; i++)
 			{
+				bool bSlot[WeaponSlot_Building+1];
+				
 				for (int j = 0; j < iCount; j++)
 				{
 					if (!bSlot[eWeapon.iSlot[j]])
@@ -234,11 +234,13 @@ public Action Command_SetSlotWeapon(int iClient, int iArgs)
 			{
 				if (CanTargetTeam(view_as<TFTeam>(iTeam), iTargetList, iTargetCount))
 				{
+					bool bSlot[WeaponSlot_Building+1];
+					
 					for (int i = 0; i < iCount; i++)
 					{
 						if (!bSlot[eWeapon.iSlot[i]])
 						{
-							RemoveRandomizedWeaponBySlot(g_eClientWeapon[iTargetList[i]], eWeapon.iSlot[i]);
+							RemoveRandomizedWeaponBySlot(g_eTeamWeapon[iTeam], eWeapon.iSlot[i]);
 							bSlot[eWeapon.iSlot[i]] = true;
 						}
 						
