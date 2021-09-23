@@ -3,6 +3,7 @@ void Event_Init()
 	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
 	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
+	HookEvent("player_hurt", Event_PlayerHurt);
 	HookEvent("player_death", Event_PlayerDeath);
 }
 
@@ -143,8 +144,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	Address pActionItem = SDKCall_GetLoadoutItem(iClient, nClass, LoadoutSlot_Action);
 	bool bFound;
 	
-	int iWeapon;
-	int iPos;
+	int iWeapon, iPos;
 	while (TF2_GetItemFromLoadoutSlot(iClient, LoadoutSlot_Action, iWeapon, iPos))
 	{
 		if (!TF2_IsValidEconItemView(pActionItem) || GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex") != LoadFromAddress(pActionItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16))
@@ -155,6 +155,14 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	
 	if (!bFound && TF2_IsValidEconItemView(pActionItem))
 		TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pActionItem));
+	
+	//Refill charge meters
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		float flVal;
+		if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_resupply_denied", flVal) || flVal == 0.0)
+			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
+	}
 	
 	if (!IsWeaponRandomized(iClient))
 		return;
@@ -197,11 +205,17 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		{
 			PrintToChat(iClient, "Unable to create weapon! index '%d'", iIndex);
 			LogError("Unable to create weapon! index '%d'", iIndex);
+			continue;
 		}
 		
 		//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
 		if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
 			SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
+		
+		//Fill charge meter
+		float flVal;
+		if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_resupply_denied", flVal) || flVal == 0.0)
+			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
 		
 		TF2_EquipWeapon(iClient, iWeapon);
 		
@@ -210,7 +224,6 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		
 		g_eClientWeapon[iClient][nClass].iRef[iPos] = EntIndexToEntRef(iWeapon);
 	}
-	
 	
 	//Set ammo to 0, CTFPlayer::GetMaxAmmo detour will correct this, adding ammo by current
 	for (int iAmmoType = 0; iAmmoType < TF_AMMO_COUNT; iAmmoType++)
@@ -229,6 +242,30 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 				break;
 			}
 		}
+	}
+}
+
+public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcast)
+{
+	if (!g_bEnabled)
+		return;
+	
+	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
+	int iDamage = event.GetInt("damageamount");
+	
+	//Increase meter for Gas Passer
+	
+	int iWeapon, iPos;
+	while (TF2_GetItemFromAttribute(iAttacker, "item_meter_charge_type", iWeapon, iPos))
+	{
+		//Could add check whenever if item_meter_charge_type value is 3, meh
+		
+		float flRate;
+		if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_damage_for_full_charge", flRate))
+			continue;
+		
+		flRate = float(iDamage) / flRate * 100.0;
+		Properties_AddWeaponChargeMeter(iAttacker, iWeapon, flRate);
 	}
 }
 

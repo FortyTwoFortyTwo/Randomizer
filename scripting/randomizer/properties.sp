@@ -149,6 +149,14 @@ float Properties_GetWeaponPropFloat(int iWeapon, const char[] sProp)
 	return flValue;
 }
 
+void Properties_SetWeaponPropFloat(int iWeapon, const char[] sProp, float flValue)
+{
+	if (!g_mPropertiesWeaponSend[iWeapon])
+		g_mPropertiesWeaponSend[iWeapon] = new StringMap();
+	
+	g_mPropertiesWeaponSend[iWeapon].SetValue(sProp, flValue);
+}
+
 void Properties_RemoveWeapon(int iWeapon)
 {
 	delete g_mPropertiesWeaponSend[iWeapon];
@@ -256,4 +264,42 @@ void Properties_SaveRageProps(int iClient, int iWeapon)
 	Properties_SaveWeaponDataInt(iClient, iWeapon, iOffset + 4);	//RageBuff.m_iBuffTypeActive
 	Properties_SaveWeaponDataInt(iClient, iWeapon, iOffset + 8);	//RageBuff.m_iBuffPulseCount
 	Properties_SaveWeaponDataFloat(iClient, iWeapon, iOffset + 12);	//RageBuff.m_flNextBuffPulseTime
+}
+
+// Item charge meter
+
+void Properties_AddWeaponChargeMeter(int iClient, int iWeapon, float flValue)
+{
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+		Properties_SaveWeaponPropFloat(iClient, iActiveWeapon, "m_flItemChargeMeter", TF2_GetSlot(iActiveWeapon));
+	
+	float flCurrent = Properties_GetWeaponPropFloat(iWeapon, "m_flItemChargeMeter");
+	if (flCurrent < 100.0 && flCurrent + flValue >= 100.0)
+	{
+		Properties_SetWeaponPropFloat(iWeapon, "m_flItemChargeMeter", 100.0);
+		
+		if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
+		{
+			int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
+			if (TF_AMMO_GRENADES1 <= iAmmoType <= TF_AMMO_GRENADES3)
+			{
+				int iAdd = TF2_GiveAmmo(iClient, iWeapon, Properties_GetWeaponPropInt(iWeapon, "m_iAmmo"), 1, iAmmoType, true, kAmmoSource_Pickup);
+				
+				Properties_SaveActiveWeaponAmmo(iClient);
+				Properties_AddWeaponPropInt(iWeapon, "m_iAmmo", iAdd);
+				Properties_UpdateActiveWeaponAmmo(iClient);
+			}
+		}
+		
+		if (IsClassname(iWeapon, "tf_wearable_razorback"))
+			SetEntProp(iWeapon, Prop_Send, "m_fEffects", GetEntProp(iWeapon, Prop_Send, "m_fEffects") & ~EF_NODRAW);
+	}
+	else if (flCurrent < 100.0)
+	{
+		Properties_SetWeaponPropFloat(iWeapon, "m_flItemChargeMeter", flCurrent + flValue);
+	}
+	
+	if (iWeapon == iActiveWeapon)
+		Properties_LoadWeaponPropFloat(iClient, iWeapon, "m_flItemChargeMeter", TF2_GetSlot(iActiveWeapon));
 }

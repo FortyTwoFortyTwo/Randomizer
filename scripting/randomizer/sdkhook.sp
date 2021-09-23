@@ -6,6 +6,8 @@ void SDKHook_HookClient(int iClient)
 	SDKHook(iClient, SDKHook_OnTakeDamagePost, Client_OnTakeDamagePost);
 	SDKHook(iClient, SDKHook_PreThink, Client_PreThink);
 	SDKHook(iClient, SDKHook_PreThinkPost, Client_PreThinkPost);
+	SDKHook(iClient, SDKHook_PostThink, Client_PostThink);
+	SDKHook(iClient, SDKHook_PostThinkPost, Client_PostThinkPost);
 	SDKHook(iClient, SDKHook_WeaponEquip, Client_WeaponEquip);
 	SDKHook(iClient, SDKHook_WeaponEquipPost, Client_WeaponEquipPost);
 	SDKHook(iClient, SDKHook_WeaponSwitch, Client_WeaponSwitch);
@@ -20,6 +22,8 @@ void SDKHook_UnhookClient(int iClient)
 	SDKUnhook(iClient, SDKHook_OnTakeDamagePost, Client_OnTakeDamagePost);
 	SDKUnhook(iClient, SDKHook_PreThink, Client_PreThink);
 	SDKUnhook(iClient, SDKHook_PreThinkPost, Client_PreThinkPost);
+	SDKUnhook(iClient, SDKHook_PostThink, Client_PostThink);
+	SDKUnhook(iClient, SDKHook_PostThinkPost, Client_PostThinkPost);
 	SDKUnhook(iClient, SDKHook_WeaponEquip, Client_WeaponEquip);
 	SDKUnhook(iClient, SDKHook_WeaponEquipPost, Client_WeaponEquipPost);
 	SDKUnhook(iClient, SDKHook_WeaponSwitch, Client_WeaponSwitch);
@@ -31,14 +35,9 @@ void SDKHook_UnhookClient(int iClient)
 void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 {
 	if (StrContains(sClassname, "tf_weapon_") == 0)
-	{
-		SDKHook(iEntity, SDKHook_SpawnPost, Weapon_SpawnPost);
 		SDKHook(iEntity, SDKHook_Reload, Weapon_Reload);
-	}
 	else if (StrEqual(sClassname, "item_healthkit_small"))
-	{
 		SDKHook(iEntity, SDKHook_SpawnPost, HealthKit_SpawnPost);
-	}
 }
 
 public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &flDamage, int &iDamageType, int &iWeapon, float vecDamageForce[3], float vecDamagePosition[3], int iDamageCustom)
@@ -197,6 +196,38 @@ public void Client_PreThinkPost(int iClient)
 	}
 }
 
+public void Client_PostThink(int iClient)
+{
+	//CTFPlayerShared::UpdateItemChargeMeters is called inside CTFPlayer::ItemPostFrame/PostThink
+	// Update charge meters ourself and forget changes TF2 did after PostThink
+	
+	int iWeapon, iPos;
+	while (TF2_GetItemFromAttribute(iClient, "item_meter_charge_type", iWeapon, iPos))
+	{
+		float flRate;
+		if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_charge_rate", flRate))
+			continue;
+		
+		flRate = GetGameFrameTime() / flRate * 100.0;
+		Properties_AddWeaponChargeMeter(iClient, iWeapon, flRate);
+	}
+}
+
+public void Client_PostThinkPost(int iClient)
+{
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+	{
+		//If meter is increased, its from TF2 charge meters itself, reverse it
+		// Otherwise it might've decreased as consumed, save it
+		int iSlot = TF2_GetSlot(iActiveWeapon);
+		if (Properties_GetWeaponPropFloat(iActiveWeapon, "m_flItemChargeMeter") < GetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", iSlot))
+			Properties_LoadWeaponPropFloat(iClient, iActiveWeapon, "m_flItemChargeMeter", iSlot);
+		else
+			Properties_SaveWeaponPropFloat(iClient, iActiveWeapon, "m_flItemChargeMeter", iSlot);
+	}
+}
+
 public Action Client_WeaponEquip(int iClient, int iWeapon)
 {
 	//Change class before equipping the weapon, otherwise reload times are odd
@@ -226,6 +257,7 @@ public Action Client_WeaponSwitch(int iClient, int iWeapon)
 	if (iActiveWeapon != INVALID_ENT_REFERENCE)
 	{
 		Properties_SaveWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
+		Properties_SaveWeaponPropFloat(iClient, iActiveWeapon, "m_flItemChargeMeter", TF2_GetSlot(iActiveWeapon));
 	}
 }
 
@@ -237,16 +269,16 @@ public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon != INVALID_ENT_REFERENCE)
 	{
-		Properties_LoadRageProps(iClient, iActiveWeapon);
-		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iDecapitations");
-		
 		int iRevengeCrits = GetEntProp(iClient, Prop_Send, "m_iRevengeCrits");
 		if (iRevengeCrits > 0 && Properties_GetWeaponPropInt(iActiveWeapon, "m_iRevengeCrits") == 0)
 			TF2_RemoveCondition(iClient, TFCond_Kritzkrieged);
 		else if (iRevengeCrits == 0 && Properties_GetWeaponPropInt(iActiveWeapon, "m_iRevengeCrits") > 0)
 			TF2_AddCondition(iClient, TFCond_Kritzkrieged, TFCondDuration_Infinite);
 		
+		Properties_LoadRageProps(iClient, iActiveWeapon);
+		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iDecapitations");
 		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
+		Properties_LoadWeaponPropFloat(iClient, iActiveWeapon, "m_flItemChargeMeter", TF2_GetSlot(iActiveWeapon));
 	}
 }
 
@@ -270,13 +302,6 @@ public void Client_WeaponCanSwitchToPost(int iClient, int iWeapon)
 	
 	//Update ammo back to whatever active weapon is
 	Properties_UpdateActiveWeaponAmmo(iClient);
-}
-
-public void Weapon_SpawnPost(int iWeapon)
-{
-	//Set properties so huds know that this is a thing
-	Properties_SetWeaponPropInt(iWeapon, "m_iDecapitations", 0);
-	Properties_SetWeaponPropInt(iWeapon, "m_iRevengeCrits", 0);
 }
 
 public Action Weapon_Reload(int iWeapon)

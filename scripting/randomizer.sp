@@ -33,6 +33,25 @@
 #define PARTICLE_BEAM_BLU	"medicgun_beam_blue"
 #define PARTICLE_BEAM_RED	"medicgun_beam_red"
 
+// entity effects
+enum
+{
+	EF_BONEMERGE			= (1<<0),	// Performs bone merge on client side
+	EF_BRIGHTLIGHT			= (1<<1),	// DLIGHT centered at entity origin
+	EF_DIMLIGHT				= (1<<2),	// player flashlight
+	EF_NOINTERP				= (1<<3),	// don't interpolate the next frame
+	EF_NOSHADOW				= (1<<4),	// Don't cast no shadow
+	EF_NODRAW				= (1<<5),	// don't draw entity
+	EF_NORECEIVESHADOW		= (1<<6),	// Don't receive no shadow
+	EF_BONEMERGE_FASTCULL	= (1<<7),	// For use with EF_BONEMERGE. If this is set, then it places this ent's origin at its
+										// parent and uses the parent's bbox + the max extents of the aiment.
+										// Otherwise, it sets up the parent's bones every frame to figure out where to place
+										// the aiment, which is inefficient because it'll setup the parent's bones even if
+										// the parent is not in the PVS.
+	EF_ITEM_BLINK			= (1<<8),	// blink an item so that the user notices it.
+	EF_PARENT_ANIMATES		= (1<<9),	// always assume that the parent entity is animating
+};
+
 enum TFQuality
 {
 	TFQual_None = -1,

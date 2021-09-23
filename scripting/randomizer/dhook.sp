@@ -64,6 +64,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxHealthForBuffing", DHook_GetMaxHealthForBuffingPre, DHook_GetMaxHealthForBuffingPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::TeamFortress_CalculateMaxSpeed", DHook_CalculateMaxSpeedPre, DHook_CalculateMaxSpeedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::TakeHealth", DHook_TakeHealthPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::CheckBlockBackstab", DHook_CheckBlockBackstabPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
 	DHook_CreateDetour(hGameData, "CTFKnife::DisguiseOnKill", DHook_DisguiseOnKillPre, DHook_DisguiseOnKillPost);
 	DHook_CreateDetour(hGameData, "CTFLunchBox::ApplyBiteEffects", DHook_ApplyBiteEffectsPre, DHook_ApplyBiteEffectsPost);
@@ -883,12 +884,6 @@ public MRESReturn DHook_SwingPre(int iWeapon, Handle hReturn)
 
 public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 {
-	//Why is this function getting called from tf_viewmodel angery
-	char sClassname[256];
-	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-	if (StrContains(sClassname, "tf_weapon_") != 0)
-		return;
-	
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
 	
 	//If DoClassSpecialSkill not called during secondary attack, do it anyway lol
@@ -899,6 +894,9 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 	}
 	
 	g_bDoClassSpecialSkill[iClient] = false;
+	
+	//Sandvich might've thrown out and switched weapon while inside SecondaryWeapon call, save charge meter
+	Properties_SaveWeaponPropFloat(iClient, iWeapon, "m_flItemChargeMeter", TF2_GetSlot(iWeapon));
 }
 
 public MRESReturn DHook_GetEffectBarAmmoPost(int iWeapon, Handle hReturn)
@@ -1135,6 +1133,44 @@ public MRESReturn DHook_TakeHealthPre(int iClient, Handle hReturn, Handle hParam
 		return MRES_ChangedHandled;
 	}
 	return MRES_Ignored;
+}
+
+public MRESReturn DHook_CheckBlockBackstabPre(int iClient, Handle hReturn, Handle hParams)
+{
+	if (TF2_IsPlayerInCondition(iClient, TFCond_RuneResist))
+		return MRES_Ignored;	//Let TF2 handle it, even though there nothing here
+	
+	//Check each razorback and only break one if available
+	int iWeapon, iPos;
+	while (TF2_GetItemFromAttribute(iClient, "backstab shield", iWeapon, iPos))
+	{
+		if (Properties_GetWeaponPropFloat(iWeapon, "m_flItemChargeMeter") < 100.0)
+			continue;
+		
+		Properties_SetWeaponPropFloat(iWeapon, "m_flItemChargeMeter", 0.0);
+		
+		//CTFWearable::Break
+		BfWrite bf = UserMessageToBfWrite(StartMessageAll("BreakModel"));
+		bf.WriteShort(GetEntProp(iWeapon, Prop_Send, "m_nModelIndex"));
+		
+		//Not the correct method from weapon GetAbsOrigin & GetAbsAngles but eh
+		float vecOrigin[3], vecAngles[3];
+		GetEntPropVector(iClient, Prop_Send, "m_vecOrigin", vecOrigin);
+		GetEntPropVector(iClient, Prop_Send, "m_angRotation", vecAngles);
+		bf.WriteVecCoord(vecOrigin);
+		bf.WriteAngles(vecAngles);
+		
+		bf.WriteShort(GetEntProp(iWeapon, Prop_Send, "m_nSkin"));
+		EndMessage();
+		
+		SetEntProp(iWeapon, Prop_Send, "m_fEffects", GetEntProp(iWeapon, Prop_Send, "m_fEffects")|EF_NODRAW);
+		
+		DHookSetReturn(hReturn, true);
+		return MRES_Supercede;
+	}
+	
+	DHookSetReturn(hReturn, false);
+	return MRES_Supercede;
 }
 
 public MRESReturn DHook_FrameUpdatePostEntityThinkPre()
