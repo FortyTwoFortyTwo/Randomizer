@@ -30,6 +30,8 @@ static bool g_bSkipUpdateRageBuffsAndRage = false;
 static int g_iClientGetChargeEffectBeingProvided;
 static int g_iWeaponGetLoadoutItem = INVALID_ENT_REFERENCE;
 static bool g_bManageBuilderWeapons;
+static ArrayList g_aValidateWearables;
+static bool g_bValidateWearablesDisguised;
 static int g_iBuildingKilledSapper = INVALID_ENT_REFERENCE;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS];
@@ -53,7 +55,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", DHook_CanAirDashPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, DHook_ValidateWeaponsPost);
-	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWearables", DHook_ValidateWearablesPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWearables", DHook_ValidateWearablesPre, DHook_ValidateWearablesPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::ManageBuilderWeapons", DHook_ManageBuilderWeaponsPre, DHook_ManageBuilderWeaponsPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::EndClassSpecialSkill", DHook_EndClassSpecialSkillPre, DHook_EndClassSpecialSkillPost);
@@ -424,12 +426,68 @@ public MRESReturn DHook_ValidateWeaponsPost(int iClient, Handle hParams)
 
 public MRESReturn DHook_ValidateWearablesPre(int iClient, Handle hParams)
 {
-	//This function validates both wearable weapons and cosmetics, but post_inventory_application hook should be able to handle wearable weapon fine
+	//This function validates both wearable weapons and cosmetics, avoid having it destroyed by disguising as disguise weapon
+	int iWearable;
+	while ((iWearable = FindEntityByClassname(iWearable, "tf_wearable*")) > MaxClients)
+	{
+		if (GetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity") == iClient)
+		{
+			int iIndex = GetEntProp(iWearable, Prop_Send, "m_iItemDefinitionIndex");
+			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			{
+				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+				
+				bool bDisguise;
+				if (LoadoutSlot_Primary <= iSlot <= LoadoutSlot_PDA2 && IsWeaponRandomized(iClient))
+					bDisguise = true;
+				else if (iSlot == LoadoutSlot_Misc && IsCosmeticRandomized(iClient))
+					bDisguise = true;
+				
+				if (bDisguise && !GetEntProp(iWearable, Prop_Send, "m_bDisguiseWearable"))
+				{
+					SetEntProp(iWearable, Prop_Send, "m_bDisguiseWearable", true);
+					
+					if (!g_aValidateWearables)
+						g_aValidateWearables = new ArrayList();
+					
+					g_aValidateWearables.Push(iWearable);
+				}
+				
+				if (iSlot != -1)
+					break;
+			}
+		}
+	}
 	
-	if (IsCosmeticRandomized(iClient))
-		return MRES_Supercede;	//Dont create or destroy any cosmetics
+	if (g_aValidateWearables)
+	{
+		g_iAllowPlayerClass[iClient]++;
+		
+		if (!TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
+		{
+			TF2_AddCondition(iClient, TFCond_Disguised, TFCondDuration_Infinite);
+			g_bValidateWearablesDisguised = true;
+		}
+	}
+}
+
+public MRESReturn DHook_ValidateWearablesPost(int iClient, Handle hParams)
+{
+	if (!g_aValidateWearables)
+		return;
 	
-	return MRES_Ignored;
+	int iLength = g_aValidateWearables.Length;
+	for (int i = 0; i < iLength; i++)
+		SetEntProp(g_aValidateWearables.Get(i), Prop_Send, "m_bDisguiseWearable", false);
+	
+	delete g_aValidateWearables;
+	
+	g_iAllowPlayerClass[iClient]++;
+		
+	if (g_bValidateWearablesDisguised)
+		TF2_RemoveCondition(iClient, TFCond_Disguised);
+	
+	g_bValidateWearablesDisguised = false;
 }
 
 public MRESReturn DHook_ManageBuilderWeaponsPre(int iClient, Handle hParams)

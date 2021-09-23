@@ -44,7 +44,7 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 	int iCosmetic;
 	while ((iCosmetic = FindEntityByClassname(iCosmetic, "tf_wearable*")) > MaxClients)
 	{
-		if (GetEntPropEnt(iCosmetic, Prop_Send, "m_hOwnerEntity") == iClient || GetEntPropEnt(iCosmetic, Prop_Send, "moveparent") == iClient)
+		if (GetEntPropEnt(iCosmetic, Prop_Send, "m_hOwnerEntity") == iClient)
 		{
 			int iIndex = GetEntProp(iCosmetic, Prop_Send, "m_iItemDefinitionIndex");
 			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
