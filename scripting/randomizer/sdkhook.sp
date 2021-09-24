@@ -55,10 +55,7 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 		}
 		
 		//Setup collecting revenge crits for diamondback
-		int iActiveWeapon = GetEntPropEnt(iAttacker, Prop_Send, "m_hActiveWeapon");
-		if (iActiveWeapon != INVALID_ENT_REFERENCE)
-			Properties_SaveWeaponPropInt(iAttacker, iActiveWeapon, "m_iRevengeCrits");
-		
+		Properties_SaveActiveWeaponPropInt(iAttacker, "m_iRevengeCrits");
 		SetEntProp(iAttacker, Prop_Send, "m_iRevengeCrits", 0);
 	}
 }
@@ -98,9 +95,7 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 		}
 		
 		//Set it back
-		int iActiveWeapon = GetEntPropEnt(iAttacker, Prop_Send, "m_hActiveWeapon");
-		if (iActiveWeapon != INVALID_ENT_REFERENCE)
-			Properties_LoadWeaponPropInt(iAttacker, iActiveWeapon, "m_iRevengeCrits");
+		Properties_LoadActiveWeaponPropInt(iAttacker, "m_iRevengeCrits");
 	}
 }
 
@@ -188,12 +183,8 @@ public void Client_PreThinkPost(int iClient)
 			SetEntPropFloat(iClient, Prop_Send, "m_flEnergyDrinkMeter", 100.0);
 	}
 	
-	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon != INVALID_ENT_REFERENCE)
-	{
-		//Save revenge crits from weapons fired or manmelter crit collected
-		Properties_SaveWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
-	}
+	//Save revenge crits from weapons fired or manmelter crit collected
+	Properties_SaveActiveWeaponPropInt(iClient, "m_iRevengeCrits");
 }
 
 public void Client_PostThink(int iClient)

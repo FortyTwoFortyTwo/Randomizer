@@ -668,9 +668,7 @@ public MRESReturn DHook_GetMaxHealthForBuffingPost(int iClient, Handle hReturn)
 		return;
 	
 	//Set back to active weapon
-	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon != INVALID_ENT_REFERENCE)
-		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iDecapitations");
+	Properties_LoadActiveWeaponPropInt(iClient, "m_iDecapitations");
 }
 
 public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, Handle hReturn, Handle hParams)
@@ -690,9 +688,7 @@ public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, Handle hReturn, Handl
 		return;
 	
 	//Set back to active weapon
-	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon != INVALID_ENT_REFERENCE)
-		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iDecapitations");
+	Properties_LoadActiveWeaponPropInt(iClient, "m_iDecapitations");
 }
 
 public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, Handle hReturn, Handle hParams)
@@ -1014,10 +1010,7 @@ public MRESReturn DHook_KilledPre(int iObject)
 	int iClient = GetEntPropEnt(iObject, Prop_Send, "m_hBuilder");
 	if (0 < iClient <= MaxClients)
 	{
-		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-		if (iActiveWeapon != INVALID_ENT_REFERENCE)
-			Properties_SaveWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
-		
+		Properties_SaveActiveWeaponPropInt(iClient, "m_iRevengeCrits");
 		SetEntProp(iClient, Prop_Send, "m_iRevengeCrits", 0);
 	}
 	
@@ -1027,10 +1020,7 @@ public MRESReturn DHook_KilledPre(int iObject)
 		int iAttacker = GetEntPropEnt(g_iBuildingKilledSapper, Prop_Send, "m_hBuilder");
 		if (0 < iAttacker <= MaxClients)
 		{
-			int iActiveWeapon = GetEntPropEnt(iAttacker, Prop_Send, "m_hActiveWeapon");
-			if (iActiveWeapon != INVALID_ENT_REFERENCE)
-				Properties_SaveWeaponPropInt(iAttacker, iActiveWeapon, "m_iRevengeCrits");
-			
+			Properties_SaveActiveWeaponPropInt(iAttacker, "m_iRevengeCrits");
 			SetEntProp(iAttacker, Prop_Send, "m_iRevengeCrits", 0);
 		}
 	}
@@ -1051,9 +1041,7 @@ public MRESReturn DHook_KilledPost(int iObject)
 		}
 		
 		//Set back to active weapon
-		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-		if (iActiveWeapon != INVALID_ENT_REFERENCE)
-			Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
+		Properties_LoadActiveWeaponPropInt(iClient, "m_iRevengeCrits");
 	}
 	
 	//Sapper is detached in post hook as object is being removed
@@ -1076,9 +1064,7 @@ public MRESReturn DHook_KilledPost(int iObject)
 			}
 			
 			//Set back to active weapon
-			int iActiveWeapon = GetEntPropEnt(iAttacker, Prop_Send, "m_hActiveWeapon");
-			if (iActiveWeapon != INVALID_ENT_REFERENCE)
-				Properties_LoadWeaponPropInt(iAttacker, iActiveWeapon, "m_iRevengeCrits");
+			Properties_LoadActiveWeaponPropInt(iAttacker, "m_iRevengeCrits");
 		}
 	}
 	

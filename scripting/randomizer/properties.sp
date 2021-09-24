@@ -15,6 +15,13 @@ void Properties_LoadWeaponPropInt(int iClient, int iWeapon, const char[] sProp, 
 	SetEntProp(iClient, Prop_Send, sProp, iValue, _, iElement);
 }
 
+void Properties_LoadActiveWeaponPropInt(int iClient, const char[] sProp)
+{
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iWeapon != INVALID_ENT_REFERENCE)
+		Properties_LoadWeaponPropInt(iClient, iWeapon, sProp);
+}
+
 void Properties_SaveWeaponPropInt(int iClient, int iWeapon, const char[] sProp, int iElement = 0)
 {
 	if (!g_mPropertiesWeaponSend[iWeapon])
@@ -26,6 +33,13 @@ void Properties_SaveWeaponPropInt(int iClient, int iWeapon, const char[] sProp, 
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon != INVALID_ENT_REFERENCE && iActiveWeapon != iWeapon)
 		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, sProp, iElement);
+}
+
+void Properties_SaveActiveWeaponPropInt(int iClient, const char[] sProp)
+{
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iWeapon != INVALID_ENT_REFERENCE)
+		Properties_SaveWeaponPropInt(iClient, iWeapon, sProp);
 }
 
 void Properties_LoadWeaponPropFloat(int iClient, int iWeapon, const char[] sProp, int iElement = 0)
