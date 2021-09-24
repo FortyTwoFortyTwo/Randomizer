@@ -46,9 +46,6 @@ stock int TF2_CreateWeapon(int iClient, int iIndex, int iSlot)
 		}
 		
 		DispatchSpawn(iWeapon);
-		
-		//Reset charge meter
-		SetEntPropFloat(iClient, Prop_Send, "m_flItemChargeMeter", 0.0, iSlot);
 	}
 	else
 	{
@@ -109,21 +106,10 @@ stock int TF2_EquipWeapon(int iClient, int iWeapon)
 {
 	SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
 	
-	char sClassname[256];
-	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-	if (StrContains(sClassname, "tf_weapon") == 0)
-	{
-		EquipPlayerWeapon(iClient, iWeapon);
-		
-		//Set ammo to 0, CTFPlayer::GetMaxAmmo detour will correct this, adding ammo by current
-		int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-		if (iAmmoType > -1)
-			SetEntProp(iClient, Prop_Send, "m_iAmmo", 0, _, iAmmoType);
-	}
-	else if (StrContains(sClassname, "tf_wearable") == 0)
-	{
+	if (TF2_IsWearable(iWeapon))
 		SDKCall_EquipWearable(iClient, iWeapon);
-	}
+	else
+		EquipPlayerWeapon(iClient, iWeapon);
 }
 
 stock Address TF2_FindReskinItem(int iClient, int iIndex)
@@ -150,6 +136,13 @@ stock bool TF2_IsValidEconItemView(Address pItem)
 	return 0 <= iIndex < 65535;
 }
 
+stock bool TF2_IsWearable(int iWeapon)
+{
+	char sClassname[256];
+	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	return StrContains(sClassname, "tf_wearable") == 0 || StrEqual(sClassname, "tf_powerup_bottle");
+}
+
 stock bool TF2_WeaponFindAttribute(int iWeapon, char[] sAttrib, float &flVal)
 {
 	Address pAttrib = TF2Attrib_GetByName(iWeapon, sAttrib);
@@ -159,7 +152,7 @@ stock bool TF2_WeaponFindAttribute(int iWeapon, char[] sAttrib, float &flVal)
 		return true;
 	}
 	
-	if(GetEntProp(iWeapon, Prop_Send, "m_bOnlyIterateItemViewAttributes") == 0) //Weapon is still using it's default attributes
+	if (!GetEntProp(iWeapon, Prop_Send, "m_bOnlyIterateItemViewAttributes")) //Weapon is still using it's default attributes
 	{
 		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
 		return TF2_IndexFindAttribute(iIndex, sAttrib, flVal);
@@ -185,13 +178,48 @@ stock bool TF2_IndexFindAttribute(int iIndex, const char[] sAttrib, float &flVal
 	return false;
 }
 
+float TF2_GetAttributePercentage(int iClient, char[] sAttrib)
+{
+	float flTotal = 1.0;
+	
+	Address pAttrib = TF2Attrib_GetByName(iClient, sAttrib);
+	if (pAttrib != Address_Null)
+		flTotal *= TF2Attrib_GetValue(pAttrib);
+	
+	int iWeapon, iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		float flVal;
+		if (TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal))
+			flTotal *= flVal;
+	}
+	
+	return flTotal;
+}
+
+float TF2_GetAttributeAdditive(int iClient, char[] sAttrib)
+{
+	float flTotal;
+	
+	Address pAttrib = TF2Attrib_GetByName(iClient, sAttrib);
+	if (pAttrib != Address_Null)
+		flTotal += TF2Attrib_GetValue(pAttrib);
+	
+	int iWeapon, iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		float flVal;
+		if (TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal))
+			flTotal += flVal;
+	}
+	
+	return flTotal;
+}
+
 stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos, bool bCosmetic = false)
 {
 	//Could be looped through client slots, but would cause issues with >1 weapons in same slot
-	
-	static int iMaxWeapons;
-	if (!iMaxWeapons)
-		iMaxWeapons = GetEntPropArraySize(iClient, Prop_Send, "m_hMyWeapons");
+	int iMaxWeapons = GetMaxWeapons();
 	
 	//Loop though all weapons (non-wearables)
 	while (iPos < iMaxWeapons)
@@ -199,51 +227,62 @@ stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos, bool bCosmetic = fa
 		iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iPos);
 		iPos++;
 		
-		if (iWeapon > MaxClients)
+		if (iWeapon != INVALID_ENT_REFERENCE)
 			return true;
 		
 		//Reset iWeapon for wearable loop below
 		if (iPos == iMaxWeapons)
-			iWeapon = MaxClients+1;
+			iWeapon = INVALID_ENT_REFERENCE;
 	}
 	
-	//Loop through all wearables
-	while ((iWeapon = FindEntityByClassname(iWeapon, "tf_wearable*")) > MaxClients)
+	if (iPos == iMaxWeapons)
 	{
-		if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") == iClient || GetEntPropEnt(iWeapon, Prop_Send, "moveparent") == iClient)
+		//Loop through all wearables
+		while ((iWeapon = FindEntityByClassname(iWeapon, "tf_wearable*")) != INVALID_ENT_REFERENCE)
 		{
-			if (bCosmetic)
-				return true;
-			
-			//Check if it not cosmetic
-			int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") == iClient)
 			{
-				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-				if (0 <= iSlot <= WeaponSlot_Building)
+				int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+				if (iIndex < 0 || iIndex >= 65535)
+					continue;	//Probably attached wearable from weapon
+				
+				if (bCosmetic)
 					return true;
+				
+				//Check if it not cosmetic
+				for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+				{
+					int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+					if (0 <= iSlot <= WeaponSlot_Building)
+						return true;
+				}
 			}
 		}
+		
+		//Reset iWeapon for canteen loop below
+		iWeapon = INVALID_ENT_REFERENCE;
+		iPos = iMaxWeapons + 1;
 	}
 	
-	iWeapon = -1;
+	//Loop through all canteens
+	if (bCosmetic)
+		while ((iWeapon = FindEntityByClassname(iWeapon, "tf_powerup_bottle")) != INVALID_ENT_REFERENCE)
+			if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") == iClient)
+				return true;
+	
+	//No more weapons to loop
+	iWeapon = INVALID_ENT_REFERENCE;
 	iPos = 0;
 	return false;
 }
 
-stock int TF2_GetItemFromClassname(int iClient, const char[] sClassname)
+stock bool TF2_GetItemFromClassname(int iClient, const char[] sClassname, int &iWeapon, int &iPos)
 {
-	int iWeapon;
-	int iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		char sBuffer[256];
-		GetEntityClassname(iWeapon, sBuffer, sizeof(sBuffer));
-		if (StrEqual(sBuffer, sClassname))
-			return iWeapon;
-	}
+	while (TF2_GetItem(iClient, iWeapon, iPos, true))
+		if (IsClassname(iWeapon, sClassname))
+			return true;
 	
-	return -1;
+	return false;
 }
 
 stock bool TF2_GetItemFromLoadoutSlot(int iClient, int iSlot, int &iWeapon, int &iPos)
@@ -261,11 +300,20 @@ stock bool TF2_GetItemFromLoadoutSlot(int iClient, int iSlot, int &iWeapon, int 
 	return false;
 }
 
+stock bool TF2_GetItemFromAttribute(int iClient, char[] sAttrib, int &iWeapon, int &iPos)
+{
+	float flVal;
+	
+	while (TF2_GetItem(iClient, iWeapon, iPos, true))
+		if (TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal))
+			return true;
+	
+	return false;
+}
+
 stock int TF2_GetSlot(int iWeapon)
 {
-	char sClassname[256];
-	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-	if (StrContains(sClassname, "tf_wearable") == 0)
+	if (TF2_IsWearable(iWeapon))
 	{
 		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
 		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
@@ -345,11 +393,166 @@ stock TFClassType TF2_GetRandomClass()
 	return view_as<TFClassType>(GetRandomInt(CLASS_MIN, CLASS_MAX));
 }
 
-stock void TF2_RemoveItem(int iClient, int iWeapon)
+stock int TF2_GetSapper(int iObject)
+{
+	if (!GetEntProp(iObject, Prop_Send, "m_bHasSapper"))
+		return INVALID_ENT_REFERENCE;
+	
+	return GetEntPropEnt(iObject, Prop_Data, "m_hMoveChild");
+}
+
+stock bool TF2_CanSwitchTo(int iClient, int iWeapon)
 {
 	char sClassname[256];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-	if (StrContains(sClassname, "tf_wearable") == 0)
+	if (StrContains(sClassname, "tf_weapon") != 0)
+		return false;
+	
+	return SDKCall_WeaponCanSwitchTo(iClient, iWeapon);
+}
+
+stock bool TF2_SwitchToWeapon(int iClient, int iWeapon)
+{
+	//Deatch other weapons first as some may have same classname
+	int iMaxWeapons = GetMaxWeapons();
+	int[] iWeapons = new int[iMaxWeapons];
+	
+	for (int i = 0; i < iMaxWeapons; i++)
+	{
+		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		if (iWeapons[i] != iWeapon)
+			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
+	}
+	
+	char sClassname[256];
+	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+	FakeClientCommand(iClient, "use %s", sClassname);
+	
+	for (int i = 0; i < iMaxWeapons; i++)
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
+}
+
+stock int TF2_GiveAmmo(int iClient, int iWeapon, int iCurrent, int iAdd, int iAmmoType, bool bSuppressSound, EAmmoSource eAmmoSource)
+{
+	//Basically CTFPlayer::GiveAmmo but without interfering m_iAmmo and other weapons
+	if (iAdd <= 0 || iAmmoType < 0 || iAmmoType >= TF_AMMO_COUNT)	//TF2 using MAX_AMMO_SLOTS (32) instead of TF_AMMO_COUNT...
+		return 0;
+	
+	if (eAmmoSource == kAmmoSource_Resupply)
+	{
+		float flVal;
+		
+		switch (iAmmoType)
+		{
+			case TF_AMMO_GRENADES1:
+			{
+				if (TF2_WeaponFindAttribute(iWeapon, "grenades1_resupply_denied", flVal) && flVal > 0.0)
+					return 0;
+			}
+			case TF_AMMO_GRENADES2:
+			{
+				if (TF2_WeaponFindAttribute(iWeapon, "grenades2_resupply_denied", flVal) && flVal > 0.0)
+					return 0;
+			}
+			case TF_AMMO_GRENADES3:
+			{
+				if (TF2_WeaponFindAttribute(iWeapon, "grenades3_resupply_denied", flVal) && flVal > 0.0)
+					return 0;
+			}
+		}
+	}
+	else if (iAmmoType == TF_AMMO_METAL)	//Must not be from kAmmoSource_Resupply
+	{
+		float flVal = TF2_GetAttributePercentage(iClient, "metal_pickup_decreased");
+		iAdd = RoundToFloor(flVal * float(iAdd));
+	}
+	
+	int iMaxAmmo = TF2_GetMaxAmmo(iClient, iWeapon, iAmmoType);
+	if (iAdd + iCurrent > iMaxAmmo)
+		iAdd = iMaxAmmo - iCurrent;
+	
+	if (iAdd <= 0)
+		return 0;
+	
+	if (!bSuppressSound)
+		EmitGameSoundToClient(iClient, "BaseCombatCharacter.AmmoPickup");
+	
+	return iAdd;
+}
+
+stock int TF2_GetMaxAmmo(int iClient, int iWeapon, int iAmmoType)
+{
+	//Same as CTFPlayer::GetMaxAmmo, this is made because of multiple weapons conflicts eachother on attributes
+	//TODO this function is so horrible with lots of hardcode, is there a better way to do this?
+	
+	int iClassMaxAmmo[CLASS_MAX+1][TF_AMMO_COUNT] = {
+		{0, 0, 0, 0, 0, 0, 0},		//Undefined
+		{0, 32, 36, 200, 1, 1, 1},	//Scout	
+		{0, 25, 75, 200, 1, 1, 1},	//Sniper
+		{0, 20, 32, 200, 1, 1, 1},	//Soldier
+		{0, 16, 24, 200, 1, 1, 1},	//Demoman
+		{0, 150, 0, 200, 1, 1, 1},	//Medic
+		{0, 200, 32, 200, 1, 1, 1},	//Heavy
+		{0, 200, 32, 200, 1, 1, 1},	//Pyro
+		{0, 0, 24, 200, 1, 1, 1},	//Spy
+		{0, 32, 200, 200, 1, 1, 1},	//Engineer
+	};
+	
+	int iMaxAmmo = iClassMaxAmmo[TF2_GetDefaultClassFromItem(iWeapon)][iAmmoType];
+	
+	//Remove all weapons using same ammo index so they don't interfere with max ammo attributes
+	//Don't remove weapons with different ammo index so they could interfere with max ammo attributes
+	int iMaxWeapons = GetMaxWeapons();
+	int[] iWeapons = new int[iMaxWeapons];
+	
+	for (int i = 0; i < iMaxWeapons; i++)
+	{
+		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		if (iWeapons[i] != INVALID_ENT_REFERENCE && iWeapons[i] != iWeapon && GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
+			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
+	}
+	
+	float flVal = 1.0;
+	switch (iAmmoType)
+	{
+		case TF_AMMO_PRIMARY:
+		{
+			flVal *= TF2_GetAttributePercentage(iClient, "hidden primary max ammo bonus");
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo primary increased");
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo primary reduced");
+			
+		}
+		case TF_AMMO_SECONDARY:
+		{
+			flVal *= TF2_GetAttributePercentage(iClient, "hidden secondary max ammo penalty");
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo secondary increased");
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo secondary reduced");
+			
+		}
+		case TF_AMMO_METAL:
+		{
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo metal increased");
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo metal reduced");
+		}
+		case TF_AMMO_GRENADES1:
+		{
+			flVal *= TF2_GetAttributePercentage(iClient, "maxammo grenades1 increased");
+		}
+	}
+	
+	if (TF2_IsPlayerInCondition(iClient, TFCond_RuneHaste))
+		flVal *= 2.0;
+	
+	//Set it back
+	for (int i = 0; i < iMaxWeapons; i++)
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
+	
+	return RoundToFloor(float(iMaxAmmo) * flVal);
+}
+
+stock void TF2_RemoveItem(int iClient, int iWeapon)
+{
+	if (TF2_IsWearable(iWeapon))
 	{
 		//If wearable, just simply use TF2_RemoveWearable
 		TF2_RemoveWearable(iClient, iWeapon);
@@ -370,19 +573,6 @@ stock void TF2_RemoveItem(int iClient, int iWeapon)
 	RemoveEntity(iWeapon);
 }
 
-stock int TF2_GetItemFromAmmoType(int iClient, int iAmmoType)
-{
-	//Only primary, secondary and melee should have ammo, keep this simple for optimization
-	for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
-	{
-		int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
-		if (iWeapon > MaxClients && GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
-			return iWeapon;
-	}
-	
-	return -1;
-}
-
 stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 {
 	int iParticle = CreateEntityByName("info_particle_system");
@@ -401,6 +591,13 @@ stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 	
 	//Return ref of entity
 	return EntIndexToEntRef(iParticle);
+}
+
+stock bool IsClassname(int iEntity, const char[] sClassname)
+{
+	char sBuffer[256];
+	GetEntityClassname(iEntity, sBuffer, sizeof(sBuffer));
+	return StrEqual(sBuffer, sClassname);
 }
 
 stock bool ItemIsAllowed(int iIndex)
@@ -474,6 +671,24 @@ stock bool CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 	
 	//Should be allowed
 	return true;
+}
+
+stock int GetMaxWeapons()
+{
+	static int iMaxWeapons;
+	if (!iMaxWeapons)
+	{
+		for (int iClient = 1; iClient <= MaxClients; iClient++)
+		{
+			if (IsClientInGame(iClient))
+			{
+				iMaxWeapons = GetEntPropArraySize(iClient, Prop_Send, "m_hMyWeapons");
+				break;
+			}
+		}
+	}
+	
+	return iMaxWeapons;
 }
 
 stock int PrecacheParticleSystem(const char[] sParticle)

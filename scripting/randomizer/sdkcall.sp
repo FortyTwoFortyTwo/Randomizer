@@ -6,6 +6,7 @@ static Handle g_hSDKEndClassSpecialSkill;
 static Handle g_hSDKGetLoadoutItem;
 static Handle g_hSDKUpdateRageBuffsAndRage;
 static Handle g_hSDKHandleRageGain;
+static Handle g_hSDKWeaponCanSwitchTo;
 static Handle g_hSDKGetSlot;
 static Handle g_hSDKEquipWearable;
 static Handle g_hSDKGiveNamedItem;
@@ -73,6 +74,14 @@ public void SDKCall_Init(GameData hGameData)
 	if (!g_hSDKHandleRageGain)
 		LogError("Failed to create call: HandleRageGain");
 	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseCombatCharacter::Weapon_CanSwitchTo");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_ByValue);
+	g_hSDKWeaponCanSwitchTo = EndPrepSDKCall();
+	if (!g_hSDKWeaponCanSwitchTo)
+		LogError("Failed to create call: CBaseCombatCharacter::Weapon_CanSwitchTo");
+	
 	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseCombatWeapon::GetSlot");
 	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
@@ -137,6 +146,11 @@ void SDKCall_UpdateRageBuffsAndRage(Address pPlayerShared)
 void SDKCall_HandleRageGain(int iClient, int iRequiredBuffFlags, float flDamage, float fInverseRageGainScale)
 {
 	SDKCall(g_hSDKHandleRageGain, iClient, iRequiredBuffFlags, flDamage, fInverseRageGainScale);
+}
+
+bool SDKCall_WeaponCanSwitchTo(int iClient, int iWeapon)
+{
+	return SDKCall(g_hSDKWeaponCanSwitchTo, iClient, iWeapon);
 }
 
 int SDKCall_GetSlot(int iWeapon)

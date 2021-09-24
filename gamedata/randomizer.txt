@@ -112,6 +112,12 @@
 		}
 		"Signatures"
 		{
+			"CTFPlayer::GiveAmmo"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer8GiveAmmoEiib11EAmmoSource"
+				"windows"	"\x55\x8B\xEC\x51\x53\x56\x8B\x75\x08\x8B\xD9\x89\x75\xFC"
+			}
 			"CTFPlayer::GetMaxAmmo"
 			{
 				"library"	"server"
@@ -214,6 +220,12 @@
 				"linux"		"@_ZN9CTFPlayer10TakeHealthEfi"
 				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x6A\x1F"
 			}
+			"CTFPlayer::CheckBlockBackstab"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer18CheckBlockBackstabEPS_"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x56\x57\x8B\xF9\x8D\x9F\xB0\x19\x00\x00"
+			}
 			"CTFPlayerClassShared::CanBuildObject"
 			{
 				"library"	"server"
@@ -270,11 +282,6 @@
 				"linux"		"6"
 				"windows"	"5"
 			}
-			"CBaseCombatCharacter::GiveAmmo"
-			{
-				"linux"		"257"
-				"windows"	"256"
-			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"linux"		"287"
@@ -284,6 +291,11 @@
 			{
 				"linux"		"333"
 				"windows"	"327"
+			}
+			"CTFWeaponBase::GetEffectBarAmmo"
+			{
+				"linux"		"462"
+				"windows"	"455"
 			}
 			"CTFWeaponBaseMelee::Swing"
 			{
@@ -305,6 +317,11 @@
 				"linux"		"483"
 				"windows"	"476"
 			}
+			"CBaseObject::Killed"
+			{
+				"linux"		"350"
+				"windows"	"349"
+			}
 			"CBaseObject::CanBeUpgraded"
 			{
 				"linux"		"377"
@@ -319,6 +336,16 @@
 			{
 				"linux"		"432"
 				"windows"	"431"
+			}
+			"CBaseCombatCharacter::GetAmmoCount"
+			{
+				"linux"		"260"
+				"windows"	"259"
+			}
+			"CBaseCombatCharacter::Weapon_CanSwitchTo"
+			{
+				"linux"		"271"
+				"windows"	"270"
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
@@ -343,6 +370,32 @@
 		}
 		"Functions"
 		{
+			"CTFPlayer::GiveAmmo"
+			{
+				"signature"	"CTFPlayer::GiveAmmo"
+				"callconv"	"thiscall"
+				"return"	"int"
+				"this"		"entity"
+				"arguments"
+				{
+					"iCount"
+					{
+						"type"	"int"
+					}
+					"iAmmoIndex"
+					{
+						"type"	"int"
+					}
+					"bSuppressSound"
+					{
+						"type"	"bool"
+					}
+					"eAmmoSource"
+					{
+						"type"	"int"
+					}
+				}
+			}
 			"CTFPlayer::GetMaxAmmo"
 			{
 				"signature"	"CTFPlayer::GetMaxAmmo"
@@ -507,6 +560,27 @@
 					}
 				}
 			}
+			"CTFPlayer::GetMaxHealthForBuffing"
+			{
+				"signature"	"CTFPlayer::GetMaxHealthForBuffing"
+				"callconv"	"thiscall"
+				"return"	"int"
+				"this"		"entity"
+			}
+			"CTFPlayer::TeamFortress_CalculateMaxSpeed"
+			{
+				"signature"	"CTFPlayer::TeamFortress_CalculateMaxSpeed"
+				"callconv"	"thiscall"
+				"return"	"float"
+				"this"		"entity"
+				"arguments"
+				{
+					"bIgnoreSpecialAbility"
+					{
+						"type"	"bool"
+					}
+				}
+			}
 			"CTFPlayer::TakeHealth"
 			{
 				"signature"	"CTFPlayer::TakeHealth"
@@ -522,6 +596,20 @@
 					"bitsDamageType"
 					{
 						"type"	"int"
+					}
+				}
+			}
+			"CTFPlayer::CheckBlockBackstab"
+			{
+				"signature"	"CTFPlayer::CheckBlockBackstab"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"pTFAttacker"
+					{
+						"type"	"cbaseentity"
 					}
 				}
 			}
@@ -643,33 +731,18 @@
 					}
 				}
 			}
-			"CBaseCombatCharacter::GiveAmmo"
-			{
-				"offset"	"CBaseCombatCharacter::GiveAmmo"
-				"hooktype"	"entity"
-				"return"	"int"
-				"this"		"entity"
-				"arguments"
-				{
-					"iCount"
-					{
-						"type"	"int"
-					}
-					"iAmmoIndex"
-					{
-						"type"	"int"
-					}
-					"bSuppressSound"
-					{
-						"type"	"bool"
-					}
-				}
-			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"offset"	"CBaseCombatWeapon::SecondaryAttack"
 				"hooktype"	"entity"
 				"return"	"void"
+				"this"		"entity"
+			}
+			"CTFWeaponBase::GetEffectBarAmmo"
+			{
+				"offset"	"CTFWeaponBase::GetEffectBarAmmo"
+				"hooktype"	"entity"
+				"return"	"int"
 				"this"		"entity"
 			}
 			"CTFWeaponBaseMelee::Swing"
@@ -728,6 +801,13 @@
 					}
 				}
 			}
+			"CBaseObject::Killed"
+			{
+				"offset"	"CBaseObject::Killed"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
+			}
 			"CBaseObject::CanBeUpgraded"
 			{
 				"offset"	"CBaseObject::CanBeUpgraded"
@@ -760,6 +840,20 @@
 					"pItem"
 					{
 						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CBaseCombatCharacter::GetAmmoCount"
+			{
+				"offset"	"CBaseCombatCharacter::GetAmmoCount"
+				"hooktype"	"entity"
+				"return"	"int"
+				"this"		"entity"
+				"arguments"
+				{
+					"iAmmoIndex"
+					{
+						"type"	"int"
 					}
 				}
 			}

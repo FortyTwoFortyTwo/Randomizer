@@ -15,22 +15,42 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.7.0"
+#define PLUGIN_VERSION			"1.8.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
 #define CONFIG_MAXCHAR	64
 
-#define CLASS_ALL	0
 #define CLASS_MIN	1	//First valid TFClassType, TFClass_Scout
 #define CLASS_MAX	9	//Last valid TFClassType, TFClass_Engineer
 
-#define TEAM_ALL	0
 #define TEAM_MIN	2	//First valid TFTeam, TFTeam_Red
 #define TEAM_MAX	3	//Last valid TFTeam, TFTeam_Blue
 
+#define DEFAULT_MAX_AMMO	1000	//Used for cases when 2 weapons use same ammotype, number only matters when diving for ammo pickups
+#define MAX_WEAPONS		40			//Max 48 m_hMyWeapons, give 8 as a space for other weapons (PDA, action etc)
+
 #define PARTICLE_BEAM_BLU	"medicgun_beam_blue"
 #define PARTICLE_BEAM_RED	"medicgun_beam_red"
+
+// entity effects
+enum
+{
+	EF_BONEMERGE			= (1<<0),	// Performs bone merge on client side
+	EF_BRIGHTLIGHT			= (1<<1),	// DLIGHT centered at entity origin
+	EF_DIMLIGHT				= (1<<2),	// player flashlight
+	EF_NOINTERP				= (1<<3),	// don't interpolate the next frame
+	EF_NOSHADOW				= (1<<4),	// Don't cast no shadow
+	EF_NODRAW				= (1<<5),	// don't draw entity
+	EF_NORECEIVESHADOW		= (1<<6),	// Don't receive no shadow
+	EF_BONEMERGE_FASTCULL	= (1<<7),	// For use with EF_BONEMERGE. If this is set, then it places this ent's origin at its
+										// parent and uses the parent's bbox + the max extents of the aiment.
+										// Otherwise, it sets up the parent's bones every frame to figure out where to place
+										// the aiment, which is inefficient because it'll setup the parent's bones even if
+										// the parent is not in the PVS.
+	EF_ITEM_BLINK			= (1<<8),	// blink an item so that the user notices it.
+	EF_PARENT_ANIMATES		= (1<<9),	// always assume that the parent entity is animating
+};
 
 enum TFQuality
 {
@@ -84,9 +104,17 @@ enum
 	TF_AMMO_PRIMARY,	//General primary weapon ammo
 	TF_AMMO_SECONDARY,	//General secondary weapon ammo
 	TF_AMMO_METAL,		//Engineer's metal
-	TF_AMMO_GRENADES1,	//Weapon misc ammo 1, in randomizer we force all melee weapon misc ammo to this
-	TF_AMMO_GRENADES2,	//Weapon misc ammo 2, in randomizer we force all secondary weapon misc ammo to this
+	TF_AMMO_GRENADES1,	//Weapon misc ammo 1
+	TF_AMMO_GRENADES2,	//Weapon misc ammo 2
+	TF_AMMO_GRENADES3,
 	TF_AMMO_COUNT
+};
+
+enum EAmmoSource
+{
+	kAmmoSource_Pickup,					// this came from either a box of ammo or a player's dropped weapon
+	kAmmoSource_Resupply,				// resupply cabinet and/or full respawn
+	kAmmoSource_DispenserOrCart,		// the player is standing next to an engineer's dispenser or pushing the cart in a payload game
 };
 
 enum
@@ -100,6 +128,15 @@ enum
 	Mode_MAX
 };
 
+enum
+{
+	HudMode_None = 0,
+	HudMode_Text = 1,
+	HudMode_Menu = 2,
+	
+	HudMode_MAX
+};
+
 enum Button
 {
 	Button_Invalid = -1,
@@ -110,6 +147,70 @@ enum Button
 	
 	Button_MAX
 };
+
+enum struct RandomizedWeapon
+{
+	int iIndex[MAX_WEAPONS];//Index to set
+	int iSlot[MAX_WEAPONS];	//Slot to use
+	int iRef[MAX_WEAPONS];	//Weapon entity if exists
+	
+	void Reset()
+	{
+		for (int iPos = 0; iPos < MAX_WEAPONS; iPos++)
+		{
+			this.iIndex[iPos] = -1;
+			this.iSlot[iPos] = -1;
+			this.iRef[iPos] = INVALID_ENT_REFERENCE;
+		}
+	}
+	
+	void Add(int iIndex, int iSlot, int iWeapon = INVALID_ENT_REFERENCE)
+	{
+		if (iIndex == -1)
+			return;
+		
+		for (int iPos = 0; iPos < MAX_WEAPONS; iPos++)
+		{
+			if (this.iIndex[iPos] == -1)
+			{
+				this.iIndex[iPos] = iIndex;
+				this.iSlot[iPos] = iSlot;
+				
+				if (iWeapon != INVALID_ENT_REFERENCE)
+					this.iRef[iPos] = EntIndexToEntRef(iWeapon);
+				
+				return;
+			}
+		}
+	}
+	
+	void RemoveBySlot(int iSlot)
+	{
+		for (int iPos = 0; iPos < MAX_WEAPONS; iPos++)
+		{
+			if (this.iSlot[iPos] == iSlot)
+			{
+				this.iIndex[iPos] = -1;
+				this.iSlot[iPos] = -1;
+				this.iRef[iPos] = INVALID_ENT_REFERENCE;
+			}
+		}
+	}
+	
+	bool HasWeapon(int iWeapon)
+	{
+		if (iWeapon == INVALID_ENT_REFERENCE)
+			return false;
+		
+		int iRef = EntIndexToEntRef(iWeapon);
+		
+		for (int iPos = 0; iPos < MAX_WEAPONS; iPos++)
+			if (this.iRef[iPos] == iRef)
+				return true;
+		
+		return false;
+	}
+}
 
 enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 {
@@ -229,6 +330,7 @@ int g_iOffsetPlayerShared;
 
 ConVar g_cvEnabled;
 ConVar g_cvWeaponsFromClass;
+ConVar g_cvWeaponsCount;
 ConVar g_cvCosmeticsConflicts;
 ConVar g_cvRandomClass;
 ConVar g_cvRandomWeapons;
@@ -240,14 +342,15 @@ ConVar g_cvDroppedWeapons;
 ConVar g_cvHuds;
 
 TFClassType g_iTeamClass[TEAM_MAX+1];
-int g_iTeamWeaponIndex[TEAM_MAX+1][CLASS_MAX+1][WeaponSlot_Building+1];
+RandomizedWeapon g_eTeamWeapon[TEAM_MAX+1][CLASS_MAX+1];
 
 TFClassType g_iClientClass[TF_MAXPLAYERS];
-int g_iClientWeaponIndex[TF_MAXPLAYERS][CLASS_MAX+1][WeaponSlot_Building+1];
+RandomizedWeapon g_eClientWeapon[TF_MAXPLAYERS][CLASS_MAX+1];
 
 TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
 int g_iAllowPlayerClass[TF_MAXPLAYERS];
 bool g_bFeignDeath[TF_MAXPLAYERS];
+bool g_bWeaponDecap[TF_MAXPLAYERS];
 Handle g_hTimerClientHud[TF_MAXPLAYERS];
 
 int g_iClientEurekaTeleporting;
@@ -257,11 +360,11 @@ int g_iClientEurekaTeleporting;
 #include "randomizer/viewmodels.sp"
 #include "randomizer/weapons.sp"
 
-#include "randomizer/ammo.sp"
 #include "randomizer/commands.sp"
 #include "randomizer/dhook.sp"
+#include "randomizer/event.sp"
 #include "randomizer/patch.sp"
-#include "randomizer/ragemeter.sp"
+#include "randomizer/properties.sp"
 #include "randomizer/sdkcall.sp"
 #include "randomizer/sdkhook.sp"
 #include "randomizer/stocks.sp"
@@ -277,6 +380,7 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+	LoadTranslations("core.phrases");
 	LoadTranslations("randomizer.phrases");
 	
 	//OnLibraryAdded dont always call TF2Items on plugin start
@@ -294,24 +398,19 @@ public void OnPluginStart()
 	
 	delete hGameData;
 	
-	Ammo_Init();
 	Commands_Init();
 	Controls_Init();
+	Event_Init();
 	Huds_Init();
 	ViewModels_Init();
 	Weapons_Init();
-	
-	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
-	HookEvent("player_spawn", Event_PlayerSpawn);
-	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
-	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	
 	AddCommandListener(Event_EurekaTeleport, "eureka_teleport");
 	
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
 		g_iClientClass[iClient] = TFClass_Unknown;
-		ResetWeaponIndex(g_iClientWeaponIndex[iClient]);
+		ResetWeaponIndex(g_eClientWeapon[iClient]);
 	}
 	
 	CreateConVar("randomizer_version", PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION, "Randomizer plugin version", FCVAR_SPONLY|FCVAR_NOTIFY|FCVAR_DONTRECORD);
@@ -321,6 +420,9 @@ public void OnPluginStart()
 	
 	g_cvWeaponsFromClass = CreateConVar("randomizer_weaponsfromclass", "0", "Should generated weapon only be from class that can normally equip?", _, true, 0.0, true, 1.0);
 	g_cvWeaponsFromClass.AddChangeHook(ConVar_RandomChanged);
+	
+	g_cvWeaponsCount = CreateConVar("randomizer_weaponscount", "-1", "How many weapons to randomly generate, -1 for each slot by one?", _, true, -1.0, true, float(MAX_WEAPONS));
+	g_cvWeaponsCount.AddChangeHook(ConVar_RandomChanged);
 	
 	g_cvCosmeticsConflicts = CreateConVar("randomizer_cosmeticsconflicts", "1", "Should generated cosmetics check for possible conflicts?", _, true, 0.0, true, 1.0);
 	g_cvCosmeticsConflicts.AddChangeHook(ConVar_RandomChanged);
@@ -344,7 +446,7 @@ public void OnPluginStart()
 	g_cvTeamCosmetics.AddChangeHook(ConVar_TeamChanged);
 	
 	g_cvDroppedWeapons = CreateConVar("randomizer_droppedweapons", "0", "Allow dropped weapons?", _, true, 0.0, true, 1.0);
-	g_cvHuds = CreateConVar("randomizer_huds", "1", "Enable weapon huds?", _, true, 0.0, true, 1.0);
+	g_cvHuds = CreateConVar("randomizer_huds", "1", "Hud to use to display weapons. 0 = none, 1 = hud text, 2 = menu.", _, true, 0.0, true, float(HudMode_MAX - 1));
 }
 
 public void OnPluginEnd()
@@ -403,7 +505,7 @@ public void OnClientPutInServer(int iClient)
 	if (!g_bEnabled)
 		return;
 	
-	g_hTimerClientHud[iClient] = CreateTimer(0.2, Huds_ClientDisplay, iClient, TIMER_REPEAT);
+	g_hTimerClientHud[iClient] = CreateTimer(0.2, Huds_ClientDisplay, iClient);
 	
 	DHook_HookGiveNamedItem(iClient);
 	DHook_HookClient(iClient);
@@ -420,7 +522,6 @@ public void OnClientDisconnect(int iClient)
 	g_hTimerClientHud[iClient] = null;
 	DHook_UnhookGiveNamedItem(iClient);
 	DHook_UnhookClient(iClient);
-	Rage_ResetRageMeters(iClient);
 }
 
 public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const float vecVel[3], const float vecAngles[3], int iWeapon, int iSubtype, int iCmdNum, int iTickCount, int iSeed, const int iMouse[2]) 
@@ -443,6 +544,12 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 	
 	if (StrEqual(sClassname, "tf_dropped_weapon") && !g_cvDroppedWeapons.BoolValue)
 		RemoveEntity(iEntity);
+}
+
+public void OnEntityDestroyed(int iEntity)
+{
+	if (0 <= iEntity < 2048)
+		Properties_RemoveWeapon(iEntity);
 }
 
 public void ConVar_EnableChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -549,7 +656,7 @@ void RandomizeTeamWeapon(TFTeam iForceTeam = TFTeam_Unassigned)
 	for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
 	{
 		g_iTeamClass[iTeam] = TFClass_Unknown;
-		ResetWeaponIndex(g_iTeamWeaponIndex[iTeam]);
+		ResetWeaponIndex(g_eTeamWeapon[iTeam]);
 	}
 	
 	//Randomize team/all class and weapons round if enabled
@@ -563,7 +670,9 @@ void RandomizeTeamWeapon(TFTeam iForceTeam = TFTeam_Unassigned)
 		}
 		case Mode_All:
 		{
-			g_iTeamClass[TEAM_ALL] = TF2_GetRandomClass();
+			TFClassType nClass = TF2_GetRandomClass();
+			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
+				g_iTeamClass[iTeam] = nClass;
 		}
 	}
 	
@@ -573,11 +682,15 @@ void RandomizeTeamWeapon(TFTeam iForceTeam = TFTeam_Unassigned)
 		{
 			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
 				if (iForceTeam == TFTeam_Unassigned || iForceTeam == view_as<TFTeam>(iTeam))
-					RandomizeWeaponIndex(g_iTeamWeaponIndex[iTeam]);
+					RandomizeWeapon(g_eTeamWeapon[iTeam]);
 		}
 		case Mode_All:
 		{
-			RandomizeWeaponIndex(g_iTeamWeaponIndex[TEAM_ALL]);
+			RandomizedWeapon eWeapon[CLASS_MAX + 1];
+			RandomizeWeapon(eWeapon);
+			
+			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
+				CopyRandomizedWeapon(eWeapon, g_eTeamWeapon[iTeam]);
 		}
 	}
 }
@@ -586,16 +699,29 @@ void RandomizeClientWeapon(int iClient)
 {
 	switch (g_cvRandomClass.IntValue)
 	{
-		case Mode_Normal: g_iClientClass[iClient] = TF2_GetRandomClass();
-		case Mode_NormalRound: g_iClientClass[iClient] = TF2_GetRandomClass();
+		case Mode_Normal, Mode_NormalRound: g_iClientClass[iClient] = TF2_GetRandomClass();
+		case Mode_Team, Mode_All: g_iClientClass[iClient] = g_iTeamClass[TF2_GetClientTeam(iClient)];
 		default: g_iClientClass[iClient] = TFClass_Unknown;
 	}
 	
 	switch (g_cvRandomWeapons.IntValue)
 	{
-		case Mode_Normal: RandomizeWeaponIndex(g_iClientWeaponIndex[iClient]);
-		case Mode_NormalRound: RandomizeWeaponIndex(g_iClientWeaponIndex[iClient]);
-		default: ResetWeaponIndex(g_iClientWeaponIndex[iClient]);
+		case Mode_Normal, Mode_NormalRound: RandomizeWeapon(g_eClientWeapon[iClient]);
+		case Mode_Team, Mode_All: CopyRandomizedWeapon(g_eTeamWeapon[TF2_GetClientTeam(iClient)], g_eClientWeapon[iClient]);
+		default: ResetWeaponIndex(g_eClientWeapon[iClient]);
+	}
+}
+
+void UpdateClientWeapon(int iClient)
+{
+	switch (g_cvRandomClass.IntValue)
+	{
+		case Mode_Team, Mode_All: g_iClientClass[iClient] = g_iTeamClass[TF2_GetClientTeam(iClient)];
+	}
+	
+	switch (g_cvRandomWeapons.IntValue)
+	{
+		case Mode_Team, Mode_All: CopyRandomizedWeapon(g_eTeamWeapon[TF2_GetClientTeam(iClient)], g_eClientWeapon[iClient]);
 	}
 }
 
@@ -639,311 +765,104 @@ bool IsCosmeticRandomized(int iClient)
 	return g_cvRandomCosmetics.IntValue >= 0;
 }
 
-TFClassType GetRandomizedClass(int iClient)
+void CopyRandomizedWeapon(const RandomizedWeapon eInput[CLASS_MAX+1], RandomizedWeapon eOutput[CLASS_MAX+1])
 {
-	switch (g_cvRandomClass.IntValue)
-	{
-		case Mode_Team: return g_iTeamClass[TF2_GetClientTeam(iClient)];
-		case Mode_All: return g_iTeamClass[TEAM_ALL];
-		default: return g_iClientClass[iClient];
-	}
+	for (int iClass = 0; iClass < sizeof(eInput); iClass++)
+		eOutput[iClass] = eInput[iClass];
 }
 
-int GetRandomizedWeaponIndex(int iClient, TFClassType nClass, int iSlot)
-{
-	int iMode = g_cvRandomWeapons.IntValue;
-	switch (iMode)
-	{
-		case Mode_Team, Mode_All:
-		{
-			int iTeam = (iMode == Mode_All) ? TEAM_ALL : GetClientTeam(iClient);
-			
-			if (iSlot > WeaponSlot_Melee || g_cvWeaponsFromClass.BoolValue)
-				return g_iTeamWeaponIndex[iTeam][nClass][iSlot];
-			else
-				return g_iTeamWeaponIndex[iTeam][CLASS_ALL][iSlot];
-		}
-		default:
-		{
-			if (iSlot > WeaponSlot_Melee || g_cvWeaponsFromClass.BoolValue)
-				return g_iClientWeaponIndex[iClient][nClass][iSlot];
-			else
-				return g_iClientWeaponIndex[iClient][CLASS_ALL][iSlot];
-		}
-	}
-}
-
-void SetRandomizedWeaponIndex(int iRandomized[CLASS_MAX+1][WeaponSlot_Building+1], int iSlot, int iIndex)
+void AddRandomizedWeapon(RandomizedWeapon eRandomized[CLASS_MAX+1], int iIndex, int iSlot)
 {
 	if (iSlot > WeaponSlot_Melee || g_cvWeaponsFromClass.BoolValue)
 	{
-		//Set index to each classes if valid
+		//Add index to each classes if valid
 		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 			if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) == iSlot)
-				iRandomized[iClass][iSlot] = iIndex;
+				eRandomized[iClass].Add(iIndex, iSlot);
 	}
 	else
 	{
-		//Set index to all-class
-		iRandomized[CLASS_ALL][iSlot] = iIndex;
-	}
-}
-
-void RandomizeWeaponIndex(int iIndex[CLASS_MAX+1][WeaponSlot_Building+1])
-{
-	if (g_cvWeaponsFromClass.BoolValue)
-	{
-		//Randomize for each classes
+		//Add index to all classes
 		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-			for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
-				iIndex[iClass][iSlot] = Weapons_GetRandomIndex(iSlot, view_as<TFClassType>(iClass));
+			eRandomized[iClass].Add(iIndex, iSlot);
 	}
-	else
-	{
-		//Randomize all-class
-		for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
-			iIndex[CLASS_ALL][iSlot] = Weapons_GetRandomIndex(iSlot, TFClass_Unknown);
-	}
-	
-	//Always randomize each classes for PDAs (engineer & spy)
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-		for (int iSlot = WeaponSlot_PDA; iSlot <= WeaponSlot_Building; iSlot++)
-			iIndex[iClass][iSlot] = Weapons_GetRandomIndex(iSlot, view_as<TFClassType>(iClass));
 }
 
-void ResetWeaponIndex(int iIndex[CLASS_MAX+1][WeaponSlot_Building+1])
+void RemoveRandomizedWeaponBySlot(RandomizedWeapon eRandomized[CLASS_MAX+1], int iSlot)
 {
-	for (int iClass = 0; iClass < sizeof(iIndex); iClass++)
-		for (int iSlot = 0; iSlot < sizeof(iIndex[]); iSlot++)
-			iIndex[iClass][iSlot] = -1;
+	for (int iClass = 0; iClass < sizeof(eRandomized); iClass++)
+		eRandomized[iClass].RemoveBySlot(iSlot);
 }
 
-public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
+void RandomizeWeapon(RandomizedWeapon eRandomized[CLASS_MAX+1])
 {
-	if (!g_bEnabled)
-		return;
+	for (int iClass = 0; iClass < sizeof(eRandomized); iClass++)
+		eRandomized[iClass].Reset();
 	
-	RandomizeTeamWeapon();
+	bool bWeaponsFromClass = g_cvWeaponsFromClass.BoolValue;
+	int iWeaponsCount = g_cvWeaponsCount.IntValue;
 	
-	//Update client weapons
-	for (int iClient = 1; iClient <= MaxClients; iClient++)
+	if (bWeaponsFromClass && iWeaponsCount > -1)
 	{
-		if (IsClientInGame(iClient))
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 		{
-			RandomizeClientWeapon(iClient);
-			
-			if (IsPlayerAlive(iClient) && (IsClassRandomized(iClient) || IsWeaponRandomized(iClient)))
-				TF2_RespawnPlayer(iClient);
+			for (int i = 0; i < iWeaponsCount; i++)
+			{
+				int iIndex = Weapons_GetRandomIndex(view_as<TFClassType>(iClass));
+				eRandomized[iClass].Add(iIndex, TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)));
+			}
 		}
 	}
-}
-
-public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadcast)
-{
-	if (!g_bEnabled)
-		return;
-	
-	int iClient = GetClientOfUserId(event.GetInt("userid"));
-	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
-		return;
-	
-	if (!IsCosmeticRandomized(iClient))
-		return;
-	
-	//Destroy any cosmetics left
-	int iCosmetic;
-	while ((iCosmetic = FindEntityByClassname(iCosmetic, "tf_wearable*")) > MaxClients)
+	else if (bWeaponsFromClass)
 	{
-		if (GetEntPropEnt(iCosmetic, Prop_Send, "m_hOwnerEntity") == iClient || GetEntPropEnt(iCosmetic, Prop_Send, "moveparent") == iClient)
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_Melee; iSlot++)
+				eRandomized[iClass].Add(Weapons_GetRandomIndex(view_as<TFClassType>(iClass), iSlot), iSlot);
+	}
+	else if (iWeaponsCount > -1)
+	{
+		for (int i = 0; i < iWeaponsCount; i++)
 		{
-			int iIndex = GetEntProp(iCosmetic, Prop_Send, "m_iItemDefinitionIndex");
+			int iIndex = Weapons_GetRandomIndex();
+			
 			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 			{
 				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-				if (iSlot == LoadoutSlot_Misc)
+				if (iSlot == -1)
 				{
-					TF2_RemoveItem(iClient, iCosmetic);
-					continue;
+					//Pick random slot
+					do
+					{
+						iSlot = TF2_GetSlotFromIndex(iIndex, TF2_GetRandomClass());
+					}
+					while (iSlot == -1);
 				}
-			}
-		}
-	}
-	
-	int iMaxCosmetics = g_cvRandomCosmetics.IntValue;
-	if (iMaxCosmetics == 0)	//Good ol TF2 2007
-		return;
-	
-	static const int iSlotCosmetics[] = {
-		LoadoutSlot_Head,
-		LoadoutSlot_Misc,
-		LoadoutSlot_Misc2
-	};
-	
-	Address pPossibleItems[CLASS_MAX * sizeof(iSlotCosmetics)];
-	int iPossibleCount;
-	
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-	{
-		for (int i = 0; i < sizeof(iSlotCosmetics); i++)
-		{
-			Address pItem = SDKCall_GetLoadoutItem(iClient, view_as<TFClassType>(iClass), iSlotCosmetics[i]);
-			if (TF2_IsValidEconItemView(pItem))
-			{
-				pPossibleItems[iPossibleCount] = pItem;
-				iPossibleCount++;
-			}
-		}
-	}
-	
-	SortIntegers(view_as<int>(pPossibleItems), iPossibleCount, Sort_Random);
-	
-	if (iMaxCosmetics > iPossibleCount)
-		iMaxCosmetics = iPossibleCount;
-	
-	if (g_cvCosmeticsConflicts.BoolValue)
-	{
-		int iCount;
-		
-		for (int i = 0; i < iPossibleCount; i++)
-		{
-			int iIndex = LoadFromAddress(pPossibleItems[i] + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
-			int iMask = TF2Econ_GetItemEquipRegionMask(iIndex);
-			bool bConflicts;
-			
-			//Find any possible cosmetic conflicts, both weapon and cosmetic
-			int iItem;
-			int iPos;
-			while (TF2_GetItem(iClient, iItem, iPos, true))
-			{
-				int iItemIndex = GetEntProp(iItem, Prop_Send, "m_iItemDefinitionIndex");
-				if (0 <= iItemIndex < 65535 && iMask & TF2Econ_GetItemEquipRegionMask(iItemIndex))
-				{
-					bConflicts = true;
-					break;
-				}
-			}
-			
-			if (!bConflicts)
-			{
-				TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pPossibleItems[i]));
-				iCount++;
-				if (iCount == iMaxCosmetics)
-					break;
+				
+				eRandomized[iClass].Add(iIndex, iSlot);
 			}
 		}
 	}
 	else
 	{
-		for (int i = 0; i < iMaxCosmetics; i++)
-			TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pPossibleItems[i]));
-	}
-}
-
-public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
-{
-	if (!g_bEnabled)
-		return;
-	
-	int iClient = GetClientOfUserId(event.GetInt("userid"));
-	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
-		return;
-	
-	TFClassType nClass = TF2_GetPlayerClass(iClient);
-	
-	//Because of blocking ValidateWeapons and ValidateWearables, make sure action weapon is correct
-	Address pActionItem = SDKCall_GetLoadoutItem(iClient, nClass, LoadoutSlot_Action);
-	bool bFound;
-	
-	int iWeapon;
-	int iPos;
-	while (TF2_GetItemFromLoadoutSlot(iClient, LoadoutSlot_Action, iWeapon, iPos))
-	{
-		if (!TF2_IsValidEconItemView(pActionItem) || GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex") != LoadFromAddress(pActionItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16))
-			TF2_RemoveItem(iClient, iWeapon);
-		else
-			bFound = true;
-	}
-	
-	if (!bFound && TF2_IsValidEconItemView(pActionItem))
-		TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pActionItem));
-	
-	if (!IsWeaponRandomized(iClient))
-		return;
-	
-	bool bKeepWeapon[WeaponSlot_Building+1];
-	
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		char sClassname[256];
-		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-		int iSlot = TF2_GetSlot(iWeapon);
-		
-		if (GetRandomizedWeaponIndex(iClient, nClass, iSlot) == Weapons_GetReskinIndex(iIndex))
-			bKeepWeapon[iSlot] = true;
-		else if (!CanKeepWeapon(iClient, sClassname, iIndex))
-			TF2_RemoveItem(iClient, iWeapon);
-	}
-	
-	for (int iSlot = 0; iSlot <= WeaponSlot_Building; iSlot++)
-	{
-		//Create weapon
-		int iIndex = GetRandomizedWeaponIndex(iClient, nClass, iSlot);
-		if (iIndex >= 0 && !bKeepWeapon[iSlot] && ItemIsAllowed(iIndex))
+		for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_Melee; iSlot++)
 		{
-			Address pItem = TF2_FindReskinItem(iClient, iIndex);
-			if (pItem)
-				iWeapon = TF2_GiveNamedItem(iClient, pItem, iSlot);
-			else
-				iWeapon = TF2_CreateWeapon(iClient, iIndex, iSlot);
+			int iIndex = Weapons_GetRandomIndex(TFClass_Unknown, iSlot);
 			
-			if (iWeapon <= MaxClients)
-			{
-				PrintToChat(iClient, "Unable to create weapon! index (%d)", iIndex);
-				LogError("Unable to create weapon! index (%d)", iIndex);
-			}
-			
-			//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
-			if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
-				SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
-			
-			TF2_EquipWeapon(iClient, iWeapon);
-			
-			if (ViewModels_ShouldBeInvisible(iWeapon, nClass))
-				ViewModels_EnableInvisible(iWeapon);
+			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+				eRandomized[iClass].Add(iIndex, iSlot);
 		}
 	}
 	
-	//Set active weapon if dont have one
-	if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") <= MaxClients)
-	{
-		for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
-		{
-			iWeapon = GetPlayerWeaponSlot(iClient, iSlot);	//Dont want wearable
-			if (iWeapon > MaxClients)
-			{
-				SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
-				break;
-			}
-		}
-	}
+	//Randomize PDAs based on class (engineer & spy)
+	for (int iSlot = WeaponSlot_PDA; iSlot <= WeaponSlot_Building; iSlot++)
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			eRandomized[iClass].Add(Weapons_GetRandomIndex(view_as<TFClassType>(iClass), iSlot), iSlot);
 }
 
-public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroadcast)
+void ResetWeaponIndex(RandomizedWeapon eRandomized[CLASS_MAX+1])
 {
-	if (!g_bEnabled)
-		return;
-	
-	int iClient = GetClientOfUserId(event.GetInt("userid"));
-	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
-	bool bDeadRinger = (event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER) != 0;
-	
-	if (bDeadRinger)
-		g_bFeignDeath[iClient] = true;
-	
-	//Only generate new weapons if killed from attacker, and it's a normal round
-	if (0 < iAttacker <= MaxClients && IsClientInGame(iAttacker) && iClient != iAttacker && !bDeadRinger && g_cvRandomWeapons.IntValue == Mode_Normal)
-		RandomizeClientWeapon(iClient);
+	for (int iClass = 0; iClass < sizeof(eRandomized); iClass++)
+		eRandomized[iClass].Reset();
 }
 
 public Action Event_EurekaTeleport(int iClient, const char[] sCommand, int iArgs)
