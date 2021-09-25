@@ -15,7 +15,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.8.0"
+#define PLUGIN_VERSION			"1.8.1"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
@@ -331,6 +331,7 @@ int g_iOffsetPlayerShared;
 ConVar g_cvEnabled;
 ConVar g_cvWeaponsFromClass;
 ConVar g_cvWeaponsCount;
+ConVar g_cvWeaponsSlotCount[WeaponSlot_Melee+1];
 ConVar g_cvCosmeticsConflicts;
 ConVar g_cvRandomClass;
 ConVar g_cvRandomWeapons;
@@ -348,6 +349,7 @@ TFClassType g_iClientClass[TF_MAXPLAYERS];
 RandomizedWeapon g_eClientWeapon[TF_MAXPLAYERS][CLASS_MAX+1];
 
 TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
+bool g_bClientRespawn[TF_MAXPLAYERS];
 int g_iAllowPlayerClass[TF_MAXPLAYERS];
 bool g_bFeignDeath[TF_MAXPLAYERS];
 bool g_bWeaponDecap[TF_MAXPLAYERS];
@@ -421,8 +423,17 @@ public void OnPluginStart()
 	g_cvWeaponsFromClass = CreateConVar("randomizer_weaponsfromclass", "0", "Should generated weapon only be from class that can normally equip?", _, true, 0.0, true, 1.0);
 	g_cvWeaponsFromClass.AddChangeHook(ConVar_RandomChanged);
 	
-	g_cvWeaponsCount = CreateConVar("randomizer_weaponscount", "-1", "How many weapons to randomly generate, -1 for each slot by one?", _, true, -1.0, true, float(MAX_WEAPONS));
+	g_cvWeaponsCount = CreateConVar("randomizer_weaponscount", "0", "How many weapons at minimum to randomly generate?", _, true, 0.0, true, float(MAX_WEAPONS));
 	g_cvWeaponsCount.AddChangeHook(ConVar_RandomChanged);
+	
+	g_cvWeaponsSlotCount[WeaponSlot_Primary] = CreateConVar("randomizer_weaponscount_primary", "1", "How many primary weapons at minimum to randomly generate?", _, true, 0.0, true, float(MAX_WEAPONS));
+	g_cvWeaponsSlotCount[WeaponSlot_Primary].AddChangeHook(ConVar_RandomChanged);
+	
+	g_cvWeaponsSlotCount[WeaponSlot_Secondary] = CreateConVar("randomizer_weaponscount_secondary", "1", "How many secondary weapons at minimum to randomly generate?", _, true, 0.0, true, float(MAX_WEAPONS));
+	g_cvWeaponsSlotCount[WeaponSlot_Secondary].AddChangeHook(ConVar_RandomChanged);
+	
+	g_cvWeaponsSlotCount[WeaponSlot_Melee] = CreateConVar("randomizer_weaponscount_melee", "1", "How many melee weapons at minimum to randomly generate?", _, true, 0.0, true, float(MAX_WEAPONS));
+	g_cvWeaponsSlotCount[WeaponSlot_Melee].AddChangeHook(ConVar_RandomChanged);
 	
 	g_cvCosmeticsConflicts = CreateConVar("randomizer_cosmeticsconflicts", "1", "Should generated cosmetics check for possible conflicts?", _, true, 0.0, true, 1.0);
 	g_cvCosmeticsConflicts.AddChangeHook(ConVar_RandomChanged);
@@ -500,6 +511,21 @@ public void OnLibraryRemoved(const char[] sName)
 	}
 }
 
+public void OnGameFrame()
+{
+	//See if any force respawn is needed
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+	{
+		if (IsClientInGame(iClient) && g_bClientRespawn[iClient])
+		{
+			g_bClientRespawn[iClient] = false;
+			
+			if (IsPlayerAlive(iClient))
+				TF2_RespawnPlayer(iClient);
+		}
+	}
+}
+
 public void OnClientPutInServer(int iClient)
 {
 	if (!g_bEnabled)
@@ -573,8 +599,9 @@ public void ConVar_RandomChanged(ConVar convar, const char[] oldValue, const cha
 			{
 				RandomizeClientWeapon(iClient);
 				
-				if (IsPlayerAlive(iClient) && IsTeamRandomized(TF2_GetClientTeam(iClient)))
-					TF2_RespawnPlayer(iClient);
+				//Force respawn client next frame to allow other convars update in same frame
+				if (IsTeamRandomized(TF2_GetClientTeam(iClient)))
+					g_bClientRespawn[iClient] = true;
 			}
 		}
 	}
@@ -595,9 +622,10 @@ public void ConVar_TeamChanged(ConVar convar, const char[] oldValue, const char[
 			bool bThisTeam = (iOldTeam == iTeam || iNewTeam == iTeam);
 			if ((bAnyTeam && !bThisTeam) || (bThisTeam && !bAnyTeam))
 			{
+				//Force respawn client next frame to allow other convars update in same frame
 				for (int iClient = 1; iClient <= MaxClients; iClient++)
-					if (IsClientInGame(iClient) && IsPlayerAlive(iClient) && GetClientTeam(iClient) == iTeam)
-						TF2_RespawnPlayer(iClient);
+					if (IsClientInGame(iClient) && GetClientTeam(iClient) == iTeam)
+						g_bClientRespawn[iClient] = true;
 			}
 		}
 	}
@@ -800,56 +828,86 @@ void RandomizeWeapon(RandomizedWeapon eRandomized[CLASS_MAX+1])
 		eRandomized[iClass].Reset();
 	
 	bool bWeaponsFromClass = g_cvWeaponsFromClass.BoolValue;
-	int iWeaponsCount = g_cvWeaponsCount.IntValue;
 	
-	if (bWeaponsFromClass && iWeaponsCount > -1)
+	int iMinCount = g_cvWeaponsCount.IntValue;
+	int iSlotMinCount;
+	int iSlotForceCount[WeaponSlot_Melee+1];
+	
+	for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_Melee; iSlot++)
+	{
+		iSlotForceCount[iSlot] = g_cvWeaponsSlotCount[iSlot].IntValue;
+		iSlotMinCount += iSlotForceCount[iSlot];
+	}
+	
+	if (iMinCount > iSlotMinCount)
+		iMinCount -= iSlotMinCount;
+	else if (iMinCount < iSlotMinCount)
+		iMinCount = 0;
+	
+	if (bWeaponsFromClass)
 	{
 		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 		{
-			for (int i = 0; i < iWeaponsCount; i++)
+			int iSlotCount[WeaponSlot_Melee+1];
+			iSlotCount = iSlotForceCount;
+			
+			for (int i = 0; i < iMinCount; i++)
 			{
 				int iIndex = Weapons_GetRandomIndex(view_as<TFClassType>(iClass));
-				eRandomized[iClass].Add(iIndex, TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)));
-			}
-		}
-	}
-	else if (bWeaponsFromClass)
-	{
-		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-			for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_Melee; iSlot++)
-				eRandomized[iClass].Add(Weapons_GetRandomIndex(view_as<TFClassType>(iClass), iSlot), iSlot);
-	}
-	else if (iWeaponsCount > -1)
-	{
-		for (int i = 0; i < iWeaponsCount; i++)
-		{
-			int iIndex = Weapons_GetRandomIndex();
-			
-			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-			{
 				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-				if (iSlot == -1)
-				{
-					//Pick random slot
-					do
-					{
-						iSlot = TF2_GetSlotFromIndex(iIndex, TF2_GetRandomClass());
-					}
-					while (iSlot == -1);
-				}
-				
 				eRandomized[iClass].Add(iIndex, iSlot);
+				
+				if (WeaponSlot_Primary <= iSlot <= WeaponSlot_Melee && iSlotCount[iSlot] > 0)
+				{
+					//General random used one of min slot count, allow another general random
+					iSlotCount[iSlot]--;
+					iMinCount++;
+				}
 			}
+			
+			//Fill remaining as force slot
+			for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_Melee; iSlot++)
+				for (int i = 0; i < iSlotCount[iSlot]; i++)
+					eRandomized[iClass].Add(Weapons_GetRandomIndex(view_as<TFClassType>(iClass), iSlot), iSlot);
 		}
 	}
 	else
 	{
-		for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_Melee; iSlot++)
+		int iSlotCount[WeaponSlot_Melee+1];
+		iSlotCount = iSlotForceCount;
+		
+		for (int i = 0; i < iMinCount; i++)
 		{
-			int iIndex = Weapons_GetRandomIndex(TFClass_Unknown, iSlot);
+			int iIndex = Weapons_GetRandomIndex();
+			
+			//Pick random slot
+			int iSlot = -1;
+			do
+			{
+				iSlot = TF2_GetSlotFromIndex(iIndex, TF2_GetRandomClass());
+			}
+			while (iSlot == -1);
 			
 			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 				eRandomized[iClass].Add(iIndex, iSlot);
+			
+			if (WeaponSlot_Primary <= iSlot <= WeaponSlot_Melee && iSlotCount[iSlot] > 0)
+			{
+				//General random used one of min slot count, allow another general random
+				iSlotCount[iSlot]--;
+				iMinCount++;
+			}
+		}
+		
+		//Fill remaining as force slot
+		for (int iSlot = WeaponSlot_Primary; iSlot <= WeaponSlot_Melee; iSlot++)
+		{
+			for (int i = 0; i < iSlotCount[iSlot]; i++)
+			{
+				int iIndex = Weapons_GetRandomIndex(TFClass_Unknown, iSlot);
+				for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+					eRandomized[iClass].Add(iIndex, iSlot);
+			}
 		}
 	}
 	

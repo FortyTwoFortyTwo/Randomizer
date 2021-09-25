@@ -7,7 +7,8 @@ TF2 Gamemode where everyone plays as random class with random weapons, a rewritt
 - `randomizer_enabled`: Enable/Disable entire randomizer plugin, another option for load/unload plugins.
 - `randomizer_droppedweapons`: Enable/Disable dropped weapons.
 - `randomizer_weaponsfromclass`: Whenever generated weapon should only be whatever class can normally equip.
-- `randomizer_weaponscount`: How many weapons to randomly generate regardless of slot, -1 for each slot (pimary, secondary and melee).
+- `randomizer_weaponscount`: How many weapons at minimum to randomly generate regardless of slot.
+- `randomizer_weaponscount_primary`/`randomizer_weaponscount_secondary`/`randomizer_weaponscount_melee`: How many weapons at minimum to randomly generate from specific slot.
 - `randomizer_randomcosmetics`: How many cosmetics to randomly generate, -1 for no cosmetic randomization.
 - `randomizer_cosmeticsconflicts`: Whenever generated cosmetics should check for possible conflicts.
 - `randomizer_huds`: Mode to display weapons from hud.

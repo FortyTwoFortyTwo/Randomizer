@@ -1,6 +1,6 @@
 void Event_Init()
 {
-	HookEvent("teamplay_round_start", Event_RoundStart, EventHookMode_Pre);
+	HookEvent("teamplay_round_start", Event_RoundStart);
 	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
 	HookEvent("player_hurt", Event_PlayerHurt);
@@ -36,6 +36,8 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
+	
+	g_bClientRespawn[iClient] = false;	//Client respawned, dont need force respawn demand
 	
 	if (!IsCosmeticRandomized(iClient))
 		return;
