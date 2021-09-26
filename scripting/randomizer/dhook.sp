@@ -461,7 +461,7 @@ public MRESReturn DHook_ValidateWearablesPre(int iClient, Handle hParams)
 	
 	if (g_aValidateWearables)
 	{
-		g_iAllowPlayerClass[iClient]++;
+		SetClientClass(iClient, TFClass_Spy);
 		
 		if (!TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
 		{
@@ -482,7 +482,7 @@ public MRESReturn DHook_ValidateWearablesPost(int iClient, Handle hParams)
 	
 	delete g_aValidateWearables;
 	
-	g_iAllowPlayerClass[iClient]--;
+	RevertClientClass(iClient);
 	
 	if (g_bValidateWearablesDisguised)
 		TF2_RemoveCondition(iClient, TFCond_Disguised);
