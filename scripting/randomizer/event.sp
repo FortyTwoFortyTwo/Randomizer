@@ -252,22 +252,25 @@ public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadc
 	if (!g_bEnabled)
 		return;
 	
+	int iClient = GetClientOfUserId(event.GetInt("userid"));
 	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
 	int iDamage = event.GetInt("damageamount");
 	
-	//Increase meter for Gas Passer
-	
-	int iWeapon, iPos;
-	while (TF2_GetItemFromAttribute(iAttacker, "item_meter_charge_type", iWeapon, iPos))
+	if (0 < iAttacker <= MaxClients && iAttacker != iClient)
 	{
-		//Could add check whenever if item_meter_charge_type value is 3, meh
-		
-		float flRate;
-		if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_damage_for_full_charge", flRate))
-			continue;
-		
-		flRate = float(iDamage) / flRate * 100.0;
-		Properties_AddWeaponChargeMeter(iAttacker, iWeapon, flRate);
+		//Increase meter for Gas Passer
+		int iWeapon, iPos;
+		while (TF2_GetItemFromAttribute(iAttacker, "item_meter_charge_type", iWeapon, iPos))
+		{
+			//Could add check whenever if item_meter_charge_type value is 3, meh
+			
+			float flRate;
+			if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_damage_for_full_charge", flRate))
+				continue;
+			
+			flRate = float(iDamage) / flRate * 100.0;
+			Properties_AddWeaponChargeMeter(iAttacker, iWeapon, flRate);
+		}
 	}
 }
 
