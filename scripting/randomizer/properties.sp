@@ -2,6 +2,7 @@ static StringMap g_mPropertiesWeaponSend[2048];
 static StringMap g_mPropertiesWeaponData[2048];
 
 static int g_iPropertiesForceWeaponAmmo = INVALID_ENT_REFERENCE;
+static int g_iPropertiesForceWeaponAmmoPriority = 0;
 
 // Load & Save Send Prop
 
@@ -181,8 +182,8 @@ void Properties_RemoveWeapon(int iWeapon)
 
 void Properties_SaveActiveWeaponAmmo(int iClient)
 {
-	if (g_iPropertiesForceWeaponAmmo != INVALID_ENT_REFERENCE)
-		ThrowError("Properties_SaveActiveWeaponAmmo called unexpected when g_iPropertiesForceWeaponAmmo '%d' is active", g_iPropertiesForceWeaponAmmo);
+	if (g_iPropertiesForceWeaponAmmoPriority > 0)
+		return;
 	
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iWeapon == INVALID_ENT_REFERENCE)
@@ -231,7 +232,7 @@ void Properties_UpdateActiveWeaponAmmo(int iClient)
 			Properties_LoadWeaponPropInt(iClient, iAmmoTypeWeapon[iAmmoType], "m_iAmmo", iAmmoType);
 }
 
-void Properties_SetForceWeaponAmmo(int iWeapon)
+void Properties_SetForceWeaponAmmo(int iWeapon, int iPriority = 0)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
 	Properties_SaveActiveWeaponAmmo(iClient);
@@ -240,14 +241,19 @@ void Properties_SetForceWeaponAmmo(int iWeapon)
 	Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iAmmo", iAmmoType);
 	
 	g_iPropertiesForceWeaponAmmo = iWeapon;
+	g_iPropertiesForceWeaponAmmoPriority = iPriority;
 }
 
-void Properties_ResetForceWeaponAmmo()
+void Properties_ResetForceWeaponAmmo(int iPriority = 0)
 {
+	if (iPriority < g_iPropertiesForceWeaponAmmoPriority)
+		return;
+	
 	if (g_iPropertiesForceWeaponAmmo != INVALID_ENT_REFERENCE)
 		Properties_UpdateActiveWeaponAmmo(GetEntPropEnt(g_iPropertiesForceWeaponAmmo, Prop_Send, "m_hOwnerEntity"));
 	
 	g_iPropertiesForceWeaponAmmo = INVALID_ENT_REFERENCE;
+	g_iPropertiesForceWeaponAmmoPriority = 0;
 }
 
 int Properties_GetForceWeaponAmmo()

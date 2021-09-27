@@ -976,17 +976,42 @@ public MRESReturn DHook_MyTouchPost(int iHealthKit, Handle hReturn, Handle hPara
 
 public MRESReturn DHook_PipebombTouchPre(int iStunBall, Handle hParams)
 {
-	//Has scout class check
 	int iClient = GetEntPropEnt(iStunBall, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
-		g_iAllowPlayerClass[iClient]++;
+	{
+		g_iAllowPlayerClass[iClient]++;	//Has scout class check
+		
+		if (IsClassname(iStunBall, "tf_projectile_stun_ball"))
+		{
+			//Find sandman that could pick up this ball
+			int iTargetWeapon = INVALID_ENT_REFERENCE;
+			float flTargetTime;
+			
+			int iWeapon, iPos;
+			while (TF2_GetItemFromClassname(iClient, "tf_weapon_bat_wood", iWeapon, iPos))
+			{
+				float flTime = GetEntPropFloat(iWeapon, Prop_Send, "m_flEffectBarRegenTime");
+				if (flTime > flTargetTime)
+				{
+					iTargetWeapon = iWeapon;
+					flTargetTime = flTime;
+				}
+			}
+			
+			if (iTargetWeapon != INVALID_ENT_REFERENCE)
+				Properties_SetForceWeaponAmmo(iTargetWeapon, 1);	//Set priority to 1 so other hooks dont reset it
+		}
+	}
 }
 
 public MRESReturn DHook_PipebombTouchPost(int iStunBall, Handle hParams)
 {
 	int iClient = GetEntPropEnt(iStunBall, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
+	{
 		g_iAllowPlayerClass[iClient]--;
+		Properties_ResetForceWeaponAmmo(1);
+	}
 }
 
 public MRESReturn DHook_OnDecapitationPre(int iSword, Handle hParams)
