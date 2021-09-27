@@ -67,6 +67,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::TeamFortress_CalculateMaxSpeed", DHook_CalculateMaxSpeedPre, DHook_CalculateMaxSpeedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::TakeHealth", DHook_TakeHealthPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CheckBlockBackstab", DHook_CheckBlockBackstabPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::CanPickupBuilding", _, DHook_CanPickupBuildingPost);
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
 	DHook_CreateDetour(hGameData, "CTFKnife::DisguiseOnKill", DHook_DisguiseOnKillPre, DHook_DisguiseOnKillPost);
 	DHook_CreateDetour(hGameData, "CTFLunchBox::ApplyBiteEffects", DHook_ApplyBiteEffectsPre, DHook_ApplyBiteEffectsPost);
@@ -521,10 +522,7 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 	int iWeapon, iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
-		if (Controls_IsPassiveInCooldown(iClient, iWeapon))
-			continue;
-		
-		if (!Controls_CanUseWhileInvis(iWeapon) && TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
+		if (!Controls_CanUse(iClient, iWeapon))
 			continue;
 		
 		int iButton = Controls_GetPassiveButtonBit(iClient, iWeapon);
@@ -1240,6 +1238,29 @@ public MRESReturn DHook_CheckBlockBackstabPre(int iClient, Handle hReturn, Handl
 	
 	DHookSetReturn(hReturn, false);
 	return MRES_Supercede;
+}
+
+public MRESReturn DHook_CanPickupBuildingPost(int iClient, Handle hReturn, Handle hParams)
+{
+	if (DHookGetReturn(hReturn))
+	{
+		//Can client actually switch away from active weapon?
+		// spinning Minigun and charging Cow Mangler doesn't want to get switched away
+		int iBuilder, iPos;
+		if (TF2_GetItemFromClassname(iClient, "tf_weapon_pda_engineer_build", iBuilder, iPos))
+		{
+			//Should really be switching to tf_weapon_builder instead of tf_weapon_pda_engineer_build, but tf_weapon_builder is a hacky weapon
+			TF2_SwitchToWeapon(iClient, iBuilder);
+			if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") == iBuilder)
+				return MRES_Ignored;	//Yes, can switch
+		}
+		
+		//No we cant
+		DHookSetReturn(hReturn, false);
+		return MRES_Supercede;
+	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_FrameUpdatePostEntityThinkPre()

@@ -207,22 +207,23 @@ void Controls_OnPassiveUse(int iClient, int iWeapon)
 	}
 }
 
-bool Controls_IsPassiveInCooldown(int iClient, int iWeapon)
-{
-	int iSlot = TF2_GetSlot(iWeapon);
-	return g_flControlsCooldown[iClient][iSlot] > GetGameTime();
-}
-
-bool Controls_CanUseWhileInvis(int iWeapon)
-{
-	ControlsPassive controlsPassive;
-	Controls_GetPassive(iWeapon, controlsPassive);
-	return controlsPassive.bInvis;
-}
-
 bool Controls_GetPassive(int iWeapon, ControlsPassive controlsPassive)
 {
 	char sClassname[CONFIG_MAXCHAR];
 	GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
 	return g_mControlsPassive.GetArray(sClassname, controlsPassive, sizeof(controlsPassive));
+}
+
+bool Controls_CanUse(int iClient, int iWeapon)
+{
+	int iSlot = TF2_GetSlot(iWeapon);
+	if (g_flControlsCooldown[iClient][iSlot] > GetGameTime())
+		return false;
+	
+	ControlsPassive controlsPassive;
+	Controls_GetPassive(iWeapon, controlsPassive);
+	if (!controlsPassive.bInvis && TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
+		return false;
+	
+	return true;
 }

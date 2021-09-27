@@ -226,6 +226,12 @@
 				"linux"		"@_ZN9CTFPlayer18CheckBlockBackstabEPS_"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x56\x57\x8B\xF9\x8D\x9F\xB0\x19\x00\x00"
 			}
+			"CTFPlayer::CanPickupBuilding"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer17CanPickupBuildingEP11CBaseObject"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x53\x57\x8B\x7D\x08"
+			}
 			"CTFPlayerClassShared::CanBuildObject"
 			{
 				"library"	"server"
@@ -608,6 +614,20 @@
 				"arguments"
 				{
 					"pTFAttacker"
+					{
+						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CTFPlayer::CanPickupBuilding"
+			{
+				"signature"	"CTFPlayer::CanPickupBuilding"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"pPickupObject"
 					{
 						"type"	"cbaseentity"
 					}
