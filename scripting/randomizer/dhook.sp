@@ -607,22 +607,7 @@ public MRESReturn DHook_GetLoadoutItemPre(int iClient, Handle hReturn, Handle hP
 	while (iWeapon == -1);
 	
 	//There also class type and weapon classname checks if they should have correct classname by class type
-	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-	
-	//First, try current class client playing
-	RevertClientClass(iClient);
-	if (TF2_GetSlotFromIndex(iIndex, TF2_GetPlayerClass(iClient)) < WeaponSlot_Primary)
-	{
-		//If weapon can't use current class, find class that would work and change
-		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-		{
-			if (TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass)) >= WeaponSlot_Primary)
-			{
-				SetClientClass(iClient, view_as<TFClassType>(iClass));
-				break;
-			}
-		}
-	}
+	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
 	
 	DHookSetReturn(hReturn, GetEntityAddress(iWeapon) + view_as<Address>(GetEntSendPropOffs(iWeapon, "m_Item", true)));
 	return MRES_Supercede;
