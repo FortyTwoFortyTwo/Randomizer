@@ -656,7 +656,7 @@ public MRESReturn DHook_GetMaxHealthForBuffingPost(int iClient, Handle hReturn)
 
 public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, Handle hReturn, Handle hParams)
 {
-	if (g_bWeaponDecap[iClient])
+	if (!IsClientInGame(iClient) || g_bWeaponDecap[iClient])	//IsClientInGame check is needed, weird game
 		return;
 	
 	//Set decap to any eyelanders, all should have same value
@@ -667,7 +667,7 @@ public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, Handle hReturn, Handle
 
 public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, Handle hReturn, Handle hParams)
 {
-	if (g_bWeaponDecap[iClient])
+	if (!IsClientInGame(iClient) || g_bWeaponDecap[iClient])
 		return;
 	
 	//Set back to active weapon
