@@ -286,6 +286,121 @@ void Properties_SaveRageProps(int iClient, int iWeapon)
 	Properties_SaveWeaponDataFloat(iClient, iWeapon, iOffset + 12);	//RageBuff.m_flNextBuffPulseTime
 }
 
+void Properties_UpdateRageBuffsAndRage(int iClient)
+{
+	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
+		return;
+	
+	Properies_CallRageMeter(iClient, SDKCall_UpdateRageBuffsAndRage, GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared));
+}
+
+void Properties_ModifyRage(DataPack hPack) 
+{
+	hPack.Reset();
+	int iClient = GetClientFromSerial(hPack.ReadCell());
+	float flAdd = hPack.ReadFloat();
+	delete hPack;
+	
+	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
+		return;
+	
+	Properies_CallRageMeter(iClient, SDKCall_ModifyRage, GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), flAdd);
+}
+
+void Properties_HandleRageGain(DataPack hPack)
+{
+	hPack.Reset();
+	int iClient = GetClientFromSerial(hPack.ReadCell());
+	int iRequiredBuffFlags = hPack.ReadCell();
+	float flDamage = hPack.ReadFloat();
+	float fInverseRageGainScale = hPack.ReadFloat();
+	delete hPack;
+	
+	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
+		return;
+	
+	Properies_CallRageMeter(iClient, SDKCall_HandleRageGain, iClient, iRequiredBuffFlags, flDamage, fInverseRageGainScale);
+}
+
+void Properies_CallRageMeter(int iClient, Function fCall, any nParam1 = 0, any nParam2 = 0, any nParam3 = 0, any nParam4 = 0)
+{
+	//All weapons using set_buff_type, generate_rage_on_dmg and generate_rage_on_heal attrib is tf_weapon and no wearables, for now...
+	int iMaxWeapons = GetMaxWeapons();
+	int[] iWeapons = new int[iMaxWeapons];
+	
+	//Get overall buff type from multiple weapons to subtract down for each ones
+	float flClientRageType = TF2_GetAttributeAdditive(iClient, "mod soldier buff type");
+	
+	//Remove all weapons so they don't interfere with its rage stats
+	for (int i = 0; i < iMaxWeapons; i++)
+	{
+		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
+	}
+	
+	bool bCalledClass[CLASS_MAX + 1];
+	
+	for (int i = 0; i < iMaxWeapons; i++)
+	{
+		if (iWeapons[i] == INVALID_ENT_REFERENCE)
+			continue;
+		
+		float flVal;
+		TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapons[i]);
+		
+		//Prevent calling same class twice, but only if it not for rage meter
+		//Soldier, Pyro and Sniper(?) use rage meter, while Heavy, Engineer, Medic and Sniper use whatever else there
+		if (!TF2_WeaponFindAttribute(iWeapons[i], "mod soldier buff type", flVal) && bCalledClass[nClass])	//Must call TF2_WeaponFindAttribute for flVal
+			continue;
+		
+		//ModifyRage is expected to only be called for Hitman Heatmaker, only increase meter to it
+		if (fCall == SDKCall_ModifyRage && flVal != 6.0)
+			continue;
+		
+		bCalledClass[nClass] = true;
+		
+		if (fCall == SDKCall_UpdateRageBuffsAndRage)
+			TF2Attrib_SetByName(iClient, "mod soldier buff type", flVal - flClientRageType);
+		
+		bool bFocusCond;
+		if (TF2_IsPlayerInCondition(iClient, TFCond_FocusBuff) && (flVal != 6.0 || !Properties_GetWeaponPropInt(iWeapons[i], "m_bRageDraining")))
+		{
+			//Updating weapons thats not in focus effect, but client is will set weapon to draining
+			TF2_RemoveConditionFake(iClient, TFCond_FocusBuff);
+			bFocusCond = true;
+		}
+		
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
+		Properties_LoadRageProps(iClient, iWeapons[i]);
+		
+		SetClientClass(iClient, nClass);
+		g_iGainingRageWeapon = iWeapons[i];
+		
+		Call_StartFunction(null, fCall);
+		Call_PushCell(nParam1);
+		Call_PushCell(nParam2);
+		Call_PushCell(nParam3);
+		Call_PushCell(nParam4);
+		Call_Finish();
+		
+		Properties_SaveRageProps(iClient, iWeapons[i]);
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
+		
+		if (bFocusCond)
+			TF2_AddConditionFake(iClient, TFCond_FocusBuff);
+		
+		if (fCall == SDKCall_UpdateRageBuffsAndRage)
+			TF2Attrib_RemoveByName(iClient, "mod soldier buff type");
+	}
+	
+	//Set it back
+	for (int i = 0; i < iMaxWeapons; i++)
+		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
+	
+	RevertClientClass(iClient);
+	g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
+}
+
 // Item charge meter
 
 void Properties_AddWeaponChargeMeter(int iClient, int iWeapon, float flValue)
