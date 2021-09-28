@@ -1,3 +1,11 @@
+static char g_sPlayerCondProp[][] = {
+	"m_nPlayerCond",
+	"m_nPlayerCondEx",
+	"m_nPlayerCondEx2",
+	"m_nPlayerCondEx3",
+	"m_nPlayerCondEx4",
+};
+
 stock int TF2_CreateWeapon(int iClient, int iIndex, int iSlot)
 {
 	char sClassname[256];
@@ -571,6 +579,25 @@ stock void TF2_RemoveItem(int iClient, int iWeapon)
 	
 	RemovePlayerItem(iClient, iWeapon);
 	RemoveEntity(iWeapon);
+}
+
+stock void TF2_AddConditionFake(int iClient, TFCond nCond)
+{
+	int iCond = view_as<int>(nCond);
+	int iArray = iCond / 32;
+	int iBit = (1 << (iCond - (iArray * 32)));
+	SetEntProp(iClient, Prop_Send, g_sPlayerCondProp[iArray], GetEntProp(iClient, Prop_Send, g_sPlayerCondProp[iArray]) | iBit);
+}
+
+stock void TF2_RemoveConditionFake(int iClient, TFCond nCond)
+{
+	int iCond = view_as<int>(nCond);
+	int iArray = iCond / 32;
+	int iBit = (1 << (iCond - (iArray * 32)));
+	SetEntProp(iClient, Prop_Send, g_sPlayerCondProp[iArray], GetEntProp(iClient, Prop_Send, g_sPlayerCondProp[iArray]) & ~iBit);
+	
+	if (iArray == 0)	//Thanks legacy TF2
+		SetEntProp(iClient, Prop_Send, "_condition_bits", GetEntProp(iClient, Prop_Send, "_condition_bits") & ~iBit);
 }
 
 stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)

@@ -5,6 +5,7 @@ static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKEndClassSpecialSkill;
 static Handle g_hSDKGetLoadoutItem;
 static Handle g_hSDKUpdateRageBuffsAndRage;
+static Handle g_hSDKModifyRage;
 static Handle g_hSDKHandleRageGain;
 static Handle g_hSDKWeaponCanSwitchTo;
 static Handle g_hSDKGetSlot;
@@ -63,6 +64,13 @@ public void SDKCall_Init(GameData hGameData)
 	g_hSDKUpdateRageBuffsAndRage = EndPrepSDKCall();
 	if (!g_hSDKUpdateRageBuffsAndRage)
 		LogError("Failed to create call: CTFPlayerShared::UpdateRageBuffsAndRage");
+	
+	StartPrepSDKCall(SDKCall_Raw);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayerShared::ModifyRage");
+	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
+	g_hSDKModifyRage = EndPrepSDKCall();
+	if (!g_hSDKModifyRage)
+		LogError("Failed to create call: CTFPlayerShared::ModifyRage");
 	
 	StartPrepSDKCall(SDKCall_Static);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "HandleRageGain");
@@ -141,6 +149,11 @@ Address SDKCall_GetLoadoutItem(int iClient, TFClassType nClass, int iSlot, bool 
 void SDKCall_UpdateRageBuffsAndRage(Address pPlayerShared)
 {
 	SDKCall(g_hSDKUpdateRageBuffsAndRage, pPlayerShared);
+}
+
+void SDKCall_ModifyRage(Address pPlayerShared, float flAdd)
+{
+	SDKCall(g_hSDKModifyRage, pPlayerShared, flAdd);
 }
 
 void SDKCall_HandleRageGain(int iClient, int iRequiredBuffFlags, float flDamage, float fInverseRageGainScale)

@@ -24,9 +24,6 @@ static Handle g_hDHookClientCommand;
 static Handle g_hDHookFrameUpdatePostEntityThink;
 
 static bool g_bSkipGetMaxAmmo;
-static bool g_bSkipHandleRageGain;
-static int g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
-static bool g_bSkipUpdateRageBuffsAndRage = false;
 static int g_iClientGetChargeEffectBeingProvided;
 static int g_iWeaponGetLoadoutItem = INVALID_ENT_REFERENCE;
 static bool g_bManageBuilderWeapons;
@@ -73,7 +70,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFLunchBox::ApplyBiteEffects", DHook_ApplyBiteEffectsPre, DHook_ApplyBiteEffectsPost);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateRageBuffsAndRage", DHook_UpdateRageBuffsAndRagePre, _);
-	DHook_CreateDetour(hGameData, "CTFPlayerShared::ModifyRage", DHook_ModifyRagePre, DHook_ModifyRagePost);
+	DHook_CreateDetour(hGameData, "CTFPlayerShared::ModifyRage", DHook_ModifyRagePre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::ActivateRageBuff", DHook_ActivateRageBuffPre, DHook_ActivateRageBuffPost);
 	DHook_CreateDetour(hGameData, "HandleRageGain", DHook_HandleRageGainPre, _);
 	
@@ -466,7 +463,7 @@ public MRESReturn DHook_ValidateWearablesPre(int iClient, Handle hParams)
 		
 		if (!TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
 		{
-			TF2_AddCondition(iClient, TFCond_Disguised, TFCondDuration_Infinite);
+			TF2_AddConditionFake(iClient, TFCond_Disguised);
 			g_bValidateWearablesDisguised = true;
 		}
 	}
@@ -486,7 +483,7 @@ public MRESReturn DHook_ValidateWearablesPost(int iClient, Handle hParams)
 	RevertClientClass(iClient);
 	
 	if (g_bValidateWearablesDisguised)
-		TF2_RemoveCondition(iClient, TFCond_Disguised);
+		TF2_RemoveConditionFake(iClient, TFCond_Disguised);
 	
 	g_bValidateWearablesDisguised = false;
 }
@@ -726,77 +723,31 @@ public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
 public MRESReturn DHook_UpdateRageBuffsAndRagePre(Address pPlayerShared)
 {
 	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
-	if (g_bSkipUpdateRageBuffsAndRage || iClient <= 0 || iClient > MaxClients)
+	if (g_iGainingRageWeapon != INVALID_ENT_REFERENCE || iClient <= 0 || iClient > MaxClients)
 		return MRES_Ignored;
 	
 	float flRageType = TF2_GetAttributeAdditive(iClient, "mod soldier buff type");
 	if (!flRageType) //We don't have any rage items, don't need to do anything
 		return MRES_Ignored;
 	
-	RequestFrame(Frame_UpdateRageBuffsAndRage, iClient);
+	RequestFrame(Properties_UpdateRageBuffsAndRage, iClient);
 	return MRES_Supercede;
-}
-
-public void Frame_UpdateRageBuffsAndRage(int iClient)
-{
-	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
-		return;
-	
-	g_bSkipUpdateRageBuffsAndRage = true;
-	
-	int iMaxWeapons = GetMaxWeapons();
-	int[] iWeapons = new int[iMaxWeapons];
-	
-	//Remove all weapons so they don't interfere with its rage stats
-	for (int i = 0; i < iMaxWeapons; i++)
-	{
-		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
-		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
-	}
-	
-	for (int i = 0; i < iMaxWeapons; i++)
-	{
-		if (iWeapons[i] == INVALID_ENT_REFERENCE)
-			continue;
-		
-		float flVal;
-		if (!TF2_WeaponFindAttribute(iWeapons[i], "mod soldier buff type", flVal))
-			continue;
-		
-		TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapons[i]);
-		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
-		Properties_LoadRageProps(iClient, iWeapons[i]);
-		
-		SetClientClass(iClient, nClass);
-		g_iGainingRageWeapon = iWeapons[i];
-		SDKCall_UpdateRageBuffsAndRage(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared));
-		
-		Properties_SaveRageProps(iClient, iWeapons[i]);
-		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
-	}
-	
-	//Set it back
-	for (int i = 0; i < iMaxWeapons; i++)
-		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
-	
-	RevertClientClass(iClient);
-	
-	g_bSkipUpdateRageBuffsAndRage = false;
-	g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 }
 
 public MRESReturn DHook_ModifyRagePre(Address pPlayerShared, Handle hParams)
 {
 	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
-	if (iClient && g_iGainingRageWeapon != INVALID_ENT_REFERENCE)
-		Properties_LoadRageProps(iClient, g_iGainingRageWeapon);
-}
-
-public MRESReturn DHook_ModifyRagePost(Address pPlayerShared, Handle hParams)
-{
-	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
-	if (iClient && g_iGainingRageWeapon != INVALID_ENT_REFERENCE)
-		Properties_SaveRageProps(iClient, g_iGainingRageWeapon);
+	if (iClient && g_iGainingRageWeapon == INVALID_ENT_REFERENCE)
+	{
+		DataPack hPack = new DataPack();
+		hPack.WriteCell(GetClientSerial(iClient));
+		hPack.WriteFloat(DHookGetParam(hParams, 1));
+		
+		RequestFrame(Properties_ModifyRage, hPack);
+		return MRES_Supercede;
+	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParams)
@@ -805,14 +756,15 @@ public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParam
 	if (!iClient)
 		return MRES_Ignored;
 	
-	//int iWeapon = DHookGetParam(hParams, 1); //First param is supposed to be the weapon, but I couldn't get it working
+	//First param is unused, named pBuffItem.
+	// But TF2 pass this param as either buff banner or player itself :japanese_goblin:
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iWeapon <= MaxClients)
+	if (iWeapon == INVALID_ENT_REFERENCE)
 		return MRES_Ignored;
 	
 	int iBuffType = DHookGetParam(hParams, 2);
 	float flClientRageType = TF2_GetAttributeAdditive(iClient, "mod soldier buff type");
-	TF2Attrib_SetByName(iClient, "mod soldier buff type", view_as<float>(iBuffType) - flClientRageType);
+	TF2Attrib_SetByName(iClient, "mod soldier buff type", float(iBuffType) - flClientRageType);
 	
 	Properties_LoadRageProps(iClient, iWeapon);
 	return MRES_Ignored;
@@ -824,9 +776,8 @@ public MRESReturn DHook_ActivateRageBuffPost(Address pPlayerShared, Handle hPara
 	if (!iClient)
 		return MRES_Ignored;
 	
-	//int iWeapon = DHookGetParam(hParams, 1);
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iWeapon <= MaxClients)
+	if (iWeapon == INVALID_ENT_REFERENCE)
 		return MRES_Ignored;
 	
 	TF2Attrib_RemoveByName(iClient, "mod soldier buff type");
@@ -838,7 +789,7 @@ public MRESReturn DHook_HandleRageGainPre(Handle hParams)
 {
 	//Banners, Phlogistinator and Hitman Heatmaker use m_flRageMeter with class check, call this function to each weapons
 	//Must be called a frame, will crash if detour is called while inside a detour
-	if (g_bSkipHandleRageGain ||  DHookIsNullParam(hParams, 1))
+	if (g_iGainingRageWeapon != INVALID_ENT_REFERENCE || DHookIsNullParam(hParams, 1))
 		return MRES_Ignored;
 	
 	DataPack hPack = new DataPack();
@@ -847,68 +798,8 @@ public MRESReturn DHook_HandleRageGainPre(Handle hParams)
 	hPack.WriteFloat(DHookGetParam(hParams, 3));
 	hPack.WriteFloat(DHookGetParam(hParams, 4));
 	
-	RequestFrame(Frame_HandleRageGain, hPack);
+	RequestFrame(Properties_HandleRageGain, hPack);
 	return MRES_Supercede;
-}
-
-public void Frame_HandleRageGain(DataPack hPack)
-{
-	hPack.Reset();
-	int iClient = GetClientFromSerial(hPack.ReadCell());
-	int iRequiredBuffFlags = hPack.ReadCell();
-	float flDamage = hPack.ReadFloat();
-	float fInverseRageGainScale = hPack.ReadFloat();
-	delete hPack;
-	
-	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
-		return;
-	
-	g_bSkipHandleRageGain = true;
-	
-	//All weapons using set_buff_type, generate_rage_on_dmg and generate_rage_on_heal attrib is tf_weapon and no wearables, for now...
-	int iMaxWeapons = GetMaxWeapons();
-	int[] iWeapons = new int[iMaxWeapons];
-	
-	//Remove all weapons so they don't interfere with its rage stats
-	for (int i = 0; i < iMaxWeapons; i++)
-	{
-		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
-		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
-	}
-	
-	bool bCalledClass[CLASS_MAX + 1];
-	
-	for (int i = 0; i < iMaxWeapons; i++)
-	{
-		if (iWeapons[i] == INVALID_ENT_REFERENCE)
-			continue;
-		
-		float flVal;
-		TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapons[i]);
-		
-		//Prevent calling same class twice, but only if it not for rage meter
-		//Soldier, Pyro and Sniper(?) use rage meter, while Heavy, Engineer, Medic and Sniper use whatever else there
-		if (bCalledClass[nClass] && !TF2_WeaponFindAttribute(iWeapons[i], "mod soldier buff type", flVal))
-			continue;
-		
-		bCalledClass[nClass] = true;
-		
-		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
-		
-		SetClientClass(iClient, nClass);
-		g_iGainingRageWeapon = iWeapons[i];
-		SDKCall_HandleRageGain(iClient, iRequiredBuffFlags, flDamage, fInverseRageGainScale);
-		
-		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
-	}
-	
-	//Set it back
-	for (int i = 0; i < iMaxWeapons; i++)
-		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
-	
-	RevertClientClass(iClient);
-	g_bSkipHandleRageGain = false;
-	g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 }
 
 public MRESReturn DHook_SwingPre(int iWeapon, Handle hReturn)

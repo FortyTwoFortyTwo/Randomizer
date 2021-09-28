@@ -42,12 +42,13 @@ void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 
 public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &flDamage, int &iDamageType, int &iWeapon, float vecDamageForce[3], float vecDamagePosition[3], int iDamageCustom)
 {
-	g_iAllowPlayerClass[iVictim]++;
+	//Allow IsPlayerClass for everyone, we want assister too which would be tough to get without gamedata
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+		if (IsClientInGame(iClient))
+			g_iAllowPlayerClass[iClient]++;
 	
 	if (0 < iAttacker <= MaxClients)
 	{
-		g_iAllowPlayerClass[iAttacker]++;
-		
 		if (iWeapon != INVALID_ENT_REFERENCE)
 		{
 			Properties_LoadWeaponPropInt(iAttacker, iWeapon, "m_iDecapitations");
@@ -62,13 +63,14 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 
 public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, float flDamage, int iDamageType, int iWeapon, const float vecDamageForce[3], const float vecDamagePosition[3], int iDamageCustom)
 {
-	g_iAllowPlayerClass[iVictim]--;
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+		if (IsClientInGame(iClient))
+			g_iAllowPlayerClass[iClient]--;
+	
 	g_bFeignDeath[iVictim] = false;
 	
 	if (0 < iAttacker <= MaxClients)
 	{
-		g_iAllowPlayerClass[iAttacker]--;
-		
 		if (iWeapon != INVALID_ENT_REFERENCE)
 		{
 			Properties_SaveWeaponPropInt(iAttacker, iWeapon, "m_iDecapitations");

@@ -15,7 +15,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.8.1"
+#define PLUGIN_VERSION			"1.8.2"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
@@ -355,6 +355,7 @@ bool g_bFeignDeath[TF_MAXPLAYERS];
 bool g_bWeaponDecap[TF_MAXPLAYERS];
 Handle g_hTimerClientHud[TF_MAXPLAYERS];
 
+int g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 int g_iClientEurekaTeleporting;
 
 #include "randomizer/controls.sp"

@@ -8,20 +8,17 @@ enum struct Patch
 	int iValueReplacement[PATCH_MAX];
 	bool bEnable;
 	
-	void Load(GameData hGameData, const char[] sPatchName)
+	bool Load(GameData hGameData, const char[] sPatchName)
 	{
 		this.pAddress = hGameData.GetAddress(sPatchName);
 		if (!this.pAddress)
-		{
-			LogError("Failed to find address for key %s", sPatchName);
-			return;
-		}
+			return false;
 		
 		char sKeyValue[PATCH_MAX * 4];
 		if (!hGameData.GetKeyValue(sPatchName, sKeyValue, sizeof(sKeyValue)))
 		{
 			LogError("Failed to find key value for %s", sPatchName);
-			return;
+			return true;
 		}
 		
 		char sBytes[PATCH_MAX][4];
@@ -31,6 +28,8 @@ enum struct Patch
 			this.iValueOriginal[i] = LoadFromAddress(this.pAddress + view_as<Address>(i), NumberType_Int8);
 			this.iValueReplacement[i] = StringToInt(sBytes[i+1], 16);
 		}
+		
+		return true;
 	}
 	
 	void Enable()
@@ -62,39 +61,46 @@ enum struct Patch
 	}
 }
 
-static Patch g_patchHealthDemomanClassCheck;
-static Patch g_patchSpeedDemomanClassCheck;
-static Patch g_patchSpeedMedic1ClassCheck;
-static Patch g_patchSpeedMedic2ClassCheck;
-static Patch g_patchSpeedHeavyClassCheck;
-static Patch g_patchSpeedScoutClassCheck;
+static ArrayList g_aPatches;	//Arrays of Patch
 
 void Patch_Init(GameData hGameData)
 {
-	g_patchHealthDemomanClassCheck.Load(hGameData, "Patch_HealthDemomanClassCheck");
-	g_patchSpeedDemomanClassCheck.Load(hGameData, "Patch_SpeedDemomanClassCheck");
-	g_patchSpeedMedic1ClassCheck.Load(hGameData, "Patch_SpeedMedic1ClassCheck");
-	g_patchSpeedMedic2ClassCheck.Load(hGameData, "Patch_SpeedMedic2ClassCheck");
-	g_patchSpeedHeavyClassCheck.Load(hGameData, "Patch_SpeedHeavyClassCheck");
-	g_patchSpeedScoutClassCheck.Load(hGameData, "Patch_SpeedScoutClassCheck");
+	g_aPatches = new ArrayList(sizeof(Patch));
+	int iCount = 0;
+	
+	do
+	{
+		iCount++;
+		char sName[16];
+		Format(sName, sizeof(sName), "Patch_%d", iCount);
+		
+		Patch patch;
+		if (!patch.Load(hGameData, sName))
+			break;
+		
+		g_aPatches.PushArray(patch);
+	}
+	while (iCount);	//Infinite loop until break
 }
 
 void Patch_Enable()
 {
-	g_patchHealthDemomanClassCheck.Enable();
-	g_patchSpeedDemomanClassCheck.Enable();
-	g_patchSpeedMedic1ClassCheck.Enable();
-	g_patchSpeedMedic2ClassCheck.Enable();
-	g_patchSpeedHeavyClassCheck.Enable();
-	g_patchSpeedScoutClassCheck.Enable();
+	int iLength = g_aPatches.Length;
+	for (int i = 0; i < iLength; i++)
+	{
+		Patch patch;
+		g_aPatches.GetArray(i, patch);
+		patch.Enable();
+	}
 }
 
 void Patch_Disable()
 {
-	g_patchHealthDemomanClassCheck.Disable();
-	g_patchSpeedDemomanClassCheck.Disable();
-	g_patchSpeedMedic1ClassCheck.Disable();
-	g_patchSpeedMedic2ClassCheck.Disable();
-	g_patchSpeedHeavyClassCheck.Disable();
-	g_patchSpeedScoutClassCheck.Disable();
+	int iLength = g_aPatches.Length;
+	for (int i = 0; i < iLength; i++)
+	{
+		Patch patch;
+		g_aPatches.GetArray(i, patch);
+		patch.Disable();
+	}
 }
