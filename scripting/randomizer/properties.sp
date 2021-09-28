@@ -291,8 +291,6 @@ void Properties_UpdateRageBuffsAndRage(int iClient)
 	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
 		return;
 	
-	
-	
 	Properies_CallRageMeter(iClient, SDKCall_UpdateRageBuffsAndRage, GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared));
 }
 
