@@ -349,7 +349,8 @@ TFClassType g_iClientClass[TF_MAXPLAYERS];
 RandomizedWeapon g_eClientWeapon[TF_MAXPLAYERS][CLASS_MAX+1];
 
 TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
-bool g_bClientRespawn[TF_MAXPLAYERS];
+bool g_bClientRefreshWeapons[TF_MAXPLAYERS];
+bool g_bClientRefreshCosmetics[TF_MAXPLAYERS];
 int g_iAllowPlayerClass[TF_MAXPLAYERS];
 bool g_bFeignDeath[TF_MAXPLAYERS];
 bool g_bWeaponDecap[TF_MAXPLAYERS];
@@ -437,7 +438,7 @@ public void OnPluginStart()
 	g_cvWeaponsSlotCount[WeaponSlot_Melee].AddChangeHook(ConVar_RandomChanged);
 	
 	g_cvCosmeticsConflicts = CreateConVar("randomizer_cosmeticsconflicts", "1", "Should generated cosmetics check for possible conflicts?", _, true, 0.0, true, 1.0);
-	g_cvCosmeticsConflicts.AddChangeHook(ConVar_RandomChanged);
+	g_cvCosmeticsConflicts.AddChangeHook(ConVar_CosmeticsChanged);
 	
 	g_cvRandomClass = CreateConVar("randomizer_randomclass", "1", "Randomizes player class. 0 = no randomize, 1 = randomize every death, 2 = randomize every round, 3 = each team get same randomize, 4 = everyone get same randomize.", _, true, 0.0, true, float(Mode_MAX - 1));
 	g_cvRandomClass.AddChangeHook(ConVar_RandomChanged);
@@ -446,7 +447,7 @@ public void OnPluginStart()
 	g_cvRandomWeapons.AddChangeHook(ConVar_RandomChanged);
 	
 	g_cvRandomCosmetics = CreateConVar("randomizer_randomcosmetics", "3", "How many cosmetics to randomly generate, -1 for no randomize", _, true, -1.0);
-	g_cvRandomCosmetics.AddChangeHook(ConVar_RandomChanged);
+	g_cvRandomCosmetics.AddChangeHook(ConVar_CosmeticsChanged);
 	
 	g_cvTeamClass = CreateConVar("randomizer_teamclass", "1", "Teams to randomize class. 1 = both teams, 2 = only red team, 3 = only blu team.", _, true, 1.0, true, float(TEAM_MAX));
 	g_cvTeamClass.AddChangeHook(ConVar_TeamChanged);
@@ -514,15 +515,20 @@ public void OnLibraryRemoved(const char[] sName)
 
 public void OnGameFrame()
 {
-	//See if any force respawn is needed
+	//See if any force refresh is needed
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
-		if (IsClientInGame(iClient) && g_bClientRespawn[iClient])
+		if (IsClientInGame(iClient))
 		{
-			g_bClientRespawn[iClient] = false;
+			//Refresh weapons before cosmetics, RefreshCosmetics may need to know player class
+			if (g_bClientRefreshWeapons[iClient])
+				RefreshPlayer(iClient);
 			
-			if (IsPlayerAlive(iClient))
-				TF2_RespawnPlayer(iClient);
+			if (g_bClientRefreshCosmetics[iClient])
+				RefreshCosmetics(iClient);
+			
+			g_bClientRefreshWeapons[iClient] = false;
+			g_bClientRefreshCosmetics[iClient] = false;
 		}
 	}
 }
@@ -602,9 +608,19 @@ public void ConVar_RandomChanged(ConVar convar, const char[] oldValue, const cha
 				
 				//Force respawn client next frame to allow other convars update in same frame
 				if (IsTeamRandomized(TF2_GetClientTeam(iClient)))
-					g_bClientRespawn[iClient] = true;
+					g_bClientRefreshWeapons[iClient] = true;
 			}
 		}
+	}
+}
+
+public void ConVar_CosmeticsChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	if (g_bEnabled)
+	{
+		for (int iClient = 1; iClient <= MaxClients; iClient++)
+			if (IsClientInGame(iClient) && IsPlayerAlive(iClient))
+				g_bClientRefreshCosmetics[iClient] = true;
 	}
 }
 
@@ -623,10 +639,17 @@ public void ConVar_TeamChanged(ConVar convar, const char[] oldValue, const char[
 			bool bThisTeam = (iOldTeam == iTeam || iNewTeam == iTeam);
 			if ((bAnyTeam && !bThisTeam) || (bThisTeam && !bAnyTeam))
 			{
-				//Force respawn client next frame to allow other convars update in same frame
+				//Force refresh client next frame to allow other convars update in same frame
 				for (int iClient = 1; iClient <= MaxClients; iClient++)
+				{
 					if (IsClientInGame(iClient) && GetClientTeam(iClient) == iTeam)
-						g_bClientRespawn[iClient] = true;
+					{
+						if (convar == g_cvTeamCosmetics)
+							g_bClientRefreshCosmetics[iClient] = true;
+						else
+							g_bClientRefreshWeapons[iClient] = true;
+					}
+				}
 			}
 		}
 	}
@@ -648,8 +671,8 @@ void EnableRandomizer()
 		{
 			OnClientPutInServer(iClient);
 			
-			if (IsPlayerAlive(iClient) && (IsClassRandomized(iClient) || IsWeaponRandomized(iClient)))
-				TF2_RespawnPlayer(iClient);
+			if (IsClassRandomized(iClient) || IsWeaponRandomized(iClient))
+				RefreshPlayer(iClient);
 		}
 	}
 }
@@ -676,8 +699,125 @@ void DisableRandomizer()
 		RemoveEntity(iBuilding);
 	
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
-		if (IsClientInGame(iClient) && IsPlayerAlive(iClient))
-			TF2_RegeneratePlayer(iClient);
+		RefreshPlayer(iClient);
+}
+
+void RefreshPlayer(int iClient)
+{
+	if (!IsClientInGame(iClient) || !IsPlayerAlive(iClient))	//Player will regardless get refreshed on spawn
+		return;
+	
+	UpdateClientWeapon(iClient);
+	
+	if (IsClassRandomized(iClient))
+		TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+	
+	TF2_RegeneratePlayer(iClient);
+}
+
+void RefreshCosmetics(int iClient)
+{
+	//Destroy any cosmetics left
+	int iCosmetic;
+	while ((iCosmetic = FindEntityByClassname(iCosmetic, "tf_wearable*")) > MaxClients)
+	{
+		if (GetEntPropEnt(iCosmetic, Prop_Send, "m_hOwnerEntity") == iClient)
+		{
+			int iIndex = GetEntProp(iCosmetic, Prop_Send, "m_iItemDefinitionIndex");
+			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			{
+				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+				if (iSlot == LoadoutSlot_Misc)
+				{
+					TF2_RemoveItem(iClient, iCosmetic);
+					continue;
+				}
+			}
+		}
+	}
+	
+	static const int iSlotCosmetics[] = {
+		LoadoutSlot_Head,
+		LoadoutSlot_Misc,
+		LoadoutSlot_Misc2
+	};
+	
+	if (!IsCosmeticRandomized(iClient))
+	{
+		//Default cosmetics
+		TFClassType nClass = TF2_GetPlayerClass(iClient);
+		for (int i = 0; i < sizeof(iSlotCosmetics); i++)
+		{
+			Address pItem = SDKCall_GetLoadoutItem(iClient, nClass, iSlotCosmetics[i]);
+			if (TF2_IsValidEconItemView(pItem))
+				TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pItem));
+		}
+	}
+	else
+	{
+		int iMaxCosmetics = g_cvRandomCosmetics.IntValue;
+		if (iMaxCosmetics == 0)	//Good ol TF2 2007
+			return;
+		
+		Address pPossibleItems[CLASS_MAX * sizeof(iSlotCosmetics)];
+		int iPossibleCount;
+		
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+		{
+			for (int i = 0; i < sizeof(iSlotCosmetics); i++)
+			{
+				Address pItem = SDKCall_GetLoadoutItem(iClient, view_as<TFClassType>(iClass), iSlotCosmetics[i]);
+				if (TF2_IsValidEconItemView(pItem))
+				{
+					pPossibleItems[iPossibleCount] = pItem;
+					iPossibleCount++;
+				}
+			}
+		}
+		
+		SortIntegers(view_as<int>(pPossibleItems), iPossibleCount, Sort_Random);
+		
+		if (iMaxCosmetics > iPossibleCount)
+			iMaxCosmetics = iPossibleCount;
+		
+		if (g_cvCosmeticsConflicts.BoolValue)
+		{
+			int iCount;
+			
+			for (int i = 0; i < iPossibleCount; i++)
+			{
+				int iIndex = LoadFromAddress(pPossibleItems[i] + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
+				int iMask = TF2Econ_GetItemEquipRegionMask(iIndex);
+				bool bConflicts;
+				
+				//Find any possible cosmetic conflicts, both weapon and cosmetic
+				int iItem;
+				int iPos;
+				while (TF2_GetItem(iClient, iItem, iPos, true))
+				{
+					int iItemIndex = GetEntProp(iItem, Prop_Send, "m_iItemDefinitionIndex");
+					if (0 <= iItemIndex < 65535 && iMask & TF2Econ_GetItemEquipRegionMask(iItemIndex))
+					{
+						bConflicts = true;
+						break;
+					}
+				}
+				
+				if (!bConflicts)
+				{
+					TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pPossibleItems[i]));
+					iCount++;
+					if (iCount == iMaxCosmetics)
+						break;
+				}
+			}
+		}
+		else
+		{
+			for (int i = 0; i < iMaxCosmetics; i++)
+				TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pPossibleItems[i]));
+		}
+	}
 }
 
 void RandomizeTeamWeapon(TFTeam iForceTeam = TFTeam_Unassigned)

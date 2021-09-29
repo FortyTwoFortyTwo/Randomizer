@@ -89,8 +89,8 @@ public Action Command_Class(int iClient, int iArgs)
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsPlayerAlive(iTargetList[i]) && IsClassRandomized(iTargetList[i]))
-			TF2_RespawnPlayer(iTargetList[i]);
+		if (IsClassRandomized(iTargetList[i]))
+			RefreshPlayer(iTargetList[i]);
 			
 	ReplyToCommand(iClient, "Set %s class to %s", sTargetName, sClass);
 	return Plugin_Handled;
@@ -157,8 +157,8 @@ public Action Command_SetWeapon(int iClient, int iArgs)
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsPlayerAlive(iTargetList[i]) && IsWeaponRandomized(iTargetList[i]))
-			TF2_RespawnPlayer(iTargetList[i]);
+		if (IsWeaponRandomized(iTargetList[i]))
+			RefreshPlayer(iTargetList[i]);
 	
 	if (iCount == 1)
 	{
@@ -252,8 +252,8 @@ public Action Command_SetSlotWeapon(int iClient, int iArgs)
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsPlayerAlive(iTargetList[i]) && IsWeaponRandomized(iTargetList[i]))
-			TF2_RespawnPlayer(iTargetList[i]);
+		if (IsWeaponRandomized(iTargetList[i]))
+			RefreshPlayer(iTargetList[i]);
 	
 	if (iCount == 1)
 	{
@@ -321,8 +321,8 @@ public Action Command_GiveWeapon(int iClient, int iArgs)
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsPlayerAlive(iTargetList[i]) && IsWeaponRandomized(iTargetList[i]))
-			TF2_RespawnPlayer(iTargetList[i]);
+		if (IsWeaponRandomized(iTargetList[i]))
+			RefreshPlayer(iTargetList[i]);
 	
 	if (iCount == 1)
 	{
@@ -390,8 +390,8 @@ public Action Command_Generate(int iClient, int iArgs)
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsPlayerAlive(iTargetList[i]) && (IsClassRandomized(iTargetList[i]) || IsWeaponRandomized(iTargetList[i])))
-			TF2_RespawnPlayer(iTargetList[i]);
+		if (IsClassRandomized(iTargetList[i]) || IsWeaponRandomized(iTargetList[i]))
+			RefreshPlayer(iTargetList[i]);
 	
 	ReplyToCommand(iClient, "Regenerated %s class and weapons", sTargetName);
 	return Plugin_Handled;

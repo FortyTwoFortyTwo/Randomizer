@@ -22,8 +22,8 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 		{
 			RandomizeClientWeapon(iClient);
 			
-			if (IsPlayerAlive(iClient) && (IsClassRandomized(iClient) || IsWeaponRandomized(iClient)))
-				TF2_RespawnPlayer(iClient);
+			if (IsClassRandomized(iClient) || IsWeaponRandomized(iClient))
+				RefreshPlayer(iClient);
 		}
 	}
 }
@@ -37,98 +37,10 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
 	
-	g_bClientRespawn[iClient] = false;	//Client respawned, dont need force respawn demand
+	g_bClientRefreshCosmetics[iClient] = false;	//Client respawned, dont need force refresh demand
 	
-	if (!IsCosmeticRandomized(iClient))
-		return;
-	
-	//Destroy any cosmetics left
-	int iCosmetic;
-	while ((iCosmetic = FindEntityByClassname(iCosmetic, "tf_wearable*")) > MaxClients)
-	{
-		if (GetEntPropEnt(iCosmetic, Prop_Send, "m_hOwnerEntity") == iClient)
-		{
-			int iIndex = GetEntProp(iCosmetic, Prop_Send, "m_iItemDefinitionIndex");
-			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-			{
-				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-				if (iSlot == LoadoutSlot_Misc)
-				{
-					TF2_RemoveItem(iClient, iCosmetic);
-					continue;
-				}
-			}
-		}
-	}
-	
-	int iMaxCosmetics = g_cvRandomCosmetics.IntValue;
-	if (iMaxCosmetics == 0)	//Good ol TF2 2007
-		return;
-	
-	static const int iSlotCosmetics[] = {
-		LoadoutSlot_Head,
-		LoadoutSlot_Misc,
-		LoadoutSlot_Misc2
-	};
-	
-	Address pPossibleItems[CLASS_MAX * sizeof(iSlotCosmetics)];
-	int iPossibleCount;
-	
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-	{
-		for (int i = 0; i < sizeof(iSlotCosmetics); i++)
-		{
-			Address pItem = SDKCall_GetLoadoutItem(iClient, view_as<TFClassType>(iClass), iSlotCosmetics[i]);
-			if (TF2_IsValidEconItemView(pItem))
-			{
-				pPossibleItems[iPossibleCount] = pItem;
-				iPossibleCount++;
-			}
-		}
-	}
-	
-	SortIntegers(view_as<int>(pPossibleItems), iPossibleCount, Sort_Random);
-	
-	if (iMaxCosmetics > iPossibleCount)
-		iMaxCosmetics = iPossibleCount;
-	
-	if (g_cvCosmeticsConflicts.BoolValue)
-	{
-		int iCount;
-		
-		for (int i = 0; i < iPossibleCount; i++)
-		{
-			int iIndex = LoadFromAddress(pPossibleItems[i] + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
-			int iMask = TF2Econ_GetItemEquipRegionMask(iIndex);
-			bool bConflicts;
-			
-			//Find any possible cosmetic conflicts, both weapon and cosmetic
-			int iItem;
-			int iPos;
-			while (TF2_GetItem(iClient, iItem, iPos, true))
-			{
-				int iItemIndex = GetEntProp(iItem, Prop_Send, "m_iItemDefinitionIndex");
-				if (0 <= iItemIndex < 65535 && iMask & TF2Econ_GetItemEquipRegionMask(iItemIndex))
-				{
-					bConflicts = true;
-					break;
-				}
-			}
-			
-			if (!bConflicts)
-			{
-				TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pPossibleItems[i]));
-				iCount++;
-				if (iCount == iMaxCosmetics)
-					break;
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < iMaxCosmetics; i++)
-			TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pPossibleItems[i]));
-	}
+	if (IsCosmeticRandomized(iClient))
+		RefreshCosmetics(iClient);
 }
 
 public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
@@ -139,6 +51,8 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
+	
+	g_bClientRefreshWeapons[iClient] = false;	//Client respawned, dont need force refresh demand
 	
 	TFClassType nClass = TF2_GetPlayerClass(iClient);
 	
