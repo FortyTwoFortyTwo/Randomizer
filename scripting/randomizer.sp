@@ -15,7 +15,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.8.2"
+#define PLUGIN_VERSION			"1.9.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
@@ -147,6 +147,12 @@ enum Button
 	
 	Button_MAX
 };
+
+enum struct RandomizedInfo
+{
+	TFClassType nClass;	//Class
+	int iRuneType;	//Type of rune
+}
 
 enum struct RandomizedWeapon
 {
@@ -325,6 +331,7 @@ enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 bool g_bEnabled;
 bool g_bTF2Items;
 bool g_bAllowGiveNamedItem;
+int g_iMannpowerCount;
 int g_iOffsetItemDefinitionIndex = -1;
 int g_iOffsetPlayerShared;
 
@@ -342,10 +349,10 @@ ConVar g_cvTeamCosmetics;
 ConVar g_cvDroppedWeapons;
 ConVar g_cvHuds;
 
-TFClassType g_iTeamClass[TEAM_MAX+1];
+RandomizedInfo g_eTeamInfo[TEAM_MAX+1];
 RandomizedWeapon g_eTeamWeapon[TEAM_MAX+1][CLASS_MAX+1];
 
-TFClassType g_iClientClass[TF_MAXPLAYERS];
+RandomizedInfo g_eClientInfo[TF_MAXPLAYERS];
 RandomizedWeapon g_eClientWeapon[TF_MAXPLAYERS][CLASS_MAX+1];
 
 TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
@@ -410,10 +417,12 @@ public void OnPluginStart()
 	Weapons_Init();
 	
 	AddCommandListener(Event_EurekaTeleport, "eureka_teleport");
+	AddCommandListener(Event_DropItem, "dropitem");
 	
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
-		g_iClientClass[iClient] = TFClass_Unknown;
+		g_eClientInfo[iClient].nClass = TFClass_Unknown;
+		g_eClientInfo[iClient].iRuneType = -1;
 		ResetWeaponIndex(g_eClientWeapon[iClient]);
 	}
 	
@@ -477,6 +486,9 @@ public void OnMapStart()
 	Huds_Refresh();
 	ViewModels_Refresh();
 	Weapons_Refresh();
+	
+	if (!g_iMannpowerCount)
+		LoadMannpowerCount();
 	
 	if (g_bEnabled)
 		DHook_HookGamerules();
@@ -702,6 +714,34 @@ void DisableRandomizer()
 		RefreshPlayer(iClient);
 }
 
+void LoadMannpowerCount()
+{
+	g_iMannpowerCount = 0;
+	
+	//Figure out how many mannpower there is by model, if invalid rune type is passed,
+	// default model is used, which is same as rune type 0
+	char sModel[PLATFORM_MAX_PATH], sDefaultModel[PLATFORM_MAX_PATH];
+	int iRune = CreateEntityByName("item_powerup_rune");
+	int iOffset = FindDataMapInfo(iRune, "m_bDisabled") + 28;
+	
+	DispatchSpawn(iRune);
+	GetEntityModel(iRune, sDefaultModel, sizeof(sDefaultModel));
+	RemoveEntity(iRune);
+	
+	do
+	{
+		g_iMannpowerCount++;
+		
+		iRune = CreateEntityByName("item_powerup_rune");
+		SetEntData(iRune, iOffset, g_iMannpowerCount);
+		
+		DispatchSpawn(iRune);
+		GetEntityModel(iRune, sModel, sizeof(sModel));
+		RemoveEntity(iRune);
+	}
+	while (!StrEqual(sModel, sDefaultModel));
+}
+
 void RefreshPlayer(int iClient)
 {
 	if (!IsClientInGame(iClient) || !IsPlayerAlive(iClient))	//Player will regardless get refreshed on spawn
@@ -710,7 +750,7 @@ void RefreshPlayer(int iClient)
 	UpdateClientWeapon(iClient);
 	
 	if (IsClassRandomized(iClient))
-		TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
+		TF2_SetPlayerClass(iClient, g_eClientInfo[iClient].nClass);
 	
 	TF2_RegeneratePlayer(iClient);
 }
@@ -824,7 +864,7 @@ void RandomizeTeamWeapon(TFTeam iForceTeam = TFTeam_Unassigned)
 {
 	for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
 	{
-		g_iTeamClass[iTeam] = TFClass_Unknown;
+		g_eTeamInfo[iTeam].nClass = TFClass_Unknown;
 		ResetWeaponIndex(g_eTeamWeapon[iTeam]);
 	}
 	
@@ -835,15 +875,19 @@ void RandomizeTeamWeapon(TFTeam iForceTeam = TFTeam_Unassigned)
 		{
 			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
 				if (iForceTeam == TFTeam_Unassigned || iForceTeam == view_as<TFTeam>(iTeam))
-					g_iTeamClass[iTeam] = TF2_GetRandomClass();
+					g_eTeamInfo[iTeam].nClass = TF2_GetRandomClass();
 		}
 		case Mode_All:
 		{
 			TFClassType nClass = TF2_GetRandomClass();
 			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
-				g_iTeamClass[iTeam] = nClass;
+				g_eTeamInfo[iTeam].nClass = nClass;
 		}
 	}
+	
+	//TODO convar
+	for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
+		g_eTeamInfo[iTeam].iRuneType = GetRandomInt(0, g_iMannpowerCount - 1);
 	
 	switch (g_cvRandomWeapons.IntValue)
 	{
@@ -868,10 +912,12 @@ void RandomizeClientWeapon(int iClient)
 {
 	switch (g_cvRandomClass.IntValue)
 	{
-		case Mode_Normal, Mode_NormalRound: g_iClientClass[iClient] = TF2_GetRandomClass();
-		case Mode_Team, Mode_All: g_iClientClass[iClient] = g_iTeamClass[TF2_GetClientTeam(iClient)];
-		default: g_iClientClass[iClient] = TFClass_Unknown;
+		case Mode_Normal, Mode_NormalRound: g_eClientInfo[iClient].nClass = TF2_GetRandomClass();
+		case Mode_Team, Mode_All: g_eClientInfo[iClient].nClass = g_eTeamInfo[TF2_GetClientTeam(iClient)].nClass;
+		default: g_eClientInfo[iClient].nClass = TFClass_Unknown;
 	}
+	
+	g_eClientInfo[iClient].iRuneType = GetRandomInt(0, g_iMannpowerCount - 1);
 	
 	switch (g_cvRandomWeapons.IntValue)
 	{
@@ -885,8 +931,10 @@ void UpdateClientWeapon(int iClient)
 {
 	switch (g_cvRandomClass.IntValue)
 	{
-		case Mode_Team, Mode_All: g_iClientClass[iClient] = g_iTeamClass[TF2_GetClientTeam(iClient)];
+		case Mode_Team, Mode_All: g_eClientInfo[iClient].nClass = g_eTeamInfo[TF2_GetClientTeam(iClient)].nClass;
 	}
+	
+	g_eClientInfo[iClient].iRuneType = g_eTeamInfo[TF2_GetClientTeam(iClient)].iRuneType;
 	
 	switch (g_cvRandomWeapons.IntValue)
 	{
@@ -1067,6 +1115,26 @@ void ResetWeaponIndex(RandomizedWeapon eRandomized[CLASS_MAX+1])
 public Action Event_EurekaTeleport(int iClient, const char[] sCommand, int iArgs)
 {
 	g_iClientEurekaTeleporting = iClient;
+	return Plugin_Continue;
+}
+
+public Action Event_DropItem(int iClient, const char[] sCommand, int iArgs)
+{
+	static bool bSkip;
+	if (bSkip)
+		return Plugin_Continue;
+	
+	if (g_eClientInfo[iClient].iRuneType != -1)
+	{
+		//Call itself but without rune cond, so item flag can be dropped
+		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), -1);
+		bSkip = true;
+		FakeClientCommand(iClient, "dropitem");
+		bSkip = false;
+		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), g_eClientInfo[iClient].iRuneType);
+		return Plugin_Handled;
+	}
+	
 	return Plugin_Continue;
 }
 

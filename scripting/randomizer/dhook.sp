@@ -65,6 +65,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::TakeHealth", DHook_TakeHealthPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CheckBlockBackstab", DHook_CheckBlockBackstabPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanPickupBuilding", _, DHook_CanPickupBuildingPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::DropRune", DHook_DropRunePre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
 	DHook_CreateDetour(hGameData, "CTFKnife::DisguiseOnKill", DHook_DisguiseOnKillPre, DHook_DisguiseOnKillPost);
 	DHook_CreateDetour(hGameData, "CTFLunchBox::ApplyBiteEffects", DHook_ApplyBiteEffectsPre, DHook_ApplyBiteEffectsPost);
@@ -996,7 +997,7 @@ public MRESReturn DHook_ForceRespawnPre(int iClient)
 	
 	if (IsClassRandomized(iClient))
 	{
-		TFClassType nClass = g_iClientClass[iClient];
+		TFClassType nClass = g_eClientInfo[iClient].nClass;
 		if (nClass != TFClass_Unknown)
 			SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(nClass));
 	}
@@ -1137,6 +1138,12 @@ public MRESReturn DHook_CanPickupBuildingPost(int iClient, Handle hReturn, Handl
 	}
 	
 	return MRES_Ignored;
+}
+
+public MRESReturn DHook_DropRunePre(int iClient, Handle hParams)
+{
+	//TODO check if client is in randomize mode
+	return MRES_Supercede;
 }
 
 public MRESReturn DHook_FrameUpdatePostEntityThinkPre()

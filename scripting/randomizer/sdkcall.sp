@@ -6,6 +6,7 @@ static Handle g_hSDKEndClassSpecialSkill;
 static Handle g_hSDKGetLoadoutItem;
 static Handle g_hSDKUpdateRageBuffsAndRage;
 static Handle g_hSDKModifyRage;
+static Handle g_hSDKSetCarryingRuneType;
 static Handle g_hSDKHandleRageGain;
 static Handle g_hSDKWeaponCanSwitchTo;
 static Handle g_hSDKGetSlot;
@@ -71,6 +72,13 @@ public void SDKCall_Init(GameData hGameData)
 	g_hSDKModifyRage = EndPrepSDKCall();
 	if (!g_hSDKModifyRage)
 		LogError("Failed to create call: CTFPlayerShared::ModifyRage");
+	
+	StartPrepSDKCall(SDKCall_Raw);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayerShared::SetCarryingRuneType");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	g_hSDKSetCarryingRuneType = EndPrepSDKCall();
+	if (!g_hSDKSetCarryingRuneType)
+		LogError("Failed to create call: CTFPlayerShared::SetCarryingRuneType");
 	
 	StartPrepSDKCall(SDKCall_Static);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "HandleRageGain");
@@ -154,6 +162,11 @@ void SDKCall_UpdateRageBuffsAndRage(Address pPlayerShared)
 void SDKCall_ModifyRage(Address pPlayerShared, float flAdd)
 {
 	SDKCall(g_hSDKModifyRage, pPlayerShared, flAdd);
+}
+
+void SDKCall_SetCarryingRuneType(Address pPlayerShared, int iRuneType)
+{
+	SDKCall(g_hSDKSetCarryingRuneType, pPlayerShared, iRuneType);
 }
 
 void SDKCall_HandleRageGain(int iClient, int iRequiredBuffFlags, float flDamage, float fInverseRageGainScale)

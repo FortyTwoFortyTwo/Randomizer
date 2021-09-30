@@ -289,6 +289,12 @@
 				"linux"		"@_ZN9CTFPlayer17CanPickupBuildingEP11CBaseObject"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x53\x57\x8B\x7D\x08"
 			}
+			"CTFPlayer::DropRune"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer8DropRuneEbi"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x53\x56\x8B\xF1\x57\x8D\x8E\xB0\x19\x00\x00"
+			}
 			"CTFPlayerClassShared::CanBuildObject"
 			{
 				"library"	"server"
@@ -330,6 +336,12 @@
 				"library"	"server"
 				"linux"		"@_ZN15CTFPlayerShared16ActivateRageBuffEP11CBaseEntityi"
 				"windows"	"\x55\x8B\xEC\x51\xF3\x0F\x10\x05\x2A\x2A\x2A\x2A\x56\x8B\xF1"
+			}
+			"CTFPlayerShared::SetCarryingRuneType"
+			{
+				"library"	"server"
+				"linux"		"@_ZN15CTFPlayerShared19SetCarryingRuneTypeE11RuneTypes_t"
+				"windows"	"\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x57\x8B\xF9\x83\xFB\xFF\x74\x2A"
 			}
 			"HandleRageGain"
 			{
@@ -687,6 +699,24 @@
 					"pPickupObject"
 					{
 						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CTFPlayer::DropRune"
+			{
+				"signature"	"CTFPlayer::DropRune"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"bApplyForce"
+					{
+						"type"	"bool"
+					}
+					"nTeam"
+					{
+						"type"	"int"
 					}
 				}
 			}

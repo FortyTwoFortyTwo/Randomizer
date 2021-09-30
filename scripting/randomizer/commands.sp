@@ -78,13 +78,13 @@ public Action Command_Class(int iClient, int iArgs)
 		case Mode_Normal, Mode_NormalRound:
 		{
 			for (int i = 0; i < iTargetCount; i++) 
-				g_iClientClass[iTargetList[i]] = nClass;
+				g_eClientInfo[iTargetList[i]].nClass = nClass;
 		}
 		case Mode_Team, Mode_All:
 		{
 			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
 				if (CanTargetTeam(view_as<TFTeam>(iTeam), iTargetList, iTargetCount))
-					g_iTeamClass[iTeam] = nClass;
+					g_eTeamInfo[iTeam].nClass = nClass;
 		}
 	}
 	

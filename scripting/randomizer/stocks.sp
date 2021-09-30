@@ -718,6 +718,13 @@ stock int GetMaxWeapons()
 	return iMaxWeapons;
 }
 
+stock void GetEntityModel(int iEntity, char[] sModel, int iMaxSize)
+{
+	int iIndex = GetEntProp(iEntity, Prop_Send, "m_nModelIndex");
+	int iTable = FindStringTable("modelprecache");
+	ReadStringTable(iTable, iIndex, sModel, iMaxSize);
+}
+
 stock int PrecacheParticleSystem(const char[] sParticle)
 {
 	static int iParticleEffectNames = INVALID_STRING_TABLE;

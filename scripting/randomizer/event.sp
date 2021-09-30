@@ -7,7 +7,6 @@ void Event_Init()
 	HookEvent("player_death", Event_PlayerDeath);
 }
 
-
 public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!g_bEnabled)
@@ -80,6 +79,8 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
 	}
 	
+	SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), g_eClientInfo[iClient].iRuneType);
+	
 	if (!IsWeaponRandomized(iClient))
 		return;
 	
@@ -95,7 +96,6 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		if (!g_eClientWeapon[iClient][nClass].HasWeapon(iWeapon))
 			TF2_RemoveItem(iClient, iWeapon);
 	}
-	
 	
 	for (iPos = 0; iPos < MAX_WEAPONS; iPos++)
 	{
