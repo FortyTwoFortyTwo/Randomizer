@@ -988,6 +988,11 @@ public MRESReturn DHook_ForceRespawnPre(int iClient)
 	//Update incase of changes from team randomization
 	UpdateClientWeapon(iClient);
 	
+	//Reset decap count
+	int iWeapon, iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+		Properties_SetWeaponPropInt(iWeapon, "m_iDecapitations", 0);
+	
 	//Detach client's object so it doesnt get destroyed on class change
 	int iBuilding = MaxClients+1;
 	while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
