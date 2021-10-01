@@ -437,9 +437,9 @@ public MRESReturn DHook_ValidateWearablesPre(int iClient, Handle hParams)
 				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
 				
 				bool bDisguise;
-				if (LoadoutSlot_Primary <= iSlot <= LoadoutSlot_PDA2 && IsWeaponRandomized(iClient))
+				if (LoadoutSlot_Primary <= iSlot <= LoadoutSlot_PDA2 && Group_IsClientRandomized(iClient, RandomizedType_Weapons))
 					bDisguise = true;
-				else if (iSlot == LoadoutSlot_Misc && IsCosmeticRandomized(iClient))
+				else if (iSlot == LoadoutSlot_Misc && Group_IsClientRandomized(iClient, RandomizedType_Cosmetics))
 					bDisguise = true;
 				
 				if (bDisguise && !GetEntProp(iWearable, Prop_Send, "m_bDisguiseWearable"))
@@ -491,7 +491,7 @@ public MRESReturn DHook_ValidateWearablesPost(int iClient, Handle hParams)
 
 public MRESReturn DHook_ManageBuilderWeaponsPre(int iClient, Handle hParams)
 {
-	if (IsWeaponRandomized(iClient))
+	if (Group_IsClientRandomized(iClient, RandomizedType_Weapons))
 		return MRES_Supercede;	//Don't do anything, we'll handle it
 	
 	g_bManageBuilderWeapons = true;
@@ -591,7 +591,7 @@ public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hPa
 
 public MRESReturn DHook_GetLoadoutItemPre(int iClient, Handle hReturn, Handle hParams)
 {
-	if (g_iWeaponGetLoadoutItem == -1 || !IsWeaponRandomized(iClient))	//not inside ValidateWeapons
+	if (g_iWeaponGetLoadoutItem == -1 || !Group_IsClientRandomized(iClient, RandomizedType_Weapons))	//not inside ValidateWeapons
 		return MRES_Ignored;
 	
 	int iWeapon = -1;
@@ -986,8 +986,8 @@ public MRESReturn DHook_CanBeUpgradedPost(int iObject, Handle hReturn, Handle hP
 
 public MRESReturn DHook_ForceRespawnPre(int iClient)
 {
-	//Update incase of changes from team randomization
-	UpdateClientWeapon(iClient);
+	//Update incase of changing group
+	UpdateClientInfo(iClient);
 	
 	//Detach client's object so it doesnt get destroyed on class change
 	int iBuilding = MaxClients+1;
@@ -995,7 +995,7 @@ public MRESReturn DHook_ForceRespawnPre(int iClient)
 		if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
 			SDKCall_RemoveObject(iClient, iBuilding);
 	
-	if (IsClassRandomized(iClient))
+	if (Group_IsClientRandomized(iClient, RandomizedType_Class))
 	{
 		TFClassType nClass = g_eClientInfo[iClient].nClass;
 		if (nClass != TFClass_Unknown)

@@ -1,7 +1,6 @@
 void Event_Init()
 {
 	HookEvent("teamplay_round_start", Event_RoundStart);
-	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
 	HookEvent("player_hurt", Event_PlayerHurt);
 	HookEvent("player_death", Event_PlayerDeath);
@@ -12,34 +11,10 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 	if (!g_bEnabled)
 		return;
 	
-	RandomizeTeamWeapon();
+	Group_RandomizeAll(RandomizedReroll_Round);
 	
-	//Update client weapons
-	for (int iClient = 1; iClient <= MaxClients; iClient++)
-	{
-		if (IsClientInGame(iClient))
-		{
-			RandomizeClientWeapon(iClient);
-			
-			if (IsClassRandomized(iClient) || IsWeaponRandomized(iClient))
-				RefreshPlayer(iClient);
-		}
-	}
-}
-
-public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadcast)
-{
-	if (!g_bEnabled)
-		return;
-	
-	int iClient = GetClientOfUserId(event.GetInt("userid"));
-	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
-		return;
-	
-	g_bClientRefreshCosmetics[iClient] = false;	//Client respawned, dont need force refresh demand
-	
-	if (IsCosmeticRandomized(iClient))
-		RefreshCosmetics(iClient);
+	if (event.GetBool("full_reset"))
+		Group_RandomizeAll(RandomizedReroll_FullRound);
 }
 
 public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
@@ -51,12 +26,10 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
 	
-	g_bClientRefreshWeapons[iClient] = false;	//Client respawned, dont need force refresh demand
-	
-	TFClassType nClass = TF2_GetPlayerClass(iClient);
+	g_bClientRefresh[iClient] = false;	//Client respawned, dont need force refresh demand
 	
 	//Because of blocking ValidateWeapons and ValidateWearables, make sure action weapon is correct
-	Address pActionItem = SDKCall_GetLoadoutItem(iClient, nClass, LoadoutSlot_Action);
+	Address pActionItem = SDKCall_GetLoadoutItem(iClient, TF2_GetPlayerClass(iClient), LoadoutSlot_Action);
 	bool bFound;
 	
 	int iWeapon, iPos;
@@ -79,86 +52,11 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
 	}
 	
-	SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), g_eClientInfo[iClient].iRuneType);
+	if (Group_IsClientRandomized(iClient, RandomizedType_Mannpower))
+		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), g_eClientInfo[iClient].iRuneType);
 	
-	if (!IsWeaponRandomized(iClient))
-		return;
-	
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		char sClassname[256];
-		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-		
-		if (CanKeepWeapon(iClient, sClassname, iIndex))
-			continue;
-		
-		if (!g_eClientWeapon[iClient][nClass].HasWeapon(iWeapon))
-			TF2_RemoveItem(iClient, iWeapon);
-	}
-	
-	for (iPos = 0; iPos < MAX_WEAPONS; iPos++)
-	{
-		if (g_eClientWeapon[iClient][nClass].iRef[iPos] != INVALID_ENT_REFERENCE && !IsValidEntity(g_eClientWeapon[iClient][nClass].iRef[iPos]))
-			g_eClientWeapon[iClient][nClass].iRef[iPos] = INVALID_ENT_REFERENCE;
-		
-		if (g_eClientWeapon[iClient][nClass].iRef[iPos] != INVALID_ENT_REFERENCE)
-			continue;
-		
-		int iIndex = g_eClientWeapon[iClient][nClass].iIndex[iPos];
-		if (iIndex == -1 || !ItemIsAllowed(iIndex))
-			continue;
-		
-		int iSlot = g_eClientWeapon[iClient][nClass].iSlot[iPos];
-		
-		Address pItem = TF2_FindReskinItem(iClient, iIndex);
-		if (pItem)
-			iWeapon = TF2_GiveNamedItem(iClient, pItem, iSlot);
-		else
-			iWeapon = TF2_CreateWeapon(iClient, iIndex, iSlot);
-		
-		if (iWeapon == INVALID_ENT_REFERENCE)
-		{
-			PrintToChat(iClient, "Unable to create weapon! index '%d'", iIndex);
-			LogError("Unable to create weapon! index '%d'", iIndex);
-			continue;
-		}
-		
-		//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
-		if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
-			SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
-		
-		//Fill charge meter
-		float flVal;
-		if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_resupply_denied", flVal) || flVal == 0.0)
-			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
-		
-		TF2_EquipWeapon(iClient, iWeapon);
-		
-		if (ViewModels_ShouldBeInvisible(iWeapon, nClass))
-			ViewModels_EnableInvisible(iWeapon);
-		
-		g_eClientWeapon[iClient][nClass].iRef[iPos] = EntIndexToEntRef(iWeapon);
-	}
-	
-	//Set ammo to 0, CTFPlayer::GetMaxAmmo detour will correct this, adding ammo by current
-	for (int iAmmoType = 0; iAmmoType < TF_AMMO_COUNT; iAmmoType++)
-		SetEntProp(iClient, Prop_Send, "m_iAmmo", 0, _, iAmmoType);
-	
-	//Set active weapon if dont have one
-	//TODO update this
-	if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") == INVALID_ENT_REFERENCE)
-	{
-		for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
-		{
-			iWeapon = GetPlayerWeaponSlot(iClient, iSlot);	//Dont want wearable
-			if (iWeapon > MaxClients)
-			{
-				SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
-				break;
-			}
-		}
-	}
+	if (Group_IsClientRandomized(iClient, RandomizedType_Weapons))
+		RefreshClientWeapons(iClient);
 }
 
 public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcast)
@@ -193,14 +91,27 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	if (!g_bEnabled)
 		return;
 	
-	int iClient = GetClientOfUserId(event.GetInt("userid"));
+	int iVictim = GetClientOfUserId(event.GetInt("userid"));
 	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
+	int iAssister = GetClientOfUserId(event.GetInt("assister"));
 	bool bDeadRinger = (event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER) != 0;
 	
 	if (bDeadRinger)
-		g_bFeignDeath[iClient] = true;
+	{
+		g_bFeignDeath[iVictim] = true;
+	}
+	else
+	{
+		if (0 < iAttacker <= MaxClients && iVictim != iAttacker)
+			Group_RandomizeClient(iVictim, RandomizedReroll_Death);
+		else if (iVictim == iAttacker)
+			Group_RandomizeClient(iVictim, RandomizedReroll_Suicide);
+		else
+			Group_RandomizeClient(iVictim, RandomizedReroll_Environment);
+	}
 	
-	//Only generate new weapons if killed from attacker, and it's a normal round
-	if (0 < iAttacker <= MaxClients && IsClientInGame(iAttacker) && iClient != iAttacker && !bDeadRinger && g_cvRandomWeapons.IntValue == Mode_Normal)
-		RandomizeClientWeapon(iClient);
+	if (0 < iAttacker <= MaxClients && iVictim != iAttacker)
+		Group_RandomizeClient(iAttacker, RandomizedReroll_Kill);
+	if (0 < iAssister <= MaxClients && iVictim != iAssister)
+		Group_RandomizeClient(iAssister, RandomizedReroll_Assist);
 }

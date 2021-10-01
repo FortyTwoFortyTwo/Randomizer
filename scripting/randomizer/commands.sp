@@ -70,28 +70,26 @@ public Action Command_Class(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	if (!CanTargetClients(iClient, g_cvRandomClass, iTargetList, iTargetCount))
-		return Plugin_Handled;
-	
-	switch (g_cvRandomClass.IntValue)
+	char sBadName[MAX_TARGET_LENGTH];
+	if (!Group_IsTargetListGood(RandomizedType_Class, iTargetList, iTargetCount, sBadName))
 	{
-		case Mode_Normal, Mode_NormalRound:
-		{
-			for (int i = 0; i < iTargetCount; i++) 
-				g_eClientInfo[iTargetList[i]].nClass = nClass;
-		}
-		case Mode_Team, Mode_All:
-		{
-			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
-				if (CanTargetTeam(view_as<TFTeam>(iTeam), iTargetList, iTargetCount))
-					g_eTeamInfo[iTeam].nClass = nClass;
-		}
+		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sTargetName, sBadName);
+		return Plugin_Handled;
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsClassRandomized(iTargetList[i]))
-			RefreshPlayer(iTargetList[i]);
-			
+	{
+		RandomizedInfo eInfo;
+		if (Group_GetClientSameInfo(iTargetList[i], RandomizedType_Class, eInfo))
+		{
+			eInfo.nClass = nClass;
+			Group_SetInfo(eInfo);
+		}
+		
+		g_eClientInfo[iTargetList[i]].nClass = nClass;
+		RefreshClient(iTargetList[i]);
+	}
+	
 	ReplyToCommand(iClient, "Set %s class to %s", sTargetName, sClass);
 	return Plugin_Handled;
 }
@@ -121,44 +119,33 @@ public Action Command_SetWeapon(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	if (!CanTargetClients(iClient, g_cvRandomWeapons, iTargetList, iTargetCount))
+	char sBadName[MAX_TARGET_LENGTH];
+	if (!Group_IsTargetListGood(RandomizedType_Weapons, iTargetList, iTargetCount, sBadName))
+	{
+		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sTargetName, sBadName);
 		return Plugin_Handled;
+	}
 	
 	RandomizedWeapon eWeapon;
 	int iCount = GetWeaponsFromCommand(iClient, eWeapon);
 	if (iCount == 0)
 		return Plugin_Handled;
 	
-	switch (g_cvRandomWeapons.IntValue)
-	{
-		case Mode_Normal, Mode_NormalRound:
-		{
-			for (int i = 0; i < iTargetCount; i++)
-			{
-				ResetWeaponIndex(g_eClientWeapon[iTargetList[i]]);
-				
-				for (int j = 0; j < iCount; j++)
-					AddRandomizedWeapon(g_eClientWeapon[iTargetList[i]], eWeapon.iIndex[j], eWeapon.iSlot[j]);
-			}
-		}
-		case Mode_Team, Mode_All:
-		{
-			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
-			{
-				if (CanTargetTeam(view_as<TFTeam>(iTeam), iTargetList, iTargetCount))
-				{
-					ResetWeaponIndex(g_eTeamWeapon[iTeam]);
-					
-					for (int i = 0; i < iCount; i++)
-						AddRandomizedWeapon(g_eTeamWeapon[iTeam], eWeapon.iIndex[i], eWeapon.iSlot[i]);
-				}
-			}
-		}
-	}
-	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsWeaponRandomized(iTargetList[i]))
-			RefreshPlayer(iTargetList[i]);
+	{
+		RandomizedWeapon eBuffer[CLASS_MAX+1];
+		if (Group_GetClientSameWeapon(iTargetList[i], RandomizedType_Weapons, eBuffer))
+		{
+			SetRandomizedWeapon(eBuffer, eWeapon, iCount);
+			
+			RandomizedInfo eInfo;
+			Group_GetClientSameInfo(iTargetList[i], RandomizedType_Weapons, eInfo);
+			Group_SetWeapon(eInfo, eBuffer);
+		}
+		
+		SetRandomizedWeapon(g_eClientWeapon[iTargetList[i]], eWeapon, iCount);
+		RefreshClient(iTargetList[i]);
+	}
 	
 	if (iCount == 1)
 	{
@@ -200,60 +187,33 @@ public Action Command_SetSlotWeapon(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	if (!CanTargetClients(iClient, g_cvRandomWeapons, iTargetList, iTargetCount))
+	char sBadName[MAX_TARGET_LENGTH];
+	if (!Group_IsTargetListGood(RandomizedType_Weapons, iTargetList, iTargetCount, sBadName))
+	{
+		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sTargetName, sBadName);
 		return Plugin_Handled;
+	}
 	
 	RandomizedWeapon eWeapon;
 	int iCount = GetWeaponsFromCommand(iClient, eWeapon);
 	if (iCount == 0)
 		return Plugin_Handled;
 	
-	switch (g_cvRandomWeapons.IntValue)
-	{
-		case Mode_Normal, Mode_NormalRound:
-		{
-			for (int i = 0; i < iTargetCount; i++)
-			{
-				bool bSlot[WeaponSlot_Building+1];
-				
-				for (int j = 0; j < iCount; j++)
-				{
-					if (!bSlot[eWeapon.iSlot[j]])
-					{
-						RemoveRandomizedWeaponBySlot(g_eClientWeapon[iTargetList[i]], eWeapon.iSlot[j]);
-						bSlot[eWeapon.iSlot[j]] = true;
-					}
-					
-					AddRandomizedWeapon(g_eClientWeapon[iTargetList[i]], eWeapon.iIndex[j], eWeapon.iSlot[j]);
-				}
-			}
-		}
-		case Mode_Team, Mode_All:
-		{
-			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
-			{
-				if (CanTargetTeam(view_as<TFTeam>(iTeam), iTargetList, iTargetCount))
-				{
-					bool bSlot[WeaponSlot_Building+1];
-					
-					for (int i = 0; i < iCount; i++)
-					{
-						if (!bSlot[eWeapon.iSlot[i]])
-						{
-							RemoveRandomizedWeaponBySlot(g_eTeamWeapon[iTeam], eWeapon.iSlot[i]);
-							bSlot[eWeapon.iSlot[i]] = true;
-						}
-						
-						AddRandomizedWeapon(g_eTeamWeapon[iTeam], eWeapon.iIndex[i], eWeapon.iSlot[i]);
-					}
-				}
-			}
-		}
-	}
-	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsWeaponRandomized(iTargetList[i]))
-			RefreshPlayer(iTargetList[i]);
+	{
+		RandomizedWeapon eBuffer[CLASS_MAX+1];
+		if (Group_GetClientSameWeapon(iTargetList[i], RandomizedType_Weapons, eBuffer))
+		{
+			SetSlotRandomizedWeapon(eBuffer, eWeapon, iCount);
+			
+			RandomizedInfo eInfo;
+			Group_GetClientSameInfo(iTargetList[i], RandomizedType_Weapons, eInfo);
+			Group_SetWeapon(eInfo, eBuffer);
+		}
+		
+		SetSlotRandomizedWeapon(g_eClientWeapon[iTargetList[i]], eWeapon, iCount);
+		RefreshClient(iTargetList[i]);
+	}
 	
 	if (iCount == 1)
 	{
@@ -295,34 +255,33 @@ public Action Command_GiveWeapon(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	if (!CanTargetClients(iClient, g_cvRandomWeapons, iTargetList, iTargetCount))
+	char sBadName[MAX_TARGET_LENGTH];
+	if (!Group_IsTargetListGood(RandomizedType_Weapons, iTargetList, iTargetCount, sBadName))
+	{
+		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sTargetName, sBadName);
 		return Plugin_Handled;
+	}
 	
 	RandomizedWeapon eWeapon;
 	int iCount = GetWeaponsFromCommand(iClient, eWeapon);
 	if (iCount == 0)
 		return Plugin_Handled;
 	
-	switch (g_cvRandomWeapons.IntValue)
-	{
-		case Mode_Normal, Mode_NormalRound:
-		{
-			for (int i = 0; i < iTargetCount; i++)
-				for (int j = 0; j < iCount; j++)
-					AddRandomizedWeapon(g_eClientWeapon[iTargetList[i]], eWeapon.iIndex[j], eWeapon.iSlot[j]);
-		}
-		case Mode_Team, Mode_All:
-		{
-			for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
-				if (CanTargetTeam(view_as<TFTeam>(iTeam), iTargetList, iTargetCount))
-					for (int i = 0; i < iCount; i++)
-						AddRandomizedWeapon(g_eTeamWeapon[iTeam], eWeapon.iIndex[i], eWeapon.iSlot[i]);
-		}
-	}
-	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsWeaponRandomized(iTargetList[i]))
-			RefreshPlayer(iTargetList[i]);
+	{
+		RandomizedWeapon eBuffer[CLASS_MAX+1];
+		if (Group_GetClientSameWeapon(iTargetList[i], RandomizedType_Weapons, eBuffer))
+		{
+			GiveRandomizedWeapon(eBuffer, eWeapon, iCount);
+			
+			RandomizedInfo eInfo;
+			Group_GetClientSameInfo(iTargetList[i], RandomizedType_Weapons, eInfo);
+			Group_SetWeapon(eInfo, eBuffer);
+		}
+		
+		GiveRandomizedWeapon(g_eClientWeapon[iTargetList[i]], eWeapon, iCount);
+		RefreshClient(iTargetList[i]);
+	}
 	
 	if (iCount == 1)
 	{
@@ -364,103 +323,21 @@ public Action Command_Generate(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	if (!CanTargetClients(iClient, g_cvRandomClass, iTargetList, iTargetCount))
+	char sBadName[MAX_TARGET_LENGTH];
+	if (!Group_IsTargetListGood(RandomizedType_None, iTargetList, iTargetCount, sBadName))	//RandomizedType_None as all types
+	{
+		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sTargetName, sBadName);
 		return Plugin_Handled;
-	
-	if (!CanTargetClients(iClient, g_cvRandomWeapons, iTargetList, iTargetCount))
-		return Plugin_Handled;
-	
-	int iModeClass = g_cvRandomClass.IntValue;
-	int iModeWeapons = g_cvRandomWeapons.IntValue;
-	
-	if (iModeClass == Mode_All || iModeWeapons == Mode_All)
-	{
-		RandomizeTeamWeapon();
-	}
-	else if (iModeClass == Mode_Team || iModeWeapons == Mode_Team)
-	{
-		for (int iTeam = TEAM_MIN; iTeam <= TEAM_MAX; iTeam++)
-			if (CanTargetTeam(view_as<TFTeam>(iTeam), iTargetList, iTargetCount))
-				RandomizeTeamWeapon(view_as<TFTeam>(iTeam));
-	}
-	else
-	{
-		for (int i = 0; i < iTargetCount; i++)
-			RandomizeClientWeapon(iTargetList[i]);
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
-		if (IsClassRandomized(iTargetList[i]) || IsWeaponRandomized(iTargetList[i]))
-			RefreshPlayer(iTargetList[i]);
+	{
+		Group_RandomizeClient(iTargetList[i], RandomizedReroll_Force);
+		RefreshClient(iTargetList[i]);
+	}
 	
-	ReplyToCommand(iClient, "Regenerated %s class and weapons", sTargetName);
+	ReplyToCommand(iClient, "Regenerated %s loadout", sTargetName);
 	return Plugin_Handled;
-}
-
-bool IsClientInTargetList(int iClient, const int[] iTargetList, int iTargetCount)
-{
-	for (int i = 0; i < iTargetCount; i++)
-		if (iClient == iTargetList[i])
-			return true;
-	
-	return false;
-}
-
-bool CanTargetClients(int iClient, ConVar cvMode, const int[] iTargetList, int iTargetCount)
-{
-	char sName[256];
-	cvMode.GetName(sName, sizeof(sName));
-	
-	switch (cvMode.IntValue)
-	{
-		case Mode_None:
-		{
-			ReplyToCommand(iClient, "%s convar must not be at %d", sName, Mode_None);
-			return false;
-		}
-		case Mode_Team:
-		{
-			bool bTargetTeam[TEAM_MAX+1];
-			for (int iTarget = 1; iTarget <= MaxClients; iTarget++)
-			{
-				if (IsClientInGame(iTarget))
-				{
-					if (IsClientInTargetList(iTarget, iTargetList, iTargetCount))
-					{
-						bTargetTeam[TF2_GetClientTeam(iTarget)] = true;
-					}
-					else if (bTargetTeam[TF2_GetClientTeam(iTarget)] == true)
-					{
-						ReplyToCommand(iClient, "Can only target teams with %s set to %d", sName, Mode_Team);
-						return false;
-					}
-				}
-			}
-		}
-		case Mode_All:
-		{
-			for (int iTarget = 1; iTarget <= MaxClients; iTarget++)
-			{
-				if (IsClientInGame(iTarget) && !IsClientInTargetList(iTarget, iTargetList, iTargetCount))
-				{
-					ReplyToCommand(iClient, "Can only target everyone with %s set to %d", sName, Mode_All);
-					return false;
-				}
-			}
-		}
-	}
-	
-	return true;
-}
-
-bool CanTargetTeam(TFTeam nTeam, const int[] iTargetList, int iTargetCount)
-{
-	//This function assumes it already passes CanTargetClients
-	for (int iTarget = 1; iTarget <= MaxClients; iTarget++)
-		if (IsClientInGame(iTarget) && IsClientInTargetList(iTarget, iTargetList, iTargetCount) && TF2_GetClientTeam(iTarget) == nTeam)
-			return true;
-	
-	return false;
 }
 
 int GetWeaponsFromCommand(int iClient, RandomizedWeapon eWeapon)

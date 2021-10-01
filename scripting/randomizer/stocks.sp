@@ -682,14 +682,14 @@ stock bool CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
 	if (iSlot == LoadoutSlot_Action)
 		return true;
 	
-	if (IsWeaponRandomized(iClient))
+	if (Group_IsClientRandomized(iClient, RandomizedType_Weapons))
 	{
 		//Dont allow weapons
 		if (LoadoutSlot_Primary <= iSlot <= LoadoutSlot_PDA2)
 			return false;
 	}
 	
-	if (IsCosmeticRandomized(iClient))
+	if (Group_IsClientRandomized(iClient, RandomizedType_Cosmetics))
 	{
 		//Dont allow cosmetics
 		if (iSlot == LoadoutSlot_Misc)
