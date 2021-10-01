@@ -160,7 +160,7 @@ void Group_Randomize(int iClient, RandomizedType nType, RandomizedInfo eInfo, Ra
 		case RandomizedType_Class: RandomizeClass(eInfo);
 		case RandomizedType_Weapons: RandomizeWeapon(eWeapons);
 		case RandomizedType_Cosmetics: RandomizeCosmetics();
-		case RandomizedType_Mannpower: RandomizeMannpower(eInfo);
+		case RandomizedType_Rune: RandomizeRune(eInfo);
 	}
 }
 
@@ -173,7 +173,7 @@ void Group_ResetClient(int iClient, RandomizedType nType)
 		case RandomizedType_Class: g_eClientInfo[iClient].nClass = TFClass_Unknown;
 		case RandomizedType_Weapons: ResetWeaponIndex(g_eClientWeapon[iClient]);
 		case RandomizedType_Cosmetics: RandomizeCosmetics();	//TODO
-		case RandomizedType_Mannpower: g_eClientInfo[iClient].iRuneType = -1;
+		case RandomizedType_Rune: g_eClientInfo[iClient].SetRuneType(-1);
 	}
 }
 

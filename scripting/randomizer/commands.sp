@@ -15,6 +15,7 @@ void Commands_Init()
 	RegAdminCmd("sm_rndsetweapon", Command_SetWeapon, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndsetslotweapon", Command_SetSlotWeapon, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndgiveweapon", Command_GiveWeapon, ADMFLAG_CHANGEMAP);
+	RegAdminCmd("sm_rndrune", Command_Rune, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndgenerate", Command_Generate, ADMFLAG_CHANGEMAP);
 }
 
@@ -295,6 +296,68 @@ public Action Command_GiveWeapon(int iClient, int iArgs)
 		ReplyToCommand(iClient, "Set %s %d weapons", sTargetName, iCount);
 	}
 	
+	return Plugin_Handled;
+}
+
+public Action Command_Rune(int iClient, int iArgs)
+{
+	if (!g_bEnabled)
+		return Plugin_Continue;
+	
+	if (iArgs < 2)
+	{
+		ReplyToCommand(iClient, "Format: sm_rndrune <@target> <rune id>");
+		return Plugin_Handled;
+	}
+	
+	char sTarget[32], sRuneType[32];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	GetCmdArg(2, sRuneType, sizeof(sRuneType));
+	
+	int iRuneType;
+	if (!StringToIntEx(sRuneType, iRuneType))
+	{
+		ReplyToCommand(iClient, "Unknown rune id '%s'", sRuneType);
+		return Plugin_Handled;
+	}
+	else if (iRuneType < -1 || iRuneType >= g_iRuneCount)
+	{
+		ReplyToCommand(iClient, "Rune id must be between -1 to %d", g_iRuneCount - 1);
+		return Plugin_Handled;
+	}
+	
+	int[] iTargetList = new int[MaxClients];
+	char sTargetName[MAX_TARGET_LENGTH];
+	bool bIsML;
+	
+	int iTargetCount = ProcessTargetString(sTarget, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sTargetName, sizeof(sTargetName), bIsML);
+	if (iTargetCount <= 0)
+	{
+		ReplyToCommand(iClient, "Could not find anyone to set rune");
+		return Plugin_Handled;
+	}
+	
+	char sBadName[MAX_TARGET_LENGTH];
+	if (!Group_IsTargetListGood(RandomizedType_Rune, iTargetList, iTargetCount, sBadName))
+	{
+		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sTargetName, sBadName);
+		return Plugin_Handled;
+	}
+	
+	for (int i = 0; i < iTargetCount; i++)
+	{
+		RandomizedInfo eInfo;
+		if (Group_GetClientSameInfo(iTargetList[i], RandomizedType_Rune, eInfo))
+		{
+			eInfo.SetRuneType(iRuneType);
+			Group_SetInfo(eInfo);
+		}
+		
+		g_eClientInfo[iTargetList[i]].SetRuneType(iRuneType);
+		RefreshClient(iTargetList[i]);
+	}
+	
+	ReplyToCommand(iClient, "Set %s rune to %d", sTargetName, iRuneType);
 	return Plugin_Handled;
 }
 

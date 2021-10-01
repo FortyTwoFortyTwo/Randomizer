@@ -47,6 +47,9 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 		if (IsClientInGame(iClient))
 			g_iAllowPlayerClass[iClient]++;
 	
+	if (Group_IsClientRandomized(iVictim, RandomizedType_Rune))
+		g_bKillRune = true;	//Dont allow victim drop rune
+	
 	if (0 < iAttacker <= MaxClients)
 	{
 		if (iWeapon != INVALID_ENT_REFERENCE)
@@ -67,6 +70,7 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 		if (IsClientInGame(iClient))
 			g_iAllowPlayerClass[iClient]--;
 	
+	g_bKillRune = false;
 	g_bFeignDeath[iVictim] = false;
 	
 	if (0 < iAttacker <= MaxClients)

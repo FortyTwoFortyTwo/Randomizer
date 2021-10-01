@@ -143,7 +143,7 @@ enum RandomizedType	//What to randomize
 	RandomizedType_Class,		//Player Class
 	RandomizedType_Weapons,		//Weapons
 	RandomizedType_Cosmetics,	//Cosmetics
-	RandomizedType_Mannpower,	//Mannpower
+	RandomizedType_Rune,	//Rune Rune
 	RandomizedType_MAX,
 }
 
@@ -178,6 +178,13 @@ enum struct RandomizedInfo
 	
 	TFClassType nClass;	//Class
 	int iRuneType;	//Type of rune
+	int iOldRuneType;	//Previous rune type
+	
+	void SetRuneType(int iRunType)
+	{
+		this.iOldRuneType = this.iRuneType;
+		this.iRuneType = iRunType;
+	}
 	
 	void Reset()
 	{
@@ -188,6 +195,7 @@ enum struct RandomizedInfo
 		
 		this.nClass = TFClass_Unknown;
 		this.iRuneType = -1;
+		this.iOldRuneType = -1;
 	}
 }
 
@@ -368,7 +376,7 @@ enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 bool g_bEnabled;
 bool g_bTF2Items;
 bool g_bAllowGiveNamedItem;
-int g_iMannpowerCount;
+int g_iRuneCount;
 int g_iOffsetItemDefinitionIndex = -1;
 int g_iOffsetPlayerShared;
 
@@ -393,6 +401,7 @@ Handle g_hTimerClientHud[TF_MAXPLAYERS];
 
 int g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 int g_iClientEurekaTeleporting;
+bool g_bKillRune;
 
 #include "randomizer/controls.sp"
 #include "randomizer/huds.sp"
@@ -475,8 +484,8 @@ public void OnMapStart()
 	ViewModels_Refresh();
 	Weapons_Refresh();
 	
-	if (!g_iMannpowerCount)
-		LoadMannpowerCount();
+	if (!g_iRuneCount)
+		LoadRuneCount();
 	
 	if (g_bEnabled)
 		DHook_HookGamerules();
@@ -560,6 +569,17 @@ public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const fl
 		SDKCall_DoClassSpecialSkill(iClient);
 }
 
+public void TF2_OnConditionAdded(int iClient, TFCond nCond)
+{
+	if (!g_bEnabled)
+		return;
+	
+	if (nCond == TFCond_RuneKnockout)	//Just giving knockout rune isnt enough, TF2 gave both knockout and melee only cond
+		TF2_AddCondition(iClient, TFCond_RestrictToMelee, TFCondDuration_Infinite);
+	
+	//TODO remove melee cond when knockout cond removed aswell
+}
+
 public void OnEntityCreated(int iEntity, const char[] sClassname)
 {
 	if (!g_bEnabled)
@@ -569,6 +589,8 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 	SDKHook_OnEntityCreated(iEntity, sClassname);
 	
 	if (StrEqual(sClassname, "tf_dropped_weapon") && !g_cvDroppedWeapons.BoolValue)
+		RemoveEntity(iEntity);
+	else if (StrEqual(sClassname, "item_powerup_rune") && g_bKillRune)
 		RemoveEntity(iEntity);
 }
 
@@ -621,11 +643,11 @@ void DisableRandomizer()
 		RefreshClient(iClient);
 }
 
-void LoadMannpowerCount()
+void LoadRuneCount()
 {
-	g_iMannpowerCount = 0;
+	g_iRuneCount = 0;
 	
-	//Figure out how many mannpower there is by model, if invalid rune type is passed,
+	//Figure out how many Rune there is by model, if invalid rune type is passed,
 	// default model is used, which is same as rune type 0
 	char sModel[PLATFORM_MAX_PATH], sDefaultModel[PLATFORM_MAX_PATH];
 	int iRune = CreateEntityByName("item_powerup_rune");
@@ -637,10 +659,10 @@ void LoadMannpowerCount()
 	
 	do
 	{
-		g_iMannpowerCount++;
+		g_iRuneCount++;
 		
 		iRune = CreateEntityByName("item_powerup_rune");
-		SetEntData(iRune, iOffset, g_iMannpowerCount);
+		SetEntData(iRune, iOffset, g_iRuneCount);
 		
 		DispatchSpawn(iRune);
 		GetEntityModel(iRune, sModel, sizeof(sModel));
@@ -663,6 +685,16 @@ void RefreshClient(int iClient)
 	
 	if (Group_IsClientRandomized(iClient, RandomizedType_Weapons))
 		RefreshClientWeapons(iClient);
+	
+	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
+	{
+		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), g_eClientInfo[iClient].iRuneType);
+	}
+	else if (g_eClientInfo[iClient].iOldRuneType != -1)
+	{
+		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), -1);
+		g_eClientInfo[iClient].iOldRuneType = -1;
+	}
 	
 	//Destroy any cosmetics left
 	int iCosmetic;
@@ -966,9 +998,9 @@ void RandomizeCosmetics()
 	//... :/
 }
 
-void RandomizeMannpower(RandomizedInfo eGroup)
+void RandomizeRune(RandomizedInfo eGroup)
 {
-	eGroup.iRuneType = GetRandomInt(0, g_iMannpowerCount - 1);
+	eGroup.SetRuneType(GetRandomInt(0, g_iRuneCount - 1));
 }
 
 void UpdateClientInfo(int iClient)
@@ -985,14 +1017,28 @@ void UpdateClientInfo(int iClient)
 //	if (Group_GetClientSameInfo(iClient, RandomizedType_Cosmetics, eInfo))
 //		g_eClientInfo[iClient].nClass = eInfo.nClass;
 	
-	if (Group_GetClientSameInfo(iClient, RandomizedType_Mannpower, eInfo))
+	if (Group_GetClientSameInfo(iClient, RandomizedType_Rune, eInfo))
+	{
+		g_eClientInfo[iClient].iOldRuneType = eInfo.iOldRuneType;
 		g_eClientInfo[iClient].iRuneType = eInfo.iRuneType;
+	}
 }
 
 void CopyRandomizedWeapon(const RandomizedWeapon eInput[CLASS_MAX+1], RandomizedWeapon eOutput[CLASS_MAX+1])
 {
+	//Dont whipe ref if index and slot is the same
 	for (int iClass = 0; iClass < sizeof(eInput); iClass++)
-		eOutput[iClass] = eInput[iClass];
+	{
+		for (int i = 0; i < MAX_WEAPONS; i++)
+		{
+			if (eOutput[iClass].iIndex[i] != eInput[iClass].iIndex[i] || eOutput[iClass].iSlot[i] != eInput[iClass].iSlot[i])
+			{
+				eOutput[iClass].iIndex[i] = eInput[iClass].iIndex[i];
+				eOutput[iClass].iSlot[i] = eInput[iClass].iSlot[i];
+				eOutput[iClass].iRef[i] = eInput[iClass].iRef[i];
+			}
+		}
+	}
 }
 
 void SetRandomizedWeapon(RandomizedWeapon eRandomized[CLASS_MAX+1], RandomizedWeapon eList, int iCount)
@@ -1066,7 +1112,7 @@ public Action Event_DropItem(int iClient, const char[] sCommand, int iArgs)
 	if (bSkip)
 		return Plugin_Continue;
 	
-	if (Group_IsClientRandomized(iClient, RandomizedType_Mannpower))
+	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
 	{
 		//Call itself but without rune cond, so item flag can be dropped
 		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), -1);

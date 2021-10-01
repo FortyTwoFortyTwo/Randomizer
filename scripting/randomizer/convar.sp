@@ -42,8 +42,8 @@ void ConVar_Init()
 	
 	ConVar_AddType(RandomizedType_Class, "randomizer_class", "@all self death, @all global round", "How should class be randomized?");
 	ConVar_AddType(RandomizedType_Weapons, "randomizer_weapons", "@all self death, @all global round", "How should weapons be randomized?");
-	ConVar_AddType(RandomizedType_Cosmetics, "randomizer_cosmetics", "@all self death, @all global round", "How should mannpower be randomized?");	//TODO
-	ConVar_AddType(RandomizedType_Mannpower, "randomizer_mannpower", "", "How should class be randomized?");
+	ConVar_AddType(RandomizedType_Cosmetics, "randomizer_cosmetics", "@all self death, @all global round", "How should cosmetics be randomized?");	//TODO
+	ConVar_AddType(RandomizedType_Rune, "randomizer_rune", "", "How should rune be randomized?");
 	
 	g_cvDroppedWeapons = CreateConVar("randomizer_droppedweapons", "0", "Allow dropped weapons?", _, true, 0.0, true, 1.0);
 	g_cvHuds = CreateConVar("randomizer_huds", "1", "Hud to use to display weapons. 0 = none, 1 = hud text, 2 = menu.", _, true, 0.0, true, float(HudMode_MAX - 1));
