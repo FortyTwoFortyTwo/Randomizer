@@ -30,6 +30,7 @@ static bool g_bManageBuilderWeapons;
 static ArrayList g_aValidateWearables;
 static bool g_bValidateWearablesDisguised;
 static int g_iBuildingKilledSapper = INVALID_ENT_REFERENCE;
+static int g_iMyTouchLunchbox = INVALID_ENT_REFERENCE;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS];
 static int g_iHookIdClientCommand[TF_MAXPLAYERS];
@@ -836,16 +837,53 @@ public MRESReturn DHook_GetEffectBarAmmoPost(int iWeapon, Handle hReturn)
 public MRESReturn DHook_MyTouchPre(int iHealthKit, Handle hReturn, Handle hParams)
 {
 	//Has heavy class check for lunchbox
-	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
+	int iClient = DHookGetParam(hParams, 1);
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
+	{
 		g_iAllowPlayerClass[iClient]++;
+		
+		//Find sandvich to use to refill
+		g_iMyTouchLunchbox = INVALID_ENT_REFERENCE;
+		float flTargetMeter = 100.0;
+		
+		int iWeapon, iPos;
+		while (TF2_GetItemFromClassname(iClient, "tf_weapon_lunchbox", iWeapon, iPos))
+		{
+			float flChargeMeter = Properties_GetWeaponPropFloat(iWeapon, "m_flItemChargeMeter");
+			if (flChargeMeter < flTargetMeter)
+			{
+				g_iMyTouchLunchbox = iWeapon;
+				flTargetMeter = flChargeMeter;
+			}
+		}
+		
+		if (g_iMyTouchLunchbox != INVALID_ENT_REFERENCE)
+		{
+			Properties_SetForceWeaponAmmo(g_iMyTouchLunchbox);
+			
+			int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+			if (iActiveWeapon != INVALID_ENT_REFERENCE)
+				Properties_SaveWeaponPropFloat(iClient, iActiveWeapon, "m_flItemChargeMeter", TF2_GetSlot(iActiveWeapon));
+			
+			Properties_LoadWeaponPropFloat(iClient, g_iMyTouchLunchbox, "m_flItemChargeMeter", TF2_GetSlot(g_iMyTouchLunchbox));
+		}
+	}
 }
 
 public MRESReturn DHook_MyTouchPost(int iHealthKit, Handle hReturn, Handle hParams)
 {
-	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
+	int iClient = DHookGetParam(hParams, 1);
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
+	{
 		g_iAllowPlayerClass[iClient]--;
+		
+		Properties_ResetForceWeaponAmmo();
+		
+		if (g_iMyTouchLunchbox != INVALID_ENT_REFERENCE)
+			Properties_SaveWeaponPropFloat(iClient, g_iMyTouchLunchbox, "m_flItemChargeMeter", TF2_GetSlot(g_iMyTouchLunchbox));
+		
+		g_iMyTouchLunchbox = INVALID_ENT_REFERENCE;
+	}
 }
 
 public MRESReturn DHook_PipebombTouchPre(int iStunBall, Handle hParams)
