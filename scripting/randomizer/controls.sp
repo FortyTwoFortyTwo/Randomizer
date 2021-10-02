@@ -70,6 +70,8 @@ public void Controls_Refresh()
 					controlsPassive.nButton = Button_Attack3;
 				else if (StrEqual(sButton, "reload"))
 					controlsPassive.nButton = Button_Reload;
+				else
+					controlsPassive.nButton = Button_Invalid;
 				
 				Controls_GetTranslation(kv, sName, "textmain", controlsPassive.sTextMain, sizeof(controlsPassive.sTextMain));
 				Controls_GetTranslation(kv, sName, "textalt", controlsPassive.sTextAlt, sizeof(controlsPassive.sTextAlt));
@@ -86,22 +88,14 @@ public void Controls_Refresh()
 	delete kv;
 }
 
-bool Controls_GetTranslation(KeyValues kv, const char[] sName, const char[] sKey, char[] sBuffer, int iLength)
+void Controls_GetTranslation(KeyValues kv, const char[] sName, const char[] sKey, char[] sBuffer, int iLength)
 {
 	kv.GetString(sKey, sBuffer, iLength);
-	if (sBuffer[0] == '\0')
-	{
-		LogError("Unable to find key '%s' in controls classname '%s'", sKey, sName);
-		return false;
-	}
+	if (!sBuffer[0])
+		return;
 	
 	if (!TranslationPhraseExists(sBuffer))
-	{
 		LogError("Found controls classname '%s' but translation '%s' doesn't exist", sName, sBuffer);
-		return false;
-	}
-	
-	return true;
 }
 
 void Controls_RefreshClient(int iClient)
@@ -134,7 +128,7 @@ Button Controls_GetPassiveButton(int iClient, int iWeapon)
 		return Button_Invalid;
 	
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon <= MaxClients)
+	if (iActiveWeapon == INVALID_ENT_REFERENCE)
 		return Button_Invalid;
 	
 	//Active weapon always use attack2
@@ -145,6 +139,8 @@ Button Controls_GetPassiveButton(int iClient, int iWeapon)
 	if (g_bControlsButton[iClient][iActiveSlot][Button_Attack2])
 	{
 		//Active slot use attack2, use alt button instead if possible
+		if (controlsPassive.nButton == Button_Invalid)
+			return Button_Invalid;
 		if (g_bControlsButton[iClient][iActiveSlot][controlsPassive.nButton])
 			return Button_Invalid;
 		else
