@@ -78,18 +78,7 @@ public Action Command_Class(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	for (int i = 0; i < iTargetCount; i++)
-	{
-		RandomizedInfo eInfo;
-		if (Group_GetClientSameInfo(iTargetList[i], RandomizedType_Class, eInfo))
-		{
-			eInfo.nClass = nClass;
-			Group_SetInfo(eInfo);
-		}
-		
-		g_eClientInfo[iTargetList[i]].nClass = nClass;
-		RefreshClient(iTargetList[i]);
-	}
+	Loadout_SetClass(iTargetList, iTargetCount, nClass);
 	
 	ReplyToCommand(iClient, "Set %s class to %s", sTargetName, sClass);
 	return Plugin_Handled;
@@ -127,33 +116,19 @@ public Action Command_SetWeapon(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	RandomizedWeapon eWeapon;
+	RandomizedWeapon eWeapon[MAX_WEAPONS];
 	int iCount = GetWeaponsFromCommand(iClient, eWeapon);
 	if (iCount == 0)
 		return Plugin_Handled;
 	
-	for (int i = 0; i < iTargetCount; i++)
-	{
-		RandomizedWeapon eBuffer[CLASS_MAX+1];
-		if (Group_GetClientSameWeapon(iTargetList[i], RandomizedType_Weapons, eBuffer))
-		{
-			SetRandomizedWeapon(eBuffer, eWeapon, iCount);
-			
-			RandomizedInfo eInfo;
-			Group_GetClientSameInfo(iTargetList[i], RandomizedType_Weapons, eInfo);
-			Group_SetWeapon(eInfo, eBuffer);
-		}
-		
-		SetRandomizedWeapon(g_eClientWeapon[iTargetList[i]], eWeapon, iCount);
-		RefreshClient(iTargetList[i]);
-	}
+	Loadout_SetWeapon(iTargetList, iTargetCount, eWeapon, iCount);
 	
 	if (iCount == 1)
 	{
 		char sName[256];
-		Weapons_GetName(eWeapon.iIndex[0], sName, sizeof(sName));
+		Weapons_GetName(eWeapon[0].iIndex, sName, sizeof(sName));
 		Format(sName, sizeof(sName), "%T", sName, LANG_SERVER);
-		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sTargetName, sName, g_sSlotName[eWeapon.iSlot[0]]);
+		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sTargetName, sName, g_sSlotName[eWeapon[0].iSlot]);
 	}
 	else
 	{
@@ -195,33 +170,19 @@ public Action Command_SetSlotWeapon(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	RandomizedWeapon eWeapon;
+	RandomizedWeapon eWeapon[MAX_WEAPONS];
 	int iCount = GetWeaponsFromCommand(iClient, eWeapon);
 	if (iCount == 0)
 		return Plugin_Handled;
 	
-	for (int i = 0; i < iTargetCount; i++)
-	{
-		RandomizedWeapon eBuffer[CLASS_MAX+1];
-		if (Group_GetClientSameWeapon(iTargetList[i], RandomizedType_Weapons, eBuffer))
-		{
-			SetSlotRandomizedWeapon(eBuffer, eWeapon, iCount);
-			
-			RandomizedInfo eInfo;
-			Group_GetClientSameInfo(iTargetList[i], RandomizedType_Weapons, eInfo);
-			Group_SetWeapon(eInfo, eBuffer);
-		}
-		
-		SetSlotRandomizedWeapon(g_eClientWeapon[iTargetList[i]], eWeapon, iCount);
-		RefreshClient(iTargetList[i]);
-	}
+	Loadout_SetSlotWeapon(iTargetList, iTargetCount, eWeapon, iCount);
 	
 	if (iCount == 1)
 	{
 		char sName[256];
-		Weapons_GetName(eWeapon.iIndex[0], sName, sizeof(sName));
+		Weapons_GetName(eWeapon[0].iIndex, sName, sizeof(sName));
 		Format(sName, sizeof(sName), "%T", sName, LANG_SERVER);
-		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sTargetName, sName, g_sSlotName[eWeapon.iSlot[0]]);
+		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sTargetName, sName, g_sSlotName[eWeapon[0].iSlot]);
 	}
 	else
 	{
@@ -263,33 +224,19 @@ public Action Command_GiveWeapon(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	RandomizedWeapon eWeapon;
+	RandomizedWeapon eWeapon[MAX_WEAPONS];
 	int iCount = GetWeaponsFromCommand(iClient, eWeapon);
 	if (iCount == 0)
 		return Plugin_Handled;
 	
-	for (int i = 0; i < iTargetCount; i++)
-	{
-		RandomizedWeapon eBuffer[CLASS_MAX+1];
-		if (Group_GetClientSameWeapon(iTargetList[i], RandomizedType_Weapons, eBuffer))
-		{
-			GiveRandomizedWeapon(eBuffer, eWeapon, iCount);
-			
-			RandomizedInfo eInfo;
-			Group_GetClientSameInfo(iTargetList[i], RandomizedType_Weapons, eInfo);
-			Group_SetWeapon(eInfo, eBuffer);
-		}
-		
-		GiveRandomizedWeapon(g_eClientWeapon[iTargetList[i]], eWeapon, iCount);
-		RefreshClient(iTargetList[i]);
-	}
+	Loadout_GiveWeapon(iTargetList, iTargetCount, eWeapon, iCount);
 	
 	if (iCount == 1)
 	{
 		char sName[256];
-		Weapons_GetName(eWeapon.iIndex[0], sName, sizeof(sName));
+		Weapons_GetName(eWeapon[0].iIndex, sName, sizeof(sName));
 		Format(sName, sizeof(sName), "%T", sName, LANG_SERVER);
-		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sTargetName, sName, g_sSlotName[eWeapon.iSlot[0]]);
+		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sTargetName, sName, g_sSlotName[eWeapon[0].iSlot]);
 	}
 	else
 	{
@@ -344,18 +291,7 @@ public Action Command_Rune(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	for (int i = 0; i < iTargetCount; i++)
-	{
-		RandomizedInfo eInfo;
-		if (Group_GetClientSameInfo(iTargetList[i], RandomizedType_Rune, eInfo))
-		{
-			eInfo.SetRuneType(iRuneType);
-			Group_SetInfo(eInfo);
-		}
-		
-		g_eClientInfo[iTargetList[i]].SetRuneType(iRuneType);
-		RefreshClient(iTargetList[i]);
-	}
+	Loadout_SetRune(iTargetList, iTargetCount, iRuneType);
 	
 	ReplyToCommand(iClient, "Set %s rune to %d", sTargetName, iRuneType);
 	return Plugin_Handled;
@@ -396,14 +332,14 @@ public Action Command_Generate(int iClient, int iArgs)
 	for (int i = 0; i < iTargetCount; i++)
 	{
 		Group_RandomizeClient(iTargetList[i], RandomizedReroll_Force);
-		RefreshClient(iTargetList[i]);
+		Loadout_RefreshClient(iTargetList[i]);
 	}
 	
 	ReplyToCommand(iClient, "Regenerated %s loadout", sTargetName);
 	return Plugin_Handled;
 }
 
-int GetWeaponsFromCommand(int iClient, RandomizedWeapon eWeapon)
+int GetWeaponsFromCommand(int iClient, RandomizedWeapon eWeapon[MAX_WEAPONS])
 {
 	//Grab whole args, skip first 1 arg on target
 	char sCommand[256];
@@ -426,12 +362,12 @@ int GetWeaponsFromCommand(int iClient, RandomizedWeapon eWeapon)
 	for (int i = 0; i < iCount; i++)
 	{
 		TrimString(sWeapons[i]);
-		eWeapon.iSlot[i] = RemoveSlotFromCommand(sWeapons[i], sizeof(sWeapons[]));
+		eWeapon[i].iSlot = RemoveSlotFromCommand(sWeapons[i], sizeof(sWeapons[]));
 		
-		if (!StringToIntEx(sWeapons[i], eWeapon.iIndex[i]))
-			eWeapon.iIndex[i] = Weapons_GetIndexFromName(sWeapons[i]);
+		if (!StringToIntEx(sWeapons[i], eWeapon[i].iIndex))
+			eWeapon[i].iIndex = Weapons_GetIndexFromName(sWeapons[i]);
 		
-		if (eWeapon.iIndex[i] == -1)
+		if (eWeapon[i].iIndex == -1)
 		{
 			ReplyToCommand(iClient, "Unable to find weapon by name '%s'", sWeapons[i]);
 			return 0;
@@ -441,15 +377,15 @@ int GetWeaponsFromCommand(int iClient, RandomizedWeapon eWeapon)
 		
 		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 		{
-			int iSlot = TF2_GetSlotFromIndex(eWeapon.iIndex[i], view_as<TFClassType>(iClass));
-			if (eWeapon.iSlot[i] != -1 && eWeapon.iSlot[i] == iSlot)
+			int iSlot = TF2_GetSlotFromIndex(eWeapon[i].iIndex, view_as<TFClassType>(iClass));
+			if (eWeapon[i].iSlot != -1 && eWeapon[i].iSlot == iSlot)
 			{
 				bValid = true;
 				break;
 			}
-			else if (eWeapon.iSlot[i] == -1 && 0 <= iSlot <= WeaponSlot_Building)
+			else if (eWeapon[i].iSlot == -1 && 0 <= iSlot <= WeaponSlot_Building)
 			{
-				eWeapon.iSlot[i] = iSlot;
+				eWeapon[i].iSlot = iSlot;
 				bValid = true;
 				break;
 			}
@@ -457,16 +393,16 @@ int GetWeaponsFromCommand(int iClient, RandomizedWeapon eWeapon)
 		
 		if (!bValid)
 		{
-			if (eWeapon.iSlot[i] == -1)
+			if (eWeapon[i].iSlot == -1)
 			{
-				ReplyToCommand(iClient, "Cannot find valid slot for Weapon index '%d'", eWeapon.iIndex[i]);
+				ReplyToCommand(iClient, "Cannot find valid slot for Weapon index '%d'", eWeapon[i].iIndex);
 			}
 			else
 			{
 				char sName[256];
-				Weapons_GetName(eWeapon.iIndex[i], sName, sizeof(sName));
+				Weapons_GetName(eWeapon[i].iIndex, sName, sizeof(sName));
 				Format(sName, sizeof(sName), "%T", sName, LANG_SERVER);
-				ReplyToCommand(iClient, "Weapon '%s' cannot be used for slot '%s'", sName, g_sSlotName[eWeapon.iSlot[i]]);
+				ReplyToCommand(iClient, "Weapon '%s' cannot be used for slot '%s'", sName, g_sSlotName[eWeapon[i].iSlot]);
 			}
 			
 			return 0;

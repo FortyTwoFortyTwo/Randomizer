@@ -1025,7 +1025,7 @@ public MRESReturn DHook_CanBeUpgradedPost(int iObject, Handle hReturn, Handle hP
 public MRESReturn DHook_ForceRespawnPre(int iClient)
 {
 	//Update incase of changing group
-	UpdateClientInfo(iClient);
+	Loadout_UpdateClientInfo(iClient);
 	
 	//Reset decap count
 	int iWeapon, iPos;
@@ -1040,7 +1040,7 @@ public MRESReturn DHook_ForceRespawnPre(int iClient)
 	
 	if (Group_IsClientRandomized(iClient, RandomizedType_Class))
 	{
-		TFClassType nClass = g_eClientInfo[iClient].nClass;
+		TFClassType nClass = Loadout_GetClientClass(iClient);
 		if (nClass != TFClass_Unknown)
 			SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(nClass));
 	}

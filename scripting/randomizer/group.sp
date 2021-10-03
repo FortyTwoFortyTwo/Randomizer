@@ -1,13 +1,9 @@
-static RandomizedInfo g_eGroupInfo[32];	//List of groups on what to randomize
-static RandomizedWeapon g_eGroupWeapon[32][CLASS_MAX+1];	//List of weapons to randomize for group
+static RandomizedInfo g_eGroupInfo[MAX_GROUPS];	//List of groups on what to randomize
 
 void Group_Init()
 {
 	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
-	{
 		g_eGroupInfo[i].Reset();
-		ResetWeaponIndex(g_eGroupWeapon[i]);
-	}
 }
 
 void Group_ClearType(RandomizedType nType)
@@ -20,7 +16,6 @@ void Group_ClearType(RandomizedType nType)
 			int iTargetCount = Group_GetTargetList(g_eGroupInfo[i].sTarget, iTargetList);
 			
 			g_eGroupInfo[i].Reset();
-			ResetWeaponIndex(g_eGroupWeapon[i]);
 			
 			//Randomize client after his group removed
 			for (int j = 0; j < iTargetCount; j++)
@@ -69,7 +64,8 @@ bool Group_IsClientRandomized(int iClient, RandomizedType nType)
 
 void Group_RandomizeClient(int iClient, RandomizedReroll nReroll)
 {
-	bool bFound[view_as<int>(RandomizedType_MAX)];
+	const int iSize = view_as<int>(RandomizedType_MAX);	//SP compiler lmaooooo
+	int bFound[iSize];
 	
 	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
 	{
@@ -90,18 +86,22 @@ void Group_RandomizeClient(int iClient, RandomizedReroll nReroll)
 		{
 			case RandomizedTarget_Self:
 			{
-				Group_Randomize(iClient, eInfo.nType, g_eClientInfo[iClient], g_eClientWeapon[iClient]);
+				Loadout_RandomizeClient(iClient, eInfo.nType);
+				g_bClientRefresh[iClient] = true;
 			}
 			case RandomizedTarget_Global:
 			{
 				int[] iTargetList = new int[MaxClients];
 				int iTargetCount = Group_GetTargetList(eInfo.sTarget, iTargetList);
 				for (int j = 0; j < iTargetCount; j++)
-					Group_Randomize(iTargetList[j], eInfo.nType, g_eClientInfo[iTargetList[j]], g_eClientWeapon[iTargetList[j]]);
+				{
+					Loadout_RandomizeClient(iTargetList[j], eInfo.nType);
+					g_bClientRefresh[iTargetList[j]] = true;
+				}
 			}
 			case RandomizedTarget_Same:
 			{
-				Group_Randomize(0, eInfo.nType, g_eGroupInfo[i], g_eGroupWeapon[i]);
+				Loadout_RandomizeGroup(i, eInfo.nType);
 				
 				int[] iTargetList = new int[MaxClients];
 				int iTargetCount = Group_GetTargetList(eInfo.sTarget, iTargetList);
@@ -113,7 +113,7 @@ void Group_RandomizeClient(int iClient, RandomizedReroll nReroll)
 	
 	for (int i = 0; i < sizeof(bFound); i++)
 		if (!bFound[i])	//Client is not randomized, reset stuff
-			Group_ResetClient(iClient, i);
+			Loadout_ResetClient(iClient, view_as<RandomizedType>(i));
 }
 
 void Group_RandomizeAll(RandomizedReroll nReroll)
@@ -135,11 +135,14 @@ void Group_RandomizeAll(RandomizedReroll nReroll)
 				int[] iTargetList = new int[MaxClients];
 				int iTargetCount = Group_GetTargetList(eInfo.sTarget, iTargetList);
 				for (int j = 0; j < iTargetCount; j++)
-					Group_Randomize(iTargetList[j], eInfo.nType, g_eClientInfo[iTargetList[j]], g_eClientWeapon[iTargetList[j]]);
+				{
+					Loadout_RandomizeClient(iTargetList[j], eInfo.nType);
+					g_bClientRefresh[iTargetList[j]] = true;
+				}
 			}
 			case RandomizedTarget_Same:
 			{
-				Group_Randomize(0, eInfo.nType, g_eGroupInfo[i], g_eGroupWeapon[i]);
+				Loadout_RandomizeGroup(i, eInfo.nType);
 				
 				int[] iTargetList = new int[MaxClients];
 				int iTargetCount = Group_GetTargetList(eInfo.sTarget, iTargetList);
@@ -150,34 +153,7 @@ void Group_RandomizeAll(RandomizedReroll nReroll)
 	}
 }
 
-void Group_Randomize(int iClient, RandomizedType nType, RandomizedInfo eInfo, RandomizedWeapon eWeapons[CLASS_MAX+1])
-{
-	if (iClient != 0)
-		g_bClientRefresh[iClient] = true;
-	
-	switch (nType)
-	{
-		case RandomizedType_Class: RandomizeClass(eInfo);
-		case RandomizedType_Weapons: RandomizeWeapon(eWeapons);
-		case RandomizedType_Cosmetics: RandomizeCosmetics();
-		case RandomizedType_Rune: RandomizeRune(eInfo);
-	}
-}
-
-void Group_ResetClient(int iClient, RandomizedType nType)
-{
-	g_bClientRefresh[iClient] = true;
-	
-	switch (nType)
-	{
-		case RandomizedType_Class: g_eClientInfo[iClient].nClass = TFClass_Unknown;
-		case RandomizedType_Weapons: ResetWeaponIndex(g_eClientWeapon[iClient]);
-		case RandomizedType_Cosmetics: RandomizeCosmetics();	//TODO
-		case RandomizedType_Rune: g_eClientInfo[iClient].SetRuneType(-1);
-	}
-}
-
-bool Group_GetClientSameInfo(int iClient, RandomizedType nType, RandomizedInfo eBuffer)
+int Group_GetClientSameInfoPos(int iClient, RandomizedType nType)
 {
 	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
 	{
@@ -187,6 +163,48 @@ bool Group_GetClientSameInfo(int iClient, RandomizedType nType, RandomizedInfo e
 			continue;
 		
 		if (eInfo.nTarget != RandomizedTarget_Same)
+			continue;
+		
+		if (!Group_TargetsClient(eInfo.sTarget, iClient))
+			continue;
+		
+		return i;
+	}
+	
+	return -1;
+}
+
+bool Group_IsPosSameForClients(int[] iClients, int iCount, int iPos, RandomizedType nType)
+{
+	RandomizedInfo eInfo;
+	eInfo = g_eGroupInfo[iPos];
+	if (eInfo.nType != nType)
+		return false;
+	
+	if (eInfo.nTarget != RandomizedTarget_Same)
+		return false;
+	
+	int[] iTargetList = new int[MaxClients];
+	int iTargetCount = Group_GetTargetList(eInfo.sTarget, iTargetList);
+	for (int i = 0; i < iCount; i++)
+		if (Group_IsInList(iClients[i], iTargetList, iTargetCount))
+			return true;
+	
+	return false;
+}
+
+void Group_GetInfoFromPos(int iPos, RandomizedInfo eBuffer)
+{
+	eBuffer = g_eGroupInfo[iPos];
+}
+
+bool Group_GetInfoFromClient(int iClient, RandomizedType nType, RandomizedInfo eBuffer)
+{
+	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
+	{
+		RandomizedInfo eInfo;
+		eInfo = g_eGroupInfo[i];
+		if (eInfo.nType != nType)
 			continue;
 		
 		if (!Group_TargetsClient(eInfo.sTarget, iClient))
@@ -197,68 +215,6 @@ bool Group_GetClientSameInfo(int iClient, RandomizedType nType, RandomizedInfo e
 	}
 	
 	return false;
-}
-
-void Group_SetInfo(RandomizedInfo eBuffer)
-{
-	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
-	{
-		RandomizedInfo eInfo;
-		eInfo = g_eGroupInfo[i];
-		if (eInfo.nType != eBuffer.nType)
-			continue;
-		
-		if (eInfo.nTarget != eBuffer.nTarget)
-			continue;
-		
-		if (!StrEqual(eInfo.sTarget, eBuffer.sTarget))
-			continue;
-		
-		g_eGroupInfo[i] = eBuffer;
-		return;
-	}
-}
-
-bool Group_GetClientSameWeapon(int iClient, RandomizedType nType, RandomizedWeapon eWeapon[CLASS_MAX+1])
-{
-	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
-	{
-		RandomizedInfo eInfo;
-		eInfo = g_eGroupInfo[i];
-		if (eInfo.nType != nType)
-			continue;
-		
-		if (eInfo.nTarget != RandomizedTarget_Same)
-			continue;
-		
-		if (!Group_TargetsClient(eInfo.sTarget, iClient))
-			continue;
-		
-		CopyRandomizedWeapon(g_eGroupWeapon[i], eWeapon);
-		return true;
-	}
-	
-	return false;
-}
-
-void Group_SetWeapon(RandomizedInfo eBuffer, RandomizedWeapon eWeapon[CLASS_MAX+1])
-{
-	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
-	{
-		RandomizedInfo eInfo;
-		eInfo = g_eGroupInfo[i];
-		if (eInfo.nType != eBuffer.nType)
-			continue;
-		
-		if (eInfo.nTarget != eBuffer.nTarget)
-			continue;
-		
-		if (!StrEqual(eInfo.sTarget, eBuffer.sTarget))
-			continue;
-		
-		CopyRandomizedWeapon(eWeapon, g_eGroupWeapon[i]);
-		return;
-	}
 }
 
 int Group_GetTargetList(const char[] sTarget, int[] iTargetList, char sTargetName[MAX_TARGET_LENGTH] = NULL_STRING)

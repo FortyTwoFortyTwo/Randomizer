@@ -22,31 +22,13 @@ void ConVar_Init()
 	g_cvEnabled = CreateConVar("randomizer_enabled", "1", "Enable Randomizer?", _, true, 0.0, true, 1.0);
 	g_cvEnabled.AddChangeHook(ConVar_EnableChanged);
 	
-	g_cvWeaponsFromClass = CreateConVar("randomizer_weaponsfromclass", "0", "Should generated weapon only be from class that can normally equip?", _, true, 0.0, true, 1.0);
-	g_cvWeaponsFromClass.AddChangeHook(ConVar_RandomizeChanged);
-	
-	g_cvWeaponsCount = CreateConVar("randomizer_weaponscount", "0", "How many weapons at minimum to randomly generate?", _, true, 0.0, true, float(MAX_WEAPONS));
-	g_cvWeaponsCount.AddChangeHook(ConVar_RandomizeChanged);
-	
-	g_cvWeaponsSlotCount[WeaponSlot_Primary] = CreateConVar("randomizer_weaponscount_primary", "1", "How many primary weapons at minimum to randomly generate?", _, true, 0.0, true, float(MAX_WEAPONS));
-	g_cvWeaponsSlotCount[WeaponSlot_Primary].AddChangeHook(ConVar_RandomizeChanged);
-	
-	g_cvWeaponsSlotCount[WeaponSlot_Secondary] = CreateConVar("randomizer_weaponscount_secondary", "1", "How many secondary weapons at minimum to randomly generate?", _, true, 0.0, true, float(MAX_WEAPONS));
-	g_cvWeaponsSlotCount[WeaponSlot_Secondary].AddChangeHook(ConVar_RandomizeChanged);
-	
-	g_cvWeaponsSlotCount[WeaponSlot_Melee] = CreateConVar("randomizer_weaponscount_melee", "1", "How many melee weapons at minimum to randomly generate?", _, true, 0.0, true, float(MAX_WEAPONS));
-	g_cvWeaponsSlotCount[WeaponSlot_Melee].AddChangeHook(ConVar_RandomizeChanged);
-	
-	g_cvCosmeticsConflicts = CreateConVar("randomizer_cosmeticsconflicts", "1", "Should generated cosmetics check for possible conflicts?", _, true, 0.0, true, 1.0);
-//	g_cvCosmeticsConflicts.AddChangeHook(ConVar_CosmeticsChanged);
-	
-	ConVar_AddType(RandomizedType_Class, "randomizer_class", "@all self death, @all global round", "How should class be randomized?");
-	ConVar_AddType(RandomizedType_Weapons, "randomizer_weapons", "@all self death, @all global round", "How should weapons be randomized?");
-	ConVar_AddType(RandomizedType_Cosmetics, "randomizer_cosmetics", "@all self death, @all global round", "How should cosmetics be randomized?");	//TODO
-	ConVar_AddType(RandomizedType_Rune, "randomizer_rune", "", "How should rune be randomized?");
-	
 	g_cvDroppedWeapons = CreateConVar("randomizer_droppedweapons", "0", "Allow dropped weapons?", _, true, 0.0, true, 1.0);
 	g_cvHuds = CreateConVar("randomizer_huds", "1", "Hud to use to display weapons. 0 = none, 1 = hud text, 2 = menu.", _, true, 0.0, true, float(HudMode_MAX - 1));
+	
+	ConVar_AddType(RandomizedType_Class, "randomizer_class", "target=@all group=self reroll=death reroll=round", "How should class be randomized?");
+	ConVar_AddType(RandomizedType_Weapons, "randomizer_weapons", "target=@all group=self reroll=death reroll=round count=0 count-primary=1 count-secondary=1 count-melee=1", "How should weapons be randomized?");
+	ConVar_AddType(RandomizedType_Cosmetics, "randomizer_cosmetics", "target=@all group=self reroll=death reroll=round count=3 conflicts=1", "How should cosmetics be randomized?");
+	ConVar_AddType(RandomizedType_Rune, "randomizer_rune", "", "How should rune be randomized?");
 }
 
 void ConVar_AddType(RandomizedType nType, const char[] sName, const char[] sDefault, const char[] sDesp)
@@ -54,7 +36,7 @@ void ConVar_AddType(RandomizedType nType, const char[] sName, const char[] sDefa
 	g_cvRandomize[nType] = CreateConVar(sName, sDefault, sDesp);
 	g_cvRandomize[nType].AddChangeHook(ConVar_RandomizeChanged);
 	
-	char sBuffer[256];
+	char sBuffer[1024];
 	g_cvRandomize[nType].GetString(sBuffer, sizeof(sBuffer));
 	ConVar_RandomizeChanged(g_cvRandomize[nType], "", sBuffer);
 }
@@ -72,6 +54,8 @@ public void ConVar_RandomizeChanged(ConVar convar, const char[] sOldValue, const
 	RandomizedType nType = ConVar_GetType(convar);
 	Group_ClearType(nType);
 	
+	//TODO revert convar value if error
+	
 	if (!sNewValue[0])	//Empty string
 		return;
 	
@@ -83,18 +67,93 @@ public void ConVar_RandomizeChanged(ConVar convar, const char[] sOldValue, const
 		eGroup.nType = nType;
 		
 		TrimString(sGroups[i]);
-		char sBuffer[16][256];
-		int iCount = ExplodeString(sGroups[i], " ", sBuffer, sizeof(sBuffer), sizeof(sBuffer[]));
+		char sParams[16][256];
+		int iCount = ExplodeString(sGroups[i], " ", sParams, sizeof(sParams), sizeof(sParams[]));
 		for (int j = 0; j < iCount; j++)
 		{
-			TrimString(sBuffer[j]);
-			if (ConVar_GetTarget(sBuffer[j], eGroup.nTarget))
-				continue;
+			TrimString(sParams[j]);
 			
-			if (ConVar_AddFlag(sBuffer[j], eGroup.nReroll))
-				continue;
+			char sParam[3][256];
+			if (ExplodeString(sParams[i], "=", sParam, sizeof(sParam), sizeof(sParam[])) != 2)
+			{
+				PrintToServer("Invalid param format '%s' (must be '<name>=<value>')", sParams[i]);
+				return;
+			}
 			
-			strcopy(eGroup.sTarget, sizeof(eGroup.sTarget), sBuffer[j]);
+			if (StrEqual(sParam[0], "target", false))
+			{
+				strcopy(eGroup.sTarget, sizeof(eGroup.sTarget), sParam[1]);
+			}
+			else if (StrEqual(sParam[0], "group", false))
+			{
+				if (!ConVar_GetTarget(sParam[1], eGroup.nTarget))
+				{
+					PrintToServer("Invalid 'group' value '%s'", sParam[1]);
+					return;
+				}
+			}
+			else if (StrEqual(sParam[0], "reroll", false))
+			{
+				if (!ConVar_AddReroll(sParam[1], eGroup.nReroll))
+				{
+					PrintToServer("Invalid 'reroll' value '%s'", sParam[1]);
+					return;
+				}
+			}
+			else if (StrEqual(sParam[0], "count", false))
+			{
+				if (!StringToIntEx(sParam[1], eGroup.iCount))
+				{
+					PrintToServer("Invalid 'count' value '%s' (must be integer)", sParam[1]);
+					return;
+				}
+			}
+			else if (StrEqual(sParam[0], "count-primary", false))
+			{
+				if (!StringToIntEx(sParam[1], eGroup.iCountSlot[WeaponSlot_Primary]))
+				{
+					PrintToServer("Invalid 'count-primary' value '%s' (must be integer)", sParam[1]);
+					return;
+				}
+			}
+			else if (StrEqual(sParam[0], "count-secondary", false))
+			{
+				if (!StringToIntEx(sParam[1], eGroup.iCountSlot[WeaponSlot_Secondary]))
+				{
+					PrintToServer("Invalid 'count-secondary' value '%s' (must be integer)", sParam[1]);
+					return;
+				}
+			}
+			else if (StrEqual(sParam[0], "count-melee", false))
+			{
+				if (!StringToIntEx(sParam[1], eGroup.iCountSlot[WeaponSlot_Melee]))
+				{
+					PrintToServer("Invalid 'count' value '%s' (must be integer)", sParam[1]);
+					return;
+				}
+			}
+			else if (StrEqual(sParam[0], "defaultclass", false))
+			{
+				if (!StringToIntEx(sParam[1], eGroup.bDefaultClass))
+				{
+					PrintToServer("Invalid 'defaultclass' value '%s' (must be integer)", sParam[1]);
+					return;
+				}
+			}
+			else if (StrEqual(sParam[0], "conflicts", false))
+			{
+				if (!StringToIntEx(sParam[1], eGroup.bConflicts))
+				{
+					PrintToServer("Invalid 'conflicts' value '%s' (must be integer)", sParam[1]);
+					return;
+				}
+			}
+			else
+			{
+				PrintToServer("Invalid param name '%s'", sParam[0]);
+				return;
+			}
+			
 		}
 		
 		Group_Add(eGroup);
@@ -124,7 +183,7 @@ bool ConVar_GetTarget(const char[] sBuffer, RandomizedTarget &nTarget)
 	return false;
 }
 
-bool ConVar_AddFlag(const char[] sBuffer, RandomizedReroll &nReroll)
+bool ConVar_AddReroll(const char[] sBuffer, RandomizedReroll &nReroll)
 {
 	for (int i = 0; i < sizeof(g_sRandomizedReroll); i++)
 	{

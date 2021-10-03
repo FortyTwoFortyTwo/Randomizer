@@ -53,10 +53,10 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	}
 	
 	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
-		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), g_eClientInfo[iClient].iRuneType);
+		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), Loadout_GetClientRune(iClient));
 	
 	if (Group_IsClientRandomized(iClient, RandomizedType_Weapons))
-		RefreshClientWeapons(iClient);
+		Loadout_RefreshClientWeapons(iClient);
 }
 
 public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcast)
