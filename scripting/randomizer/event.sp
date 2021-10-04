@@ -2,6 +2,7 @@ void Event_Init()
 {
 	HookEvent("teamplay_round_start", Event_RoundStart);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
+	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("player_hurt", Event_PlayerHurt);
 	HookEvent("player_death", Event_PlayerDeath);
 }
@@ -52,11 +53,22 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
 	}
 	
-	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
-		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), Loadout_GetClientRune(iClient));
-	
 	if (Group_IsClientRandomized(iClient, RandomizedType_Weapons))
 		Loadout_RefreshClientWeapons(iClient);
+}
+
+public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadcast)
+{
+	if (!g_bEnabled)
+		return;
+	
+	int iClient = GetClientOfUserId(event.GetInt("userid"));
+	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
+		return;
+	
+	//Between post_inventory_application and player_spawn all conds were removed, so giving cond has to be done here
+	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
+		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), Loadout_GetClientRune(iClient));
 }
 
 public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcast)

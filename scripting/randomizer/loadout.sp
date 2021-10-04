@@ -119,7 +119,7 @@ static bool g_bRandomizeCosmetics[TF_MAXPLAYERS];
 
 void Loadout_Init()
 {
-	for (int i = 0; i <= sizeof(g_eLoadoutClient); i++)
+	for (int i = 0; i < sizeof(g_eLoadoutClient); i++)
 	{
 		g_eLoadoutClient[i].Reset();
 		g_eLoadoutClient[i].iClient = i;
@@ -129,8 +129,8 @@ void Loadout_Init()
 	for (int i = 0; i < sizeof(g_eLoadoutGroup); i++)
 	{
 		g_eLoadoutGroup[i].Reset();
-		g_eLoadoutClient[i].iClient = -1;
-		g_eLoadoutClient[i].iGroup = i;
+		g_eLoadoutGroup[i].iClient = -1;
+		g_eLoadoutGroup[i].iGroup = i;
 	}
 }
 

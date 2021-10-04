@@ -342,7 +342,6 @@ Handle g_hTimerClientHud[TF_MAXPLAYERS];
 
 int g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 int g_iClientEurekaTeleporting;
-bool g_bKillRune;
 
 #include "randomizer/controls.sp"
 #include "randomizer/huds.sp"
@@ -526,8 +525,6 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 	SDKHook_OnEntityCreated(iEntity, sClassname);
 	
 	if (StrEqual(sClassname, "tf_dropped_weapon") && !g_cvDroppedWeapons.BoolValue)
-		RemoveEntity(iEntity);
-	else if (StrEqual(sClassname, "item_powerup_rune") && g_bKillRune)
 		RemoveEntity(iEntity);
 }
 

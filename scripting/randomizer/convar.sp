@@ -74,9 +74,9 @@ public void ConVar_RandomizeChanged(ConVar convar, const char[] sOldValue, const
 			TrimString(sParams[j]);
 			
 			char sParam[3][256];
-			if (ExplodeString(sParams[i], "=", sParam, sizeof(sParam), sizeof(sParam[])) != 2)
+			if (ExplodeString(sParams[j], "=", sParam, sizeof(sParam), sizeof(sParam[])) != 2)
 			{
-				PrintToServer("Invalid param format '%s' (must be '<name>=<value>')", sParams[i]);
+				PrintToServer("Invalid param format '%s' (must be '<name>=<value>')", sParams[j]);
 				return;
 			}
 			

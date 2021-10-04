@@ -8,6 +8,7 @@ enum struct Detour
 
 static ArrayList g_aDHookDetours;
 
+static Handle g_hDHookEventKilled;
 static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookGetEffectBarAmmo;
 static Handle g_hDHookSwing;
@@ -34,6 +35,7 @@ static int g_iMyTouchLunchbox = INVALID_ENT_REFERENCE;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS];
 static int g_iHookIdClientCommand[TF_MAXPLAYERS];
+static int g_iHookIdEventKilledPre[TF_MAXPLAYERS];
 static int g_iHookIdForceRespawnPre[TF_MAXPLAYERS];
 static int g_iHookIdForceRespawnPost[TF_MAXPLAYERS];
 static int g_iHookIdEquipWearable[TF_MAXPLAYERS];
@@ -76,6 +78,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::ActivateRageBuff", DHook_ActivateRageBuffPre, DHook_ActivateRageBuffPost);
 	DHook_CreateDetour(hGameData, "HandleRageGain", DHook_HandleRageGainPre, _);
 	
+	g_hDHookEventKilled = DHook_CreateVirtual(hGameData, "CBaseEntity::Event_Killed");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookGetEffectBarAmmo = DHook_CreateVirtual(hGameData, "CTFWeaponBase::GetEffectBarAmmo");
 	g_hDHookSwing = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Swing");
@@ -180,6 +183,7 @@ bool DHook_IsGiveNamedItemActive()
 
 void DHook_HookClient(int iClient)
 {
+	g_iHookIdEventKilledPre[iClient] = DHookEntity(g_hDHookEventKilled, false, iClient, _, DHook_EventKilledPre);
 	g_iHookIdForceRespawnPre[iClient] = DHookEntity(g_hDHookForceRespawn, false, iClient, _, DHook_ForceRespawnPre);
 	g_iHookIdForceRespawnPost[iClient] = DHookEntity(g_hDHookForceRespawn, true, iClient, _, DHook_ForceRespawnPost);
 	g_iHookIdEquipWearable[iClient] = DHookEntity(g_hDHookEquipWearable, true, iClient, _, DHook_EquipWearablePost);
@@ -189,6 +193,12 @@ void DHook_HookClient(int iClient)
 
 void DHook_UnhookClient(int iClient)
 {
+	if (g_iHookIdEventKilledPre[iClient])
+	{
+		DHookRemoveHookID(g_iHookIdEventKilledPre[iClient]);
+		g_iHookIdEventKilledPre[iClient] = 0;	
+	}
+	
 	if (g_iHookIdForceRespawnPre[iClient])
 	{
 		DHookRemoveHookID(g_iHookIdForceRespawnPre[iClient]);
@@ -1020,6 +1030,13 @@ public MRESReturn DHook_CanBeUpgradedPost(int iObject, Handle hReturn, Handle hP
 {
 	int iClient = DHookGetParam(hParams, 1);
 	RevertClientClass(iClient);
+}
+
+public MRESReturn DHook_EventKilledPre(int iClient, Handle hParams)
+{
+	//Remove rune so it won't be dropped as pickupable
+	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
+		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), -1);
 }
 
 public MRESReturn DHook_ForceRespawnPre(int iClient)

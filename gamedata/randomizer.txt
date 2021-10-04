@@ -357,6 +357,11 @@
 				"linux"		"6"
 				"windows"	"5"
 			}
+			"CBaseEntity::Event_Killed"
+			{
+				"linux"		"67"
+				"windows"	"66"
+			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"linux"		"287"
@@ -835,6 +840,20 @@
 					"fInverseRageGainScale"
 					{
 						"type"	"float"
+					}
+				}
+			}
+			"CBaseEntity::Event_Killed"
+			{
+				"offset"	"CBaseEntity::Event_Killed"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"info"
+					{
+						"type"    "objectptr"
 					}
 				}
 			}
