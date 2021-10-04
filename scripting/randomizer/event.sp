@@ -12,10 +12,10 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 	if (!g_bEnabled)
 		return;
 	
-	Group_RandomizeAll(RandomizedReroll_Round);
+	Group_TriggerRandomizeAll(RandomizedReroll_Round);
 	
 	if (event.GetBool("full_reset"))
-		Group_RandomizeAll(RandomizedReroll_FullRound);
+		Group_TriggerRandomizeAll(RandomizedReroll_FullRound);
 }
 
 public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
@@ -115,15 +115,15 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	else
 	{
 		if (0 < iAttacker <= MaxClients && iVictim != iAttacker)
-			Group_RandomizeClient(iVictim, RandomizedReroll_Death);
+			Group_TriggerRandomizeClient(iVictim, RandomizedReroll_Death);
 		else if (iVictim == iAttacker)
-			Group_RandomizeClient(iVictim, RandomizedReroll_Suicide);
+			Group_TriggerRandomizeClient(iVictim, RandomizedReroll_Suicide);
 		else
-			Group_RandomizeClient(iVictim, RandomizedReroll_Environment);
+			Group_TriggerRandomizeClient(iVictim, RandomizedReroll_Environment);
 	}
 	
 	if (0 < iAttacker <= MaxClients && iVictim != iAttacker)
-		Group_RandomizeClient(iAttacker, RandomizedReroll_Kill);
+		Group_TriggerRandomizeClient(iAttacker, RandomizedReroll_Kill);
 	if (0 < iAssister <= MaxClients && iVictim != iAssister)
-		Group_RandomizeClient(iAssister, RandomizedReroll_Assist);
+		Group_TriggerRandomizeClient(iAssister, RandomizedReroll_Assist);
 }

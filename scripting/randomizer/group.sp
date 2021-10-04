@@ -13,13 +13,13 @@ void Group_ClearType(RandomizedType nType)
 		if (g_eGroupInfo[i].nType == nType)
 		{
 			int[] iTargetList = new int[MaxClients];
-			int iTargetCount = Group_GetTargetList(g_eGroupInfo[i].sTarget, iTargetList);
+			int iTargetCount = Group_GetTargetList(g_eGroupInfo[i].sGroup, iTargetList);
 			
 			g_eGroupInfo[i].Reset();
 			
 			//Randomize client after his group removed
 			for (int j = 0; j < iTargetCount; j++)
-				Group_RandomizeClient(iTargetList[j], RandomizedReroll_Force);
+				Loadout_RandomizeClient(iTargetList[j], nType);
 		}
 	}
 }
@@ -32,12 +32,13 @@ void Group_Add(RandomizedInfo eInfo)
 		if (g_eGroupInfo[i].nType == RandomizedType_None)
 		{
 			g_eGroupInfo[i] = eInfo;
+			Loadout_RandomizeGroup(i);
 			
 			//Refresh any clients using this
 			int[] iTargetList = new int[MaxClients];
-			int iTargetCount = Group_GetTargetList(eInfo.sTarget, iTargetList);
+			int iTargetCount = Group_GetTargetList(eInfo.sGroup, iTargetList);
 			for (int j = 0; j < iTargetCount; j++)
-				Group_RandomizeClient(iTargetList[j], RandomizedReroll_Force);
+				Loadout_RandomizeClient(iTargetList[j], eInfo.nType);
 			
 			return;
 		}
@@ -53,20 +54,18 @@ bool Group_IsClientRandomized(int iClient, RandomizedType nType)
 		if (eInfo.nType != nType)
 			continue;
 		
-		if (!Group_TargetsClient(eInfo.sTarget, iClient))
-			continue;
-		
-		return true;
+		int[] iTargetList = new int[MaxClients];
+		int iTargetCount = Group_GetTargetList(eInfo.sTrigger, iTargetList);
+		for (int j = 0; j < iTargetCount; j++)
+			if (Group_TargetsClient(eInfo.sGroup, iClient, iTargetList[j]))
+				return true;
 	}
 	
 	return false;
 }
 
-void Group_RandomizeClient(int iClient, RandomizedReroll nReroll)
+void Group_TriggerRandomizeClient(int iClient, RandomizedReroll nReroll)
 {
-	const int iSize = view_as<int>(RandomizedType_MAX);	//SP compiler lmaooooo
-	int bFound[iSize];
-	
 	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
 	{
 		RandomizedInfo eInfo;
@@ -74,49 +73,29 @@ void Group_RandomizeClient(int iClient, RandomizedReroll nReroll)
 		if (eInfo.nType == RandomizedType_None)
 			continue;
 		
-		if (!Group_TargetsClient(eInfo.sTarget, iClient))
+		if (!Group_TargetsClient(eInfo.sTrigger, iClient))
 			continue;
-		
-		bFound[eInfo.nType] = true;
 		
 		if (!(eInfo.nReroll & nReroll))
 			continue;
 		
-		switch (eInfo.nTarget)
+		if (eInfo.bSame)
 		{
-			case RandomizedTarget_Self:
-			{
-				Loadout_RandomizeClient(iClient, eInfo.nType);
-				g_bClientRefresh[iClient] = true;
-			}
-			case RandomizedTarget_Global:
-			{
-				int[] iTargetList = new int[MaxClients];
-				int iTargetCount = Group_GetTargetList(eInfo.sTarget, iTargetList);
-				for (int j = 0; j < iTargetCount; j++)
-				{
-					Loadout_RandomizeClient(iTargetList[j], eInfo.nType);
-					g_bClientRefresh[iTargetList[j]] = true;
-				}
-			}
-			case RandomizedTarget_Same:
-			{
-				Loadout_RandomizeGroup(i, eInfo.nType);
-				
-				int[] iTargetList = new int[MaxClients];
-				int iTargetCount = Group_GetTargetList(eInfo.sTarget, iTargetList);
-				for (int j = 0; j < iTargetCount; j++)
-					g_bClientRefresh[iTargetList[j]] = true;
-			}
+			//Use group to randomize same loadout to distribute all clients in group
+			Loadout_RandomizeGroup(i);
+		}
+		else
+		{
+			//Randomize each clients
+			int[] iTargetList = new int[MaxClients];
+			int iTargetCount = Group_GetTargetList(eInfo.sGroup, iTargetList, iClient);
+			for (int j = 0; j < iTargetCount; j++)
+				Loadout_RandomizeClient(iTargetList[j], eInfo.nType);
 		}
 	}
-	
-	for (int i = 0; i < sizeof(bFound); i++)
-		if (!bFound[i])	//Client is not randomized, reset stuff
-			Loadout_ResetClient(iClient, view_as<RandomizedType>(i));
 }
 
-void Group_RandomizeAll(RandomizedReroll nReroll)
+void Group_TriggerRandomizeAll(RandomizedReroll nReroll)
 {
 	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
 	{
@@ -128,27 +107,17 @@ void Group_RandomizeAll(RandomizedReroll nReroll)
 		if (!(eInfo.nReroll & nReroll))
 			continue;
 		
-		switch (eInfo.nTarget)
+		if (eInfo.bSame)
 		{
-			case RandomizedTarget_Self, RandomizedTarget_Global:
-			{
-				int[] iTargetList = new int[MaxClients];
-				int iTargetCount = Group_GetTargetList(eInfo.sTarget, iTargetList);
-				for (int j = 0; j < iTargetCount; j++)
-				{
-					Loadout_RandomizeClient(iTargetList[j], eInfo.nType);
-					g_bClientRefresh[iTargetList[j]] = true;
-				}
-			}
-			case RandomizedTarget_Same:
-			{
-				Loadout_RandomizeGroup(i, eInfo.nType);
-				
-				int[] iTargetList = new int[MaxClients];
-				int iTargetCount = Group_GetTargetList(eInfo.sTarget, iTargetList);
-				for (int j = 0; j < iTargetCount; j++)
-					g_bClientRefresh[iTargetList[j]] = true;
-			}
+			//Use group to randomize same loadout to distribute all clients in group
+			Loadout_RandomizeGroup(i);
+		}
+		else
+		{
+			int[] iTargetList = new int[MaxClients];
+			int iTargetCount = Group_GetTargetList(eInfo.sGroup, iTargetList);
+			for (int j = 0; j < iTargetCount; j++)
+				Loadout_RandomizeClient(iTargetList[j], eInfo.nType);
 		}
 	}
 }
@@ -162,10 +131,10 @@ int Group_GetClientSameInfoPos(int iClient, RandomizedType nType)
 		if (eInfo.nType != nType)
 			continue;
 		
-		if (eInfo.nTarget != RandomizedTarget_Same)
+		if (!eInfo.bSame)
 			continue;
 		
-		if (!Group_TargetsClient(eInfo.sTarget, iClient))
+		if (!Group_TargetsClient(eInfo.sGroup, iClient))
 			continue;
 		
 		return i;
@@ -181,11 +150,11 @@ bool Group_IsPosSameForClients(int[] iClients, int iCount, int iPos, RandomizedT
 	if (eInfo.nType != nType)
 		return false;
 	
-	if (eInfo.nTarget != RandomizedTarget_Same)
+	if (!eInfo.bSame)
 		return false;
 	
 	int[] iTargetList = new int[MaxClients];
-	int iTargetCount = Group_GetTargetList(eInfo.sTarget, iTargetList);
+	int iTargetCount = Group_GetTargetList(eInfo.sGroup, iTargetList);
 	for (int i = 0; i < iCount; i++)
 		if (Group_IsInList(iClients[i], iTargetList, iTargetCount))
 			return true;
@@ -207,26 +176,31 @@ bool Group_GetInfoFromClient(int iClient, RandomizedType nType, RandomizedInfo e
 		if (eInfo.nType != nType)
 			continue;
 		
-		if (!Group_TargetsClient(eInfo.sTarget, iClient))
-			continue;
-		
-		eBuffer = eInfo;
-		return true;
+		int[] iTargetList = new int[MaxClients];
+		int iTargetCount = Group_GetTargetList(eInfo.sTrigger, iTargetList);
+		for (int j = 0; j < iTargetCount; j++)
+		{
+			if (Group_TargetsClient(eInfo.sGroup, iClient, iTargetList[j]))
+			{
+				eBuffer = eInfo;
+				return true;
+			}
+		}
 	}
 	
 	return false;
 }
 
-int Group_GetTargetList(const char[] sTarget, int[] iTargetList, char sTargetName[MAX_TARGET_LENGTH] = NULL_STRING)
+int Group_GetTargetList(const char[] sGroup, int[] iTargetList, int iAdmin = 0, char sGroupName[MAX_TARGET_LENGTH] = NULL_STRING)
 {
 	bool bIsML;
-	return ProcessTargetString(sTarget, 0, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sTargetName, sizeof(sTargetName), bIsML);
+	return ProcessTargetString(sGroup, iAdmin, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sGroupName, sizeof(sGroupName), bIsML);
 }
 
-bool Group_TargetsClient(const char[] sTarget, int iClient)
+bool Group_TargetsClient(const char[] sGroup, int iClient, int iAdmin = 0)
 {
 	int[] iTargetList = new int[MaxClients];
-	int iTargetCount = Group_GetTargetList(sTarget, iTargetList);
+	int iTargetCount = Group_GetTargetList(sGroup, iTargetList, iAdmin);
 	for (int i = 0; i < iTargetCount; i++)
 		if (iTargetList[i] == iClient)
 			return true;
@@ -234,8 +208,9 @@ bool Group_TargetsClient(const char[] sTarget, int iClient)
 	return false;
 }
 
-bool Group_IsTargetListGood(RandomizedType nType, const int[] iTargetList, int iTargetCount, char sTargetName[MAX_TARGET_LENGTH])
+bool Group_RandomizeFromClients(RandomizedType nType, const int[] iTargetList, int iTargetCount, char sGroupName[MAX_TARGET_LENGTH])
 {
+	//Check if list of clients is valid for randomize
 	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
 	{
 		RandomizedInfo eInfo; 
@@ -243,11 +218,11 @@ bool Group_IsTargetListGood(RandomizedType nType, const int[] iTargetList, int i
 		if (eInfo.nType != nType && nType != RandomizedType_None)
 			continue;
 		
-		if (eInfo.nTarget != RandomizedTarget_Same)
+		if (!eInfo.bSame)
 			continue;
 		
 		int[] iBufferList = new int[MaxClients];
-		int iBufferCount = Group_GetTargetList(eInfo.sTarget, iBufferList, sTargetName);
+		int iBufferCount = Group_GetTargetList(eInfo.sGroup, iBufferList, _, sGroupName);
 		
 		int iFound = 0;	//-1 if found none, 1 if found so far
 		
@@ -268,6 +243,17 @@ bool Group_IsTargetListGood(RandomizedType nType, const int[] iTargetList, int i
 					return false;
 			}
 		}
+	}
+	
+	//List is good, can randomize
+	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
+	{
+		RandomizedInfo eInfo; 
+		eInfo = g_eGroupInfo[i];
+		if (eInfo.nType != nType && nType != RandomizedType_None)
+			continue;
+		
+		Loadout_RandomizeGroup(i);
 	}
 	
 	return true;

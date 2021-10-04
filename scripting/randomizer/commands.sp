@@ -50,8 +50,8 @@ public Action Command_Class(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	char sTarget[32], sClass[32];
-	GetCmdArg(1, sTarget, sizeof(sTarget));
+	char sGroup[32], sClass[32];
+	GetCmdArg(1, sGroup, sizeof(sGroup));
 	GetCmdArg(2, sClass, sizeof(sClass));
 	TFClassType nClass = TF2_GetClass(sClass);
 	if (nClass == TFClass_Unknown)
@@ -61,10 +61,10 @@ public Action Command_Class(int iClient, int iArgs)
 	}
 	
 	int[] iTargetList = new int[MaxClients];
-	char sTargetName[MAX_TARGET_LENGTH];
+	char sGroupName[MAX_TARGET_LENGTH];
 	bool bIsML;
 	
-	int iTargetCount = ProcessTargetString(sTarget, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sTargetName, sizeof(sTargetName), bIsML);
+	int iTargetCount = ProcessTargetString(sGroup, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sGroupName, sizeof(sGroupName), bIsML);
 	if (iTargetCount <= 0)
 	{
 		ReplyToCommand(iClient, "Could not find anyone to set class");
@@ -72,15 +72,15 @@ public Action Command_Class(int iClient, int iArgs)
 	}
 	
 	char sBadName[MAX_TARGET_LENGTH];
-	if (!Group_IsTargetListGood(RandomizedType_Class, iTargetList, iTargetCount, sBadName))
+	if (!Group_RandomizeFromClients(RandomizedType_Class, iTargetList, iTargetCount, sBadName))
 	{
-		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sTargetName, sBadName);
+		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sGroupName, sBadName);
 		return Plugin_Handled;
 	}
 	
 	Loadout_SetClass(iTargetList, iTargetCount, nClass);
 	
-	ReplyToCommand(iClient, "Set %s class to %s", sTargetName, sClass);
+	ReplyToCommand(iClient, "Set %s class to %s", sGroupName, sClass);
 	return Plugin_Handled;
 }
 
@@ -95,14 +95,14 @@ public Action Command_SetWeapon(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	char sTarget[32];
-	GetCmdArg(1, sTarget, sizeof(sTarget));
+	char sGroup[32];
+	GetCmdArg(1, sGroup, sizeof(sGroup));
 	
 	int[] iTargetList = new int[MaxClients];
-	char sTargetName[MAX_TARGET_LENGTH];
+	char sGroupName[MAX_TARGET_LENGTH];
 	bool bIsML;
 	
-	int iTargetCount = ProcessTargetString(sTarget, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sTargetName, sizeof(sTargetName), bIsML);
+	int iTargetCount = ProcessTargetString(sGroup, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sGroupName, sizeof(sGroupName), bIsML);
 	if (iTargetCount <= 0)
 	{
 		ReplyToCommand(iClient, "Could not find anyone to set weapons");
@@ -110,9 +110,9 @@ public Action Command_SetWeapon(int iClient, int iArgs)
 	}
 	
 	char sBadName[MAX_TARGET_LENGTH];
-	if (!Group_IsTargetListGood(RandomizedType_Weapons, iTargetList, iTargetCount, sBadName))
+	if (!Group_RandomizeFromClients(RandomizedType_Weapons, iTargetList, iTargetCount, sBadName))
 	{
-		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sTargetName, sBadName);
+		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sGroupName, sBadName);
 		return Plugin_Handled;
 	}
 	
@@ -128,11 +128,11 @@ public Action Command_SetWeapon(int iClient, int iArgs)
 		char sName[256];
 		Weapons_GetName(eWeapon[0].iIndex, sName, sizeof(sName));
 		Format(sName, sizeof(sName), "%T", sName, LANG_SERVER);
-		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sTargetName, sName, g_sSlotName[eWeapon[0].iSlot]);
+		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sGroupName, sName, g_sSlotName[eWeapon[0].iSlot]);
 	}
 	else
 	{
-		ReplyToCommand(iClient, "Set %s %d weapons", sTargetName, iCount);
+		ReplyToCommand(iClient, "Set %s %d weapons", sGroupName, iCount);
 	}
 	
 	return Plugin_Handled;
@@ -149,14 +149,14 @@ public Action Command_SetSlotWeapon(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	char sTarget[32];
-	GetCmdArg(1, sTarget, sizeof(sTarget));
+	char sGroup[32];
+	GetCmdArg(1, sGroup, sizeof(sGroup));
 	
 	int[] iTargetList = new int[MaxClients];
-	char sTargetName[MAX_TARGET_LENGTH];
+	char sGroupName[MAX_TARGET_LENGTH];
 	bool bIsML;
 	
-	int iTargetCount = ProcessTargetString(sTarget, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sTargetName, sizeof(sTargetName), bIsML);
+	int iTargetCount = ProcessTargetString(sGroup, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sGroupName, sizeof(sGroupName), bIsML);
 	if (iTargetCount <= 0)
 	{
 		ReplyToCommand(iClient, "Could not find anyone to set weapons");
@@ -164,9 +164,9 @@ public Action Command_SetSlotWeapon(int iClient, int iArgs)
 	}
 	
 	char sBadName[MAX_TARGET_LENGTH];
-	if (!Group_IsTargetListGood(RandomizedType_Weapons, iTargetList, iTargetCount, sBadName))
+	if (!Group_RandomizeFromClients(RandomizedType_Weapons, iTargetList, iTargetCount, sBadName))
 	{
-		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sTargetName, sBadName);
+		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sGroupName, sBadName);
 		return Plugin_Handled;
 	}
 	
@@ -182,11 +182,11 @@ public Action Command_SetSlotWeapon(int iClient, int iArgs)
 		char sName[256];
 		Weapons_GetName(eWeapon[0].iIndex, sName, sizeof(sName));
 		Format(sName, sizeof(sName), "%T", sName, LANG_SERVER);
-		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sTargetName, sName, g_sSlotName[eWeapon[0].iSlot]);
+		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sGroupName, sName, g_sSlotName[eWeapon[0].iSlot]);
 	}
 	else
 	{
-		ReplyToCommand(iClient, "Set %s %d weapons", sTargetName, iCount);
+		ReplyToCommand(iClient, "Set %s %d weapons", sGroupName, iCount);
 	}
 	
 	return Plugin_Handled;
@@ -203,14 +203,14 @@ public Action Command_GiveWeapon(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	char sTarget[32];
-	GetCmdArg(1, sTarget, sizeof(sTarget));
+	char sGroup[32];
+	GetCmdArg(1, sGroup, sizeof(sGroup));
 	
 	int[] iTargetList = new int[MaxClients];
-	char sTargetName[MAX_TARGET_LENGTH];
+	char sGroupName[MAX_TARGET_LENGTH];
 	bool bIsML;
 	
-	int iTargetCount = ProcessTargetString(sTarget, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sTargetName, sizeof(sTargetName), bIsML);
+	int iTargetCount = ProcessTargetString(sGroup, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sGroupName, sizeof(sGroupName), bIsML);
 	if (iTargetCount <= 0)
 	{
 		ReplyToCommand(iClient, "Could not find anyone to give weapons");
@@ -218,9 +218,9 @@ public Action Command_GiveWeapon(int iClient, int iArgs)
 	}
 	
 	char sBadName[MAX_TARGET_LENGTH];
-	if (!Group_IsTargetListGood(RandomizedType_Weapons, iTargetList, iTargetCount, sBadName))
+	if (!Group_RandomizeFromClients(RandomizedType_Weapons, iTargetList, iTargetCount, sBadName))
 	{
-		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sTargetName, sBadName);
+		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sGroupName, sBadName);
 		return Plugin_Handled;
 	}
 	
@@ -236,11 +236,11 @@ public Action Command_GiveWeapon(int iClient, int iArgs)
 		char sName[256];
 		Weapons_GetName(eWeapon[0].iIndex, sName, sizeof(sName));
 		Format(sName, sizeof(sName), "%T", sName, LANG_SERVER);
-		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sTargetName, sName, g_sSlotName[eWeapon[0].iSlot]);
+		ReplyToCommand(iClient, "Set %s weapon '%s' for slot '%s'", sGroupName, sName, g_sSlotName[eWeapon[0].iSlot]);
 	}
 	else
 	{
-		ReplyToCommand(iClient, "Set %s %d weapons", sTargetName, iCount);
+		ReplyToCommand(iClient, "Set %s %d weapons", sGroupName, iCount);
 	}
 	
 	return Plugin_Handled;
@@ -257,8 +257,8 @@ public Action Command_Rune(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	char sTarget[32], sRuneType[32];
-	GetCmdArg(1, sTarget, sizeof(sTarget));
+	char sGroup[32], sRuneType[32];
+	GetCmdArg(1, sGroup, sizeof(sGroup));
 	GetCmdArg(2, sRuneType, sizeof(sRuneType));
 	
 	int iRuneType;
@@ -274,10 +274,10 @@ public Action Command_Rune(int iClient, int iArgs)
 	}
 	
 	int[] iTargetList = new int[MaxClients];
-	char sTargetName[MAX_TARGET_LENGTH];
+	char sGroupName[MAX_TARGET_LENGTH];
 	bool bIsML;
 	
-	int iTargetCount = ProcessTargetString(sTarget, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sTargetName, sizeof(sTargetName), bIsML);
+	int iTargetCount = ProcessTargetString(sGroup, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sGroupName, sizeof(sGroupName), bIsML);
 	if (iTargetCount <= 0)
 	{
 		ReplyToCommand(iClient, "Could not find anyone to set rune");
@@ -285,15 +285,15 @@ public Action Command_Rune(int iClient, int iArgs)
 	}
 	
 	char sBadName[MAX_TARGET_LENGTH];
-	if (!Group_IsTargetListGood(RandomizedType_Rune, iTargetList, iTargetCount, sBadName))
+	if (!Group_RandomizeFromClients(RandomizedType_Rune, iTargetList, iTargetCount, sBadName))
 	{
-		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sTargetName, sBadName);
+		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sGroupName, sBadName);
 		return Plugin_Handled;
 	}
 	
 	Loadout_SetRune(iTargetList, iTargetCount, iRuneType);
 	
-	ReplyToCommand(iClient, "Set %s rune to %d", sTargetName, iRuneType);
+	ReplyToCommand(iClient, "Set %s rune to %d", sGroupName, iRuneType);
 	return Plugin_Handled;
 }
 
@@ -308,14 +308,14 @@ public Action Command_Generate(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	char sTarget[32];
-	GetCmdArg(1, sTarget, sizeof(sTarget));
+	char sGroup[32];
+	GetCmdArg(1, sGroup, sizeof(sGroup));
 	
 	int[] iTargetList = new int[MaxClients];
-	char sTargetName[MAX_TARGET_LENGTH];
+	char sGroupName[MAX_TARGET_LENGTH];
 	bool bIsML;
 	
-	int iTargetCount = ProcessTargetString(sTarget, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sTargetName, sizeof(sTargetName), bIsML);
+	int iTargetCount = ProcessTargetString(sGroup, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sGroupName, sizeof(sGroupName), bIsML);
 	if (iTargetCount <= 0)
 	{
 		ReplyToCommand(iClient, "Could not find anyone to regenerate class and weapons");
@@ -323,19 +323,19 @@ public Action Command_Generate(int iClient, int iArgs)
 	}
 	
 	char sBadName[MAX_TARGET_LENGTH];
-	if (!Group_IsTargetListGood(RandomizedType_None, iTargetList, iTargetCount, sBadName))	//RandomizedType_None as all types
+	if (!Group_RandomizeFromClients(RandomizedType_None, iTargetList, iTargetCount, sBadName))	//RandomizedType_None as all types
 	{
-		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sTargetName, sBadName);
+		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sGroupName, sBadName);
 		return Plugin_Handled;
 	}
 	
 	for (int i = 0; i < iTargetCount; i++)
 	{
-		Group_RandomizeClient(iTargetList[i], RandomizedReroll_Force);
+		Loadout_RandomizeClientAll(iTargetList[i]);
 		Loadout_RefreshClient(iTargetList[i]);
 	}
 	
-	ReplyToCommand(iClient, "Regenerated %s loadout", sTargetName);
+	ReplyToCommand(iClient, "Regenerated %s loadout", sGroupName);
 	return Plugin_Handled;
 }
 

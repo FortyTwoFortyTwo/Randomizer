@@ -1,9 +1,3 @@
-static char g_sRandomizedTarget[][] = {
-	"self",
-	"global",
-	"same",
-};
-
 static char g_sRandomizedReroll[][] = {
 	"death",
 	"environment",
@@ -25,9 +19,9 @@ void ConVar_Init()
 	g_cvDroppedWeapons = CreateConVar("randomizer_droppedweapons", "0", "Allow dropped weapons?", _, true, 0.0, true, 1.0);
 	g_cvHuds = CreateConVar("randomizer_huds", "1", "Hud to use to display weapons. 0 = none, 1 = hud text, 2 = menu.", _, true, 0.0, true, float(HudMode_MAX - 1));
 	
-	ConVar_AddType(RandomizedType_Class, "randomizer_class", "target=@all group=self reroll=death reroll=round", "How should class be randomized?");
-	ConVar_AddType(RandomizedType_Weapons, "randomizer_weapons", "target=@all group=self reroll=death reroll=round count=0 count-primary=1 count-secondary=1 count-melee=1", "How should weapons be randomized?");
-	ConVar_AddType(RandomizedType_Cosmetics, "randomizer_cosmetics", "target=@all group=self reroll=death reroll=round count=3 conflicts=1", "How should cosmetics be randomized?");
+	ConVar_AddType(RandomizedType_Class, "randomizer_class", "trigger=@all group=@me reroll=death reroll=round", "How should class be randomized?");
+	ConVar_AddType(RandomizedType_Weapons, "randomizer_weapons", "trigger=@all group=@me reroll=death reroll=round count=0 count-primary=1 count-secondary=1 count-melee=1", "How should weapons be randomized?");
+	ConVar_AddType(RandomizedType_Cosmetics, "randomizer_cosmetics", "trigger=@all group=@me reroll=death reroll=round count=3 conflicts=1", "How should cosmetics be randomized?");
 	ConVar_AddType(RandomizedType_Rune, "randomizer_rune", "", "How should rune be randomized?");
 	ConVar_AddType(RandomizedType_Spells, "randomizer_spells", "", "How should spells be randomized?");
 }
@@ -81,23 +75,27 @@ public void ConVar_RandomizeChanged(ConVar convar, const char[] sOldValue, const
 				return;
 			}
 			
-			if (StrEqual(sParam[0], "target", false))
+			if (StrEqual(sParam[0], "trigger", false))
 			{
-				strcopy(eGroup.sTarget, sizeof(eGroup.sTarget), sParam[1]);
+				strcopy(eGroup.sTrigger, sizeof(eGroup.sTrigger), sParam[1]);
 			}
 			else if (StrEqual(sParam[0], "group", false))
 			{
-				if (!ConVar_GetTarget(sParam[1], eGroup.nTarget))
-				{
-					PrintToServer("Invalid 'group' value '%s'", sParam[1]);
-					return;
-				}
+				strcopy(eGroup.sGroup, sizeof(eGroup.sGroup), sParam[1]);
 			}
 			else if (StrEqual(sParam[0], "reroll", false))
 			{
 				if (!ConVar_AddReroll(sParam[1], eGroup.nReroll))
 				{
 					PrintToServer("Invalid 'reroll' value '%s'", sParam[1]);
+					return;
+				}
+			}
+			else if (StrEqual(sParam[0], "same", false))
+			{
+				if (!StringToIntEx(sParam[1], eGroup.bSame))
+				{
+					PrintToServer("Invalid 'same' value '%s' (must be integer)", sParam[1]);
 					return;
 				}
 			}
@@ -168,20 +166,6 @@ RandomizedType ConVar_GetType(ConVar convar)
 			return view_as<RandomizedType>(i);
 	
 	return RandomizedType_None;
-}
-
-bool ConVar_GetTarget(const char[] sBuffer, RandomizedTarget &nTarget)
-{
-	for (int i = 0; i < sizeof(g_sRandomizedTarget); i++)
-	{
-		if (StrContains(g_sRandomizedTarget[i], sBuffer, false) == 0)
-		{
-			nTarget = view_as<RandomizedTarget>(i);
-			return true;
-		}
-	}
-	
-	return false;
 }
 
 bool ConVar_AddReroll(const char[] sBuffer, RandomizedReroll &nReroll)

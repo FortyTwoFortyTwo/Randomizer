@@ -2,6 +2,8 @@ enum struct RandomizedLoadout
 {
 	TFClassType nClass;		//Class
 	ArrayList aWeapons[CLASS_MAX+1];	//Arrays of RandomizedWeapon to set
+	bool bRandomWeapons;	//Currently have random weapons?
+	bool bRandomCosmetics;	//Currently have random cosmetics?
 	int iRuneType;			//Type of rune
 	int iOldRuneType;		//Previous rune type
 	bool bRerollSpell;		//Should client's spell be rerolled?
@@ -31,6 +33,9 @@ enum struct RandomizedLoadout
 	
 	void AddWeapon(RandomizedWeapon eWeapon, int iClass)
 	{
+		if (eWeapon.iIndex == -1)
+			return;
+		
 		if (!this.aWeapons[iClass])
 			this.aWeapons[iClass] = new ArrayList(sizeof(RandomizedWeapon));
 		
@@ -82,7 +87,7 @@ enum struct RandomizedLoadout
 					this.aWeapons[iClass].GetArray(iNewPos, eNewWeapon);
 					if (eOldWeapon.iIndex == eNewWeapon.iIndex && eOldWeapon.iSlot == eNewWeapon.iSlot && eNewWeapon.iRef == INVALID_ENT_REFERENCE)
 					{
-						this.aWeapons[iClass].Set(eOldWeapon.iRef, RandomizedWeapon::iRef);
+						this.aWeapons[iClass].Set(iNewPos, eOldWeapon.iRef, RandomizedWeapon::iRef);
 						break;
 					}
 				}
@@ -105,6 +110,12 @@ enum struct RandomizedLoadout
 	{
 		this.iOldRuneType = this.iRuneType;
 		this.iRuneType = iRuneType;
+	}
+	
+	void SetSpellIndex(int iIndex, bool bForce)
+	{
+		this.bRerollSpell = bForce;
+		this.iSpellIndex = iIndex;
 	}
 	
 	void GetInfo(RandomizedType nType, RandomizedInfo eInfo)
@@ -140,41 +151,47 @@ void Loadout_Init()
 
 // General
 
+void Loadout_Randomize(RandomizedLoadout eLoadout, RandomizedType nType)
+{
+	switch (nType)
+	{
+		case RandomizedType_Class: Loadout_RandomizeClass(eLoadout);
+		case RandomizedType_Weapons: Loadout_RandomizeWeapon(eLoadout);
+		case RandomizedType_Cosmetics: Loadout_RandomizeCosmetics(eLoadout);
+		case RandomizedType_Rune: Loadout_RandomizeRune(eLoadout);
+		case RandomizedType_Spells: Loadout_RandomizeSpells(eLoadout);
+	}
+}
+
 void Loadout_RandomizeClient(int iClient, RandomizedType nType)
 {
-	switch (nType)
-	{
-		case RandomizedType_Class: Loadout_RandomizeClass(g_eLoadoutClient[iClient]);
-		case RandomizedType_Weapons: Loadout_RandomizeWeapon(g_eLoadoutClient[iClient]);
-		case RandomizedType_Cosmetics: Loadout_RandomizeCosmetics(g_eLoadoutClient[iClient]);
-		case RandomizedType_Rune: Loadout_RandomizeRune(g_eLoadoutClient[iClient]);
-		case RandomizedType_Spells: Loadout_RandomizeSpells(g_eLoadoutClient[iClient]);
-	}
-}
-
-void Loadout_RandomizeGroup(int iPos, RandomizedType nType)
-{
-	switch (nType)
-	{
-		case RandomizedType_Class: Loadout_RandomizeClass(g_eLoadoutGroup[iPos]);
-		case RandomizedType_Weapons: Loadout_RandomizeWeapon(g_eLoadoutGroup[iPos]);
-		case RandomizedType_Cosmetics: Loadout_RandomizeCosmetics(g_eLoadoutGroup[iPos]);
-		case RandomizedType_Rune: Loadout_RandomizeRune(g_eLoadoutGroup[iPos]);
-		case RandomizedType_Spells: Loadout_RandomizeSpells(g_eLoadoutGroup[iPos]);
-	}
-}
-
-void Loadout_ResetClient(int iClient, RandomizedType nType)
-{
+	Loadout_Randomize(g_eLoadoutClient[iClient], nType);
 	g_bClientRefresh[iClient] = true;
-	
-	switch (nType)
+}
+
+void Loadout_RandomizeClientAll(int iClient)
+{
+	for (RandomizedType nType; nType < RandomizedType_MAX; nType++)
 	{
-		case RandomizedType_Class: g_eLoadoutClient[iClient].nClass = TFClass_Unknown;
-		case RandomizedType_Weapons: g_eLoadoutClient[iClient].ResetWeapon();
-	//	case RandomizedType_Cosmetics: RandomizeCosmetics();	//TODO
-		case RandomizedType_Rune: g_eLoadoutClient[iClient].SetRuneType(-1);
+		if (Group_IsClientRandomized(iClient, nType) && Group_GetClientSameInfoPos(iClient, nType) == -1)
+			Loadout_RandomizeClient(iClient, nType);
 	}
+}
+
+void Loadout_RandomizeGroup(int iPos)
+{
+	//Only randomize if it for "same" param
+	RandomizedInfo eInfo;
+	Group_GetInfoFromPos(iPos, eInfo);
+	if (!eInfo.bSame)
+		return;
+	
+	Loadout_Randomize(g_eLoadoutGroup[iPos], eInfo.nType);
+	
+	int[] iTargetList = new int[MaxClients];
+	int iTargetCount = Group_GetTargetList(eInfo.sGroup, iTargetList);
+	for (int i = 0; i < iTargetCount; i++)
+		g_bClientRefresh[iTargetList[i]] = true;
 }
 
 void Loadout_UpdateClientInfo(int iClient)
@@ -184,21 +201,26 @@ void Loadout_UpdateClientInfo(int iClient)
 	iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Class);
 	if (iPos != -1)
 		g_eLoadoutClient[iClient].nClass = g_eLoadoutGroup[iPos].nClass;
+	else if (!Group_IsClientRandomized(iClient, RandomizedType_Class))
+		g_eLoadoutClient[iClient].nClass = TFClass_Unknown;
 	
 	iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Weapons);
 	if (iPos != -1)
 		g_eLoadoutClient[iClient].CopyWeapons(g_eLoadoutGroup[iPos].aWeapons);
+	else if (!Group_IsClientRandomized(iClient, RandomizedType_Weapons))
+		g_eLoadoutClient[iClient].ResetWeapon();
 	
 	iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Rune);
 	if (iPos != -1)
 		g_eLoadoutClient[iClient].iRuneType = g_eLoadoutGroup[iPos].iRuneType;
+	else if (!Group_IsClientRandomized(iClient, RandomizedType_Rune))
+		g_eLoadoutClient[iClient].SetRuneType(-1);
 	
 	iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Spells);
 	if (iPos != -1)
-	{
-		g_eLoadoutClient[iClient].bRerollSpell |= g_eLoadoutGroup[iPos].bRerollSpell;
-		g_eLoadoutClient[iClient].iSpellIndex = g_eLoadoutGroup[iPos].iSpellIndex;
-	}
+		g_eLoadoutClient[iClient].SetSpellIndex(g_eLoadoutGroup[iPos].iSpellIndex, g_eLoadoutGroup[iPos].bRerollSpell);
+	else if (!Group_IsClientRandomized(iClient, RandomizedType_Spells))
+		g_eLoadoutClient[iClient].SetSpellIndex(-1, false);
 }
 
 void Loadout_RefreshClient(int iClient)
@@ -210,14 +232,39 @@ void Loadout_RefreshClient(int iClient)
 	
 	Loadout_UpdateClientInfo(iClient);
 	
+	static const int iSlotWeapons[] = {
+		LoadoutSlot_Primary,
+		LoadoutSlot_Secondary,
+		LoadoutSlot_Melee,
+		LoadoutSlot_Building,
+		LoadoutSlot_PDA,
+		LoadoutSlot_PDA2,
+	};
+	
+	static const int iSlotCosmetics[] = {
+		LoadoutSlot_Head,
+		LoadoutSlot_Misc,
+		LoadoutSlot_Misc2
+	};
+	
 	if (Group_IsClientRandomized(iClient, RandomizedType_Class))
 		TF2_SetPlayerClass(iClient, g_eLoadoutClient[iClient].nClass);
 	
 	if (Group_IsClientRandomized(iClient, RandomizedType_Weapons))
 		Loadout_RefreshClientWeapons(iClient);
+	else if (g_eLoadoutClient[iClient].bRandomWeapons)
+	{
+		Loadout_ResetClientLoadout(iClient, iSlotWeapons, sizeof(iSlotWeapons));
+		g_eLoadoutClient[iClient].bRandomWeapons = false;
+	}
 	
 	if (Group_IsClientRandomized(iClient, RandomizedType_Cosmetics))
-		Loadout_RefreshClientCosmetics(iClient);
+		Loadout_RefreshClientCosmetics(iClient, iSlotCosmetics, sizeof(iSlotCosmetics));
+	else if (g_eLoadoutClient[iClient].bRandomCosmetics)
+	{
+		Loadout_ResetClientLoadout(iClient, iSlotCosmetics, sizeof(iSlotCosmetics));
+		g_eLoadoutClient[iClient].bRandomCosmetics = false;
+	}
 	
 	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
 	{
@@ -231,6 +278,37 @@ void Loadout_RefreshClient(int iClient)
 	
 	if (Group_IsClientRandomized(iClient, RandomizedType_Spells))
 		Loadout_RefreshClientSpells(iClient);
+}
+
+void Loadout_ResetClientLoadout(int iClient, const int[] iSlots, int iCount)
+{
+	//Remove all items using its slot
+	int iItem, iPos;
+	while (TF2_GetItem(iClient, iItem, iPos, true))
+	{
+		int iIndex = GetEntProp(iItem, Prop_Send, "m_iItemDefinitionIndex");
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+		{
+			int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+			for (int i = 0; i < iCount; i++)
+			{
+				if (iSlot == iSlots[i])
+				{
+					TF2_RemoveItem(iClient, iItem);
+					continue;
+				}
+			}
+		}
+	}
+	
+	//Give default items
+	TFClassType nClass = TF2_GetPlayerClass(iClient);
+	for (int i = 0; i < iCount; i++)
+	{
+		Address pItem = SDKCall_GetLoadoutItem(iClient, nClass, iSlots[i]);
+		if (TF2_IsValidEconItemView(pItem))
+			TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pItem));
+	}
 }
 
 // Class
@@ -376,6 +454,7 @@ void Loadout_RefreshClientWeapons(int iClient)
 {
 	Properties_SaveActiveWeaponAmmo(iClient);
 	
+	g_eLoadoutClient[iClient].bRandomWeapons = true;
 	TFClassType nClass = TF2_GetPlayerClass(iClient);
 	
 	int iWeapon, iPos;
@@ -597,16 +676,18 @@ void Loadout_RandomizeCosmetics(RandomizedLoadout eLoadout)
 		Group_GetInfoFromPos(eLoadout.iGroup, eInfo);
 		
 		int[] iClients = new int[MaxClients];
-		int iCount = Group_GetTargetList(eInfo.sTarget, iClients);
+		int iCount = Group_GetTargetList(eInfo.sGroup, iClients);
 		for (int i = 0; i < iCount; i++)
 			g_bRandomizeCosmetics[iClients[i]] = true;
 	}
 }
 
-void Loadout_RefreshClientCosmetics(int iClient)
+void Loadout_RefreshClientCosmetics(int iClient, const int[] iSlots, int iSlotCount)
 {
 	if (!g_bRandomizeCosmetics[iClient])
 		return;
+	
+	g_eLoadoutClient[iClient].bRandomCosmetics = true;
 	
 	//Destroy any cosmetics left
 	int iCosmetic;
@@ -627,90 +708,70 @@ void Loadout_RefreshClientCosmetics(int iClient)
 		}
 	}
 	
-	static const int iSlotCosmetics[] = {
-		LoadoutSlot_Head,
-		LoadoutSlot_Misc,
-		LoadoutSlot_Misc2
-	};
+	RandomizedInfo eGroup;
+	Group_GetInfoFromClient(iClient, RandomizedType_Cosmetics, eGroup);
 	
-	if (!Group_IsClientRandomized(iClient, RandomizedType_Cosmetics))
+	int iMaxCosmetics = eGroup.iCount;
+	if (iMaxCosmetics == 0)	//Good ol TF2 2007
+		return;
+		
+	Address[] pPossibleItems = new Address[CLASS_MAX * iSlotCount];
+	int iPossibleCount;
+	
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{
-		//Default cosmetics
-		TFClassType nClass = TF2_GetPlayerClass(iClient);
-		for (int i = 0; i < sizeof(iSlotCosmetics); i++)
+		for (int i = 0; i < iSlotCount; i++)
 		{
-			Address pItem = SDKCall_GetLoadoutItem(iClient, nClass, iSlotCosmetics[i]);
+			Address pItem = SDKCall_GetLoadoutItem(iClient, view_as<TFClassType>(iClass), iSlots[i]);
 			if (TF2_IsValidEconItemView(pItem))
-				TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pItem));
+			{
+				pPossibleItems[iPossibleCount] = pItem;
+				iPossibleCount++;
+			}
+		}
+	}
+	
+	SortIntegers(view_as<int>(pPossibleItems), iPossibleCount, Sort_Random);
+	
+	if (iMaxCosmetics > iPossibleCount)
+		iMaxCosmetics = iPossibleCount;
+	
+	if (eGroup.bConflicts)
+	{
+		int iCount;
+		
+		for (int i = 0; i < iPossibleCount; i++)
+		{
+			int iIndex = LoadFromAddress(pPossibleItems[i] + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
+			int iMask = TF2Econ_GetItemEquipRegionMask(iIndex);
+			bool bConflicts;
+			
+			//Find any possible cosmetic conflicts, both weapon and cosmetic
+			int iItem;
+			int iPos;
+			while (TF2_GetItem(iClient, iItem, iPos, true))
+			{
+				int iItemIndex = GetEntProp(iItem, Prop_Send, "m_iItemDefinitionIndex");
+				if (0 <= iItemIndex < 65535 && iMask & TF2Econ_GetItemEquipRegionMask(iItemIndex))
+				{
+					bConflicts = true;
+					break;
+				}
+			}
+			
+			if (!bConflicts)
+			{
+				TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pPossibleItems[i]));
+				iCount++;
+				if (iCount == iMaxCosmetics)
+					break;
+			}
 		}
 	}
 	else
 	{
-		RandomizedInfo eGroup;
-		Group_GetInfoFromClient(iClient, RandomizedType_Cosmetics, eGroup);
-		
-		int iMaxCosmetics = eGroup.iCount;
-		if (iMaxCosmetics == 0)	//Good ol TF2 2007
-			return;
-		
-		Address pPossibleItems[CLASS_MAX * sizeof(iSlotCosmetics)];
-		int iPossibleCount;
-		
-		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-		{
-			for (int i = 0; i < sizeof(iSlotCosmetics); i++)
-			{
-				Address pItem = SDKCall_GetLoadoutItem(iClient, view_as<TFClassType>(iClass), iSlotCosmetics[i]);
-				if (TF2_IsValidEconItemView(pItem))
-				{
-					pPossibleItems[iPossibleCount] = pItem;
-					iPossibleCount++;
-				}
-			}
-		}
-		
-		SortIntegers(view_as<int>(pPossibleItems), iPossibleCount, Sort_Random);
-		
-		if (iMaxCosmetics > iPossibleCount)
-			iMaxCosmetics = iPossibleCount;
-		
-		if (eGroup.bConflicts)
-		{
-			int iCount;
-			
-			for (int i = 0; i < iPossibleCount; i++)
-			{
-				int iIndex = LoadFromAddress(pPossibleItems[i] + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
-				int iMask = TF2Econ_GetItemEquipRegionMask(iIndex);
-				bool bConflicts;
-				
-				//Find any possible cosmetic conflicts, both weapon and cosmetic
-				int iItem;
-				int iPos;
-				while (TF2_GetItem(iClient, iItem, iPos, true))
-				{
-					int iItemIndex = GetEntProp(iItem, Prop_Send, "m_iItemDefinitionIndex");
-					if (0 <= iItemIndex < 65535 && iMask & TF2Econ_GetItemEquipRegionMask(iItemIndex))
-					{
-						bConflicts = true;
-						break;
-					}
-				}
-				
-				if (!bConflicts)
-				{
-					TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pPossibleItems[i]));
-					iCount++;
-					if (iCount == iMaxCosmetics)
-						break;
-				}
-			}
-		}
-		else
-		{
-			for (int i = 0; i < iMaxCosmetics; i++)
-				TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pPossibleItems[i]));
-		}
+		for (int i = 0; i < iMaxCosmetics; i++)
+			TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pPossibleItems[i]));
 	}
 }
 

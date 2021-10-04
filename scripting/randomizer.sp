@@ -151,14 +151,6 @@ enum RandomizedType	//What to randomize
 	RandomizedType_MAX,
 }
 
-enum RandomizedTarget	//Who to randomize
-{
-	RandomizedTarget_None = -1,
-	RandomizedTarget_Self,		//Only self
-	RandomizedTarget_Global,	//Everyone in group
-	RandomizedTarget_Same,		//Everyone in group as same loadout
-}
-
 enum RandomizedReroll	//When should loadout be rerolled
 {
 	RandomizedReroll_None			= 0,
@@ -170,15 +162,15 @@ enum RandomizedReroll	//When should loadout be rerolled
 	RandomizedReroll_Round			= (1<<5),	//Round start
 	RandomizedReroll_FullRound		= (1<<6),	//Full round start
 	RandomizedReroll_Capture		= (1<<7),	//Control point or flag capture
-	RandomizedReroll_Force			= (0xFFFFFFFF),	//Force reroll
 }
 
 enum struct RandomizedInfo
 {
 	RandomizedType nType;				//What type to randomize
-	char sTarget[MAX_TARGET_LENGTH];	//Who to call for randomization
-	RandomizedTarget nTarget;			//Who get randomized
+	char sTrigger[MAX_TARGET_LENGTH];	//Who can trigger the reroll
+	char sGroup[MAX_TARGET_LENGTH];		//Who would get affected for randomization
 	RandomizedReroll nReroll;			//When to reroll loadout
+	bool bSame;							//Should everyone in group get same loadout
 	int iCount;							//Amount to reroll (weapons and cosmetics)
 	int iCountSlot[WeaponSlot_Melee+1];	//Amount to reroll for specific slot (weapons)
 	bool bDefaultClass;					//Whenever if it should be default class only (weapons)
@@ -187,9 +179,10 @@ enum struct RandomizedInfo
 	void Reset()
 	{
 		this.nType = RandomizedType_None;
-		this.sTarget = "";
-		this.nTarget = RandomizedTarget_None;
+		this.sGroup = "";
+		this.sTrigger = "";
 		this.nReroll = RandomizedReroll_None;
+		this.bSame = false;
 		this.iCount = 0;
 		this.iCountSlot = { 0, 0, 0 };
 		this.bDefaultClass = false;
@@ -483,7 +476,7 @@ public void OnClientPutInServer(int iClient)
 	DHook_HookClient(iClient);
 	SDKHook_HookClient(iClient);
 	
-	Group_RandomizeClient(iClient, RandomizedReroll_Force);
+	Loadout_RandomizeClientAll(iClient);
 }
 
 public void OnClientDisconnect(int iClient)
