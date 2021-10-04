@@ -29,6 +29,7 @@ void ConVar_Init()
 	ConVar_AddType(RandomizedType_Weapons, "randomizer_weapons", "target=@all group=self reroll=death reroll=round count=0 count-primary=1 count-secondary=1 count-melee=1", "How should weapons be randomized?");
 	ConVar_AddType(RandomizedType_Cosmetics, "randomizer_cosmetics", "target=@all group=self reroll=death reroll=round count=3 conflicts=1", "How should cosmetics be randomized?");
 	ConVar_AddType(RandomizedType_Rune, "randomizer_rune", "", "How should rune be randomized?");
+	ConVar_AddType(RandomizedType_Spells, "randomizer_spells", "", "How should spells be randomized?");
 }
 
 void ConVar_AddType(RandomizedType nType, const char[] sName, const char[] sDefault, const char[] sDesp)

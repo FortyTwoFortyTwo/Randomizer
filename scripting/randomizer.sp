@@ -146,6 +146,7 @@ enum RandomizedType	//What to randomize
 	RandomizedType_Weapons,		//Weapons
 	RandomizedType_Cosmetics,	//Cosmetics
 	RandomizedType_Rune,		//Rune from Mannpower
+	RandomizedType_Spells,		//Spells from Halloween Spellbook
 	
 	RandomizedType_MAX,
 }

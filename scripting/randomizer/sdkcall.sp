@@ -4,6 +4,7 @@ static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKEndClassSpecialSkill;
 static Handle g_hSDKGetLoadoutItem;
+static Handle g_hSDKRollNewSpell;
 static Handle g_hSDKUpdateRageBuffsAndRage;
 static Handle g_hSDKModifyRage;
 static Handle g_hSDKSetCarryingRuneType;
@@ -59,6 +60,14 @@ public void SDKCall_Init(GameData hGameData)
 	g_hSDKGetLoadoutItem = EndPrepSDKCall();
 	if (!g_hSDKGetLoadoutItem)
 		LogError("Failed to create call: CTFPlayer::GetLoadoutItem");
+	
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFSpellBook::RollNewSpell");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_ByValue);
+	g_hSDKRollNewSpell = EndPrepSDKCall();
+	if (!g_hSDKRollNewSpell)
+		LogError("Failed to create call: CTFSpellBook::RollNewSpell");
 	
 	StartPrepSDKCall(SDKCall_Raw);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayerShared::UpdateRageBuffsAndRage");
@@ -152,6 +161,11 @@ bool SDKCall_EndClassSpecialSkill(int iClient)
 Address SDKCall_GetLoadoutItem(int iClient, TFClassType nClass, int iSlot, bool bReportWhitelistFails = false)
 {
 	return SDKCall(g_hSDKGetLoadoutItem, iClient, nClass, iSlot, bReportWhitelistFails);
+}
+
+void SDKCall_RollNewSpell(int iSpellbook, int iTier, bool bForceReroll)
+{
+	SDKCall(g_hSDKRollNewSpell, iSpellbook, iTier, bForceReroll);
 }
 
 void SDKCall_UpdateRageBuffsAndRage(Address pPlayerShared)

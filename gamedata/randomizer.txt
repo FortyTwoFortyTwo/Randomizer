@@ -303,15 +303,21 @@
 			}
 			"CTFKnife::DisguiseOnKill"
 			{
-				"library" "server"
-				"linux"  "@_ZN8CTFKnife14DisguiseOnKillEv"
-				"windows" "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x96\x00\x08\x00\x00"
+				"library"	"server"
+				"linux"		"@_ZN8CTFKnife14DisguiseOnKillEv"
+				"windows"	"\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x96\x00\x08\x00\x00"
 			}
 			"CTFLunchBox::ApplyBiteEffects"
 			{
-				"library" "server"
-				"linux"  "@_ZN11CTFLunchBox16ApplyBiteEffectsEP9CTFPlayer"
-				"windows" "\x55\x8B\xEC\x51\x53\x8B\xD9\x56\x57\x6A\x01"
+				"library"	"server"
+				"linux"		"@_ZN11CTFLunchBox16ApplyBiteEffectsEP9CTFPlayer"
+				"windows"	"\x55\x8B\xEC\x51\x53\x8B\xD9\x56\x57\x6A\x01"
+			}
+			"CTFSpellBook::RollNewSpell"
+			{
+				"library"	"server"
+				"linux"		"@_ZN12CTFSpellBook12RollNewSpellEib"
+				"windows"	"\x55\x8B\xEC\x57\x8B\xF9\x83\xBF\xFC\x07\x00\x00\x00"
 			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{

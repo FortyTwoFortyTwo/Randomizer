@@ -4,6 +4,8 @@ enum struct RandomizedLoadout
 	ArrayList aWeapons[CLASS_MAX+1];	//Arrays of RandomizedWeapon to set
 	int iRuneType;			//Type of rune
 	int iOldRuneType;		//Previous rune type
+	bool bRerollSpell;		//Should client's spell be rerolled?
+	int iSpellIndex;		//Spell index to set
 	
 	int iClient;	//Client index if has one
 	int iGroup;		//Group index if has one
@@ -17,6 +19,8 @@ enum struct RandomizedLoadout
 		
 		this.iRuneType = -1;
 		this.iOldRuneType = -1;
+		this.bRerollSpell = false;
+		this.iSpellIndex = -1;
 	}
 	
 	void ResetWeapon()
@@ -144,6 +148,7 @@ void Loadout_RandomizeClient(int iClient, RandomizedType nType)
 		case RandomizedType_Weapons: Loadout_RandomizeWeapon(g_eLoadoutClient[iClient]);
 		case RandomizedType_Cosmetics: Loadout_RandomizeCosmetics(g_eLoadoutClient[iClient]);
 		case RandomizedType_Rune: Loadout_RandomizeRune(g_eLoadoutClient[iClient]);
+		case RandomizedType_Spells: Loadout_RandomizeSpells(g_eLoadoutClient[iClient]);
 	}
 }
 
@@ -155,6 +160,7 @@ void Loadout_RandomizeGroup(int iPos, RandomizedType nType)
 		case RandomizedType_Weapons: Loadout_RandomizeWeapon(g_eLoadoutGroup[iPos]);
 		case RandomizedType_Cosmetics: Loadout_RandomizeCosmetics(g_eLoadoutGroup[iPos]);
 		case RandomizedType_Rune: Loadout_RandomizeRune(g_eLoadoutGroup[iPos]);
+		case RandomizedType_Spells: Loadout_RandomizeSpells(g_eLoadoutGroup[iPos]);
 	}
 }
 
@@ -186,6 +192,13 @@ void Loadout_UpdateClientInfo(int iClient)
 	iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Rune);
 	if (iPos != -1)
 		g_eLoadoutClient[iClient].iRuneType = g_eLoadoutGroup[iPos].iRuneType;
+	
+	iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Spells);
+	if (iPos != -1)
+	{
+		g_eLoadoutClient[iClient].bRerollSpell |= g_eLoadoutGroup[iPos].bRerollSpell;
+		g_eLoadoutClient[iClient].iSpellIndex = g_eLoadoutGroup[iPos].iSpellIndex;
+	}
 }
 
 void Loadout_RefreshClient(int iClient)
@@ -215,6 +228,9 @@ void Loadout_RefreshClient(int iClient)
 		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), -1);
 		g_eLoadoutClient[iClient].iOldRuneType = -1;
 	}
+	
+	if (Group_IsClientRandomized(iClient, RandomizedType_Spells))
+		Loadout_RefreshClientSpells(iClient);
 }
 
 // Class
@@ -722,5 +738,49 @@ void Loadout_SetRune(int[] iClients, int iCount, int iRuneType)
 	{
 		g_eLoadoutClient[iClients[i]].SetRuneType(iRuneType);
 		Loadout_RefreshClient(iClients[i]);
+	}
+}
+
+// Spells
+
+void Loadout_RandomizeSpells(RandomizedLoadout eLoadout)
+{
+	eLoadout.bRerollSpell = true;
+	eLoadout.iSpellIndex = -1;
+}
+
+void Loadout_RefreshClientSpells(int iClient)
+{
+	if (!g_eLoadoutClient[iClient].bRerollSpell)
+		return;
+	
+	int iSpellBook, iPos;
+	if (!TF2_GetItemFromClassname(iClient, "tf_weapon_spellbook", iSpellBook, iPos))
+		return;
+	
+	SDKCall_RollNewSpell(iSpellBook, 0, true);
+	g_eLoadoutClient[iClient].bRerollSpell = false;
+	
+	int iOffset = FindSendPropInfo("CTFSpellBook", "m_flTimeNextSpell") - 8;
+	if (g_eLoadoutClient[iClient].iSpellIndex != -1)
+	{
+		//Force set next spell index
+		SetEntData(iSpellBook, iOffset, g_eLoadoutClient[iClient].iSpellIndex);
+	}
+	else
+	{
+		//Dont have force spell index, use whatever rolled value as so, for all groups aswell
+		g_eLoadoutClient[iClient].iSpellIndex = GetEntData(iSpellBook, iOffset);
+		
+		iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Spells);
+		if (iPos != -1)
+		{
+			g_eLoadoutGroup[iPos].iSpellIndex = g_eLoadoutClient[iClient].iSpellIndex;
+			
+			//Just update all client infos for new spell index
+			for (int i = 1; i <= MaxClients; i++)
+				if (IsClientInGame(i))
+					Loadout_UpdateClientInfo(i);
+		}
 	}
 }
