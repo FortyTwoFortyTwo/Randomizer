@@ -516,14 +516,15 @@ public MRESReturn DHook_ManageBuilderWeaponsPost(int iClient, Handle hParams)
 
 public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 {
-	//There 3 things going on in this function depending on player class attempting to:
+	//There 4 things going on in this function depending on player class attempting to:
+	//If Grappling Hook active weapon, activate rune
 	//If Demoman, detonate stickies or charge
 	//If Engineer, pickup buildings
 	//If Spy, cloak or uncloak
 	
 	g_bDoClassSpecialSkill[iClient] = true;
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon <= MaxClients)
+	if (iActiveWeapon == INVALID_ENT_REFERENCE)
 		return MRES_Ignored;
 	
 	int iButtons = GetClientButtons(iClient);
