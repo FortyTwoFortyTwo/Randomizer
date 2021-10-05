@@ -98,7 +98,20 @@ void ViewModels_DisableInvisible(int iWeapon)
 	SetEntityRenderColor(iWeapon, 255, 255, 255, 255);
 }
 
-bool ViewModels_ShouldUseRobotArm(int iClient, int iWeapon)
+void ViewModels_CheckRobotArm(int iClient)
 {
-	return g_mViewModelsRobotArm.Exists(iWeapon, TF2_GetPlayerClass(iClient));
+	TFClassType nClass = TF2_GetPlayerClass(iClient);
+	int iWeapon, iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		bool bCurrentRobotArm = g_mViewModelsRobotArm.Exists(iWeapon, nClass);
+		bool bNextRobotArm = bCurrentRobotArm;
+		if (IsClassRandomized(iClient))
+			bNextRobotArm = g_mViewModelsRobotArm.Exists(iWeapon, g_iClientClass[iClient]);
+		
+		if (bNextRobotArm)	//Should have one
+			TF2Attrib_SetByName(iWeapon, "mod wrench builds minisentry", 1.0);
+		else if (bCurrentRobotArm)	//Currently have robot arm but shouldn't have one for new class
+			TF2Attrib_RemoveByName(iWeapon, "mod wrench builds minisentry");
+	}
 }

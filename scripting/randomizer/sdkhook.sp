@@ -233,8 +233,7 @@ public void Client_WeaponEquipPost(int iClient, int iWeapon)
 	RevertClientClass(iClient);
 	
 	//Give robot arm viewmodel if weapon isnt good with current viewmodel
-	if (ViewModels_ShouldUseRobotArm(iClient, iWeapon))
-		TF2Attrib_SetByName(iWeapon, "mod wrench builds minisentry", 1.0);
+	ViewModels_CheckRobotArm(iClient);
 	
 	//Refresh controls and huds
 	Controls_RefreshClient(iClient);
