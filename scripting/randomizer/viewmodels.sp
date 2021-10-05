@@ -106,8 +106,8 @@ void ViewModels_CheckRobotArm(int iClient)
 	{
 		bool bCurrentRobotArm = g_mViewModelsRobotArm.Exists(iWeapon, nClass);
 		bool bNextRobotArm = bCurrentRobotArm;
-		if (IsClassRandomized(iClient))
-			bNextRobotArm = g_mViewModelsRobotArm.Exists(iWeapon, g_iClientClass[iClient]);
+		if (Group_IsClientRandomized(iClient, RandomizedType_Class))
+			bNextRobotArm = g_mViewModelsRobotArm.Exists(iWeapon, Loadout_GetClientClass(iClient));
 		
 		if (bNextRobotArm)	//Should have one
 			TF2Attrib_SetByName(iWeapon, "mod wrench builds minisentry", 1.0);

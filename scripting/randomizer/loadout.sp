@@ -286,6 +286,9 @@ void Loadout_RefreshClient(int iClient)
 	
 	Loadout_UpdateClientInfo(iClient);
 	
+	//Check if robot arm need to be changed before setting class
+	ViewModels_CheckRobotArm(iClient);
+	
 	for (RandomizedType nType; nType < RandomizedType_MAX; nType++)
 	{
 		if (Group_IsClientRandomized(iClient, nType))
