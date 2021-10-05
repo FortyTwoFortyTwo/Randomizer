@@ -1038,6 +1038,9 @@ public MRESReturn DHook_ForceRespawnPre(int iClient)
 		if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
 			SDKCall_RemoveObject(iClient, iBuilding);
 	
+	//Check if robot arm need to be changed before setting class
+	ViewModels_CheckRobotArm(iClient);
+	
 	if (IsClassRandomized(iClient))
 	{
 		TFClassType nClass = g_iClientClass[iClient];

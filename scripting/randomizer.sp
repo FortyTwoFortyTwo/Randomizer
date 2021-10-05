@@ -709,6 +709,9 @@ void RefreshPlayer(int iClient)
 	
 	UpdateClientWeapon(iClient);
 	
+	//Check if robot arm need to be changed before setting class
+	ViewModels_CheckRobotArm(iClient);
+	
 	if (IsClassRandomized(iClient))
 		TF2_SetPlayerClass(iClient, g_iClientClass[iClient]);
 	
