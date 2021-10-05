@@ -2,12 +2,17 @@ enum struct RandomizedLoadout
 {
 	TFClassType nClass;		//Class
 	ArrayList aWeapons[CLASS_MAX+1];	//Arrays of RandomizedWeapon to set
-	bool bRandomWeapons;	//Currently have random weapons?
-	bool bRandomCosmetics;	//Currently have random cosmetics?
-	int iRuneType;			//Type of rune
-	int iOldRuneType;		//Previous rune type
-	bool bRerollSpell;		//Should client's spell be rerolled?
+	
+	int iNextCosmeticId;	//Cosmetic id to use on refresh
+	int iCurrentCosmeticId;	//Current cosmetic id 
+	
+	int iNextRuneType;		//Rune type to use on refresh
+	int iCurrentRuneType;	//Current rune type
+	
+	bool bRerollSpell;		//Should client's spell be rerolled
 	int iSpellIndex;		//Spell index to set
+	
+	bool bRandomized[RandomizedType_MAX];	//Is client currently randomized from type?
 	
 	int iClient;	//Client index if has one
 	int iGroup;		//Group index if has one
@@ -19,8 +24,12 @@ enum struct RandomizedLoadout
 		for (int i = 0; i < sizeof(RandomizedLoadout::aWeapons); i++)
 			delete this.aWeapons[i];
 		
-		this.iRuneType = -1;
-		this.iOldRuneType = -1;
+		this.iNextCosmeticId = -1;
+		this.iCurrentCosmeticId = -1;
+		
+		this.iNextRuneType = -1;
+		this.iCurrentRuneType = -1;
+		
 		this.bRerollSpell = false;
 		this.iSpellIndex = -1;
 	}
@@ -106,12 +115,6 @@ enum struct RandomizedLoadout
 		return this.aWeapons[nClass].FindValue(iRef, RandomizedWeapon::iRef) != -1;
 	}
 	
-	void SetRuneType(int iRuneType)
-	{
-		this.iOldRuneType = this.iRuneType;
-		this.iRuneType = iRuneType;
-	}
-	
 	void SetSpellIndex(int iIndex, bool bForce)
 	{
 		this.bRerollSpell = bForce;
@@ -130,7 +133,22 @@ enum struct RandomizedLoadout
 static RandomizedLoadout g_eLoadoutClient[TF_MAXPLAYERS];
 static RandomizedLoadout g_eLoadoutGroup[MAX_GROUPS];
 
-static bool g_bRandomizeCosmetics[TF_MAXPLAYERS];
+static int g_iRandomizeCosmeticId;
+
+static const int g_iLoadoutSlotWeapons[] = {
+	LoadoutSlot_Primary,
+	LoadoutSlot_Secondary,
+	LoadoutSlot_Melee,
+	LoadoutSlot_Building,
+	LoadoutSlot_PDA,
+	LoadoutSlot_PDA2,
+};
+	
+static const int g_iLoadoutSlotCosmetics[] = {
+	LoadoutSlot_Head,
+	LoadoutSlot_Misc,
+	LoadoutSlot_Misc2
+};
 
 void Loadout_Init()
 {
@@ -163,6 +181,54 @@ void Loadout_Randomize(RandomizedLoadout eLoadout, RandomizedType nType)
 	}
 }
 
+void Loadout_CopyGroupInfoToClient(int iClient, int iPos, RandomizedType nType)
+{
+	switch (nType)
+	{
+		case RandomizedType_Class: g_eLoadoutClient[iClient].nClass = g_eLoadoutGroup[iPos].nClass;
+		case RandomizedType_Weapons: g_eLoadoutClient[iClient].CopyWeapons(g_eLoadoutGroup[iPos].aWeapons);
+		case RandomizedType_Cosmetics: g_eLoadoutClient[iClient].iNextCosmeticId = g_eLoadoutGroup[iPos].iNextCosmeticId;
+		case RandomizedType_Rune: g_eLoadoutClient[iClient].iNextRuneType = g_eLoadoutGroup[iPos].iNextRuneType;
+		case RandomizedType_Spells: g_eLoadoutClient[iClient].SetSpellIndex(g_eLoadoutGroup[iPos].iSpellIndex, g_eLoadoutGroup[iPos].bRerollSpell);
+	}
+}
+
+void Loadout_ResetClientInfo(int iClient, RandomizedType nType)
+{
+	switch (nType)
+	{
+		case RandomizedType_Class: g_eLoadoutClient[iClient].nClass = TFClass_Unknown;
+		case RandomizedType_Weapons: g_eLoadoutClient[iClient].ResetWeapon();
+		case RandomizedType_Cosmetics: g_eLoadoutClient[iClient].iNextCosmeticId = -1;
+		case RandomizedType_Rune: g_eLoadoutClient[iClient].iNextRuneType = -1;
+		case RandomizedType_Spells: g_eLoadoutClient[iClient].SetSpellIndex(-1, false);
+	}
+}
+
+void Loadout_ApplyClientLoadout(int iClient, RandomizedType nType)
+{
+	switch (nType)
+	{
+		case RandomizedType_Class: TF2_SetPlayerClass(iClient, g_eLoadoutClient[iClient].nClass);
+		case RandomizedType_Weapons: Loadout_ApplyClientWeapons(iClient);
+		case RandomizedType_Cosmetics: Loadout_ApplyClientCosmetics(iClient, g_iLoadoutSlotCosmetics, sizeof(g_iLoadoutSlotCosmetics));
+		case RandomizedType_Rune: Loadout_ApplyClientRune(iClient);
+		case RandomizedType_Spells: Loadout_RefreshClientSpells(iClient);
+	}
+}
+
+void Loadout_ClearClientLoadout(int iClient, RandomizedType nType)
+{
+	switch (nType)
+	{
+	//	case RandomizedType_Class: {};
+		case RandomizedType_Weapons: Loadout_ResetClientLoadout(iClient, g_iLoadoutSlotWeapons, sizeof(g_iLoadoutSlotWeapons));
+		case RandomizedType_Cosmetics: Loadout_ResetClientLoadout(iClient, g_iLoadoutSlotCosmetics, sizeof(g_iLoadoutSlotCosmetics));
+		case RandomizedType_Rune: Loadout_ResetClientRune(iClient);
+	//	case RandomizedType_Spells: {};
+	}
+}
+
 void Loadout_RandomizeClient(int iClient, RandomizedType nType)
 {
 	Loadout_Randomize(g_eLoadoutClient[iClient], nType);
@@ -188,39 +254,27 @@ void Loadout_RandomizeGroup(int iPos)
 	
 	Loadout_Randomize(g_eLoadoutGroup[iPos], eInfo.nType);
 	
-	int[] iTargetList = new int[MaxClients];
-	int iTargetCount = Group_GetTargetList(eInfo.sGroup, iTargetList);
-	for (int i = 0; i < iTargetCount; i++)
-		g_bClientRefresh[iTargetList[i]] = true;
+	int[] iGroupList = new int[MaxClients];
+	int iGroupCount = Group_GetAllGroupList(eInfo, iGroupList);
+	for (int i = 0; i < iGroupCount; i++)
+		g_bClientRefresh[iGroupList[i]] = true;
 }
 
 void Loadout_UpdateClientInfo(int iClient)
 {
-	int iPos;
-	
-	iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Class);
-	if (iPos != -1)
-		g_eLoadoutClient[iClient].nClass = g_eLoadoutGroup[iPos].nClass;
-	else if (!Group_IsClientRandomized(iClient, RandomizedType_Class))
-		g_eLoadoutClient[iClient].nClass = TFClass_Unknown;
-	
-	iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Weapons);
-	if (iPos != -1)
-		g_eLoadoutClient[iClient].CopyWeapons(g_eLoadoutGroup[iPos].aWeapons);
-	else if (!Group_IsClientRandomized(iClient, RandomizedType_Weapons))
-		g_eLoadoutClient[iClient].ResetWeapon();
-	
-	iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Rune);
-	if (iPos != -1)
-		g_eLoadoutClient[iClient].iRuneType = g_eLoadoutGroup[iPos].iRuneType;
-	else if (!Group_IsClientRandomized(iClient, RandomizedType_Rune))
-		g_eLoadoutClient[iClient].SetRuneType(-1);
-	
-	iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Spells);
-	if (iPos != -1)
-		g_eLoadoutClient[iClient].SetSpellIndex(g_eLoadoutGroup[iPos].iSpellIndex, g_eLoadoutGroup[iPos].bRerollSpell);
-	else if (!Group_IsClientRandomized(iClient, RandomizedType_Spells))
-		g_eLoadoutClient[iClient].SetSpellIndex(-1, false);
+	for (RandomizedType nType; nType < RandomizedType_MAX; nType++)
+	{
+		if (Group_IsClientRandomized(iClient, nType))
+		{
+			int iPos = Group_GetClientSameInfoPos(iClient, nType);
+			if (iPos != -1)
+				Loadout_CopyGroupInfoToClient(iClient, iPos, nType);
+		}
+		else
+		{
+			Loadout_ResetClientInfo(iClient, nType);
+		}
+	}
 }
 
 void Loadout_RefreshClient(int iClient)
@@ -232,52 +286,19 @@ void Loadout_RefreshClient(int iClient)
 	
 	Loadout_UpdateClientInfo(iClient);
 	
-	static const int iSlotWeapons[] = {
-		LoadoutSlot_Primary,
-		LoadoutSlot_Secondary,
-		LoadoutSlot_Melee,
-		LoadoutSlot_Building,
-		LoadoutSlot_PDA,
-		LoadoutSlot_PDA2,
-	};
-	
-	static const int iSlotCosmetics[] = {
-		LoadoutSlot_Head,
-		LoadoutSlot_Misc,
-		LoadoutSlot_Misc2
-	};
-	
-	if (Group_IsClientRandomized(iClient, RandomizedType_Class))
-		TF2_SetPlayerClass(iClient, g_eLoadoutClient[iClient].nClass);
-	
-	if (Group_IsClientRandomized(iClient, RandomizedType_Weapons))
-		Loadout_RefreshClientWeapons(iClient);
-	else if (g_eLoadoutClient[iClient].bRandomWeapons)
+	for (RandomizedType nType; nType < RandomizedType_MAX; nType++)
 	{
-		Loadout_ResetClientLoadout(iClient, iSlotWeapons, sizeof(iSlotWeapons));
-		g_eLoadoutClient[iClient].bRandomWeapons = false;
+		if (Group_IsClientRandomized(iClient, nType))
+		{
+			Loadout_ApplyClientLoadout(iClient, nType);
+			g_eLoadoutClient[iClient].bRandomized[nType] = true;
+		}
+		else if (g_eLoadoutClient[iClient].bRandomized[nType])
+		{
+			Loadout_ClearClientLoadout(iClient, nType);
+			g_eLoadoutClient[iClient].bRandomized[nType] = false;
+		}
 	}
-	
-	if (Group_IsClientRandomized(iClient, RandomizedType_Cosmetics))
-		Loadout_RefreshClientCosmetics(iClient, iSlotCosmetics, sizeof(iSlotCosmetics));
-	else if (g_eLoadoutClient[iClient].bRandomCosmetics)
-	{
-		Loadout_ResetClientLoadout(iClient, iSlotCosmetics, sizeof(iSlotCosmetics));
-		g_eLoadoutClient[iClient].bRandomCosmetics = false;
-	}
-	
-	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
-	{
-		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), g_eLoadoutClient[iClient].iRuneType);
-	}
-	else if (g_eLoadoutClient[iClient].iOldRuneType != -1)
-	{
-		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), -1);
-		g_eLoadoutClient[iClient].iOldRuneType = -1;
-	}
-	
-	if (Group_IsClientRandomized(iClient, RandomizedType_Spells))
-		Loadout_RefreshClientSpells(iClient);
 }
 
 void Loadout_ResetClientLoadout(int iClient, const int[] iSlots, int iCount)
@@ -322,7 +343,7 @@ void Loadout_SetClass(int[] iClients, int iCount, TFClassType nClass)
 {
 	for (int i = 0; i < sizeof(g_eLoadoutGroup); i++)
 	{
-		if (Group_IsPosSameForClients(iClients, iCount, i, RandomizedType_Class))
+		if (Group_CanRandomizePosForClients(i, RandomizedType_Class, iClients, iCount))
 			g_eLoadoutGroup[i].nClass = nClass;
 	}
 	
@@ -450,11 +471,10 @@ void Loadout_RandomizeWeapon(RandomizedLoadout eLoadout)
 	}
 }
 
-void Loadout_RefreshClientWeapons(int iClient)
+void Loadout_ApplyClientWeapons(int iClient)
 {
 	Properties_SaveActiveWeaponAmmo(iClient);
 	
-	g_eLoadoutClient[iClient].bRandomWeapons = true;
 	TFClassType nClass = TF2_GetPlayerClass(iClient);
 	
 	int iWeapon, iPos;
@@ -583,7 +603,7 @@ void Loadout_SetWeapon(int[] iClients, int iCount, RandomizedWeapon eList[MAX_WE
 {
 	for (int i = 0; i < sizeof(g_eLoadoutGroup); i++)
 	{
-		if (Group_IsPosSameForClients(iClients, iCount, i, RandomizedType_Weapons))
+		if (Group_CanRandomizePosForClients(i, RandomizedType_Weapons, iClients, iCount))
 		{
 			g_eLoadoutGroup[i].ResetWeapon();
 			
@@ -607,7 +627,7 @@ void Loadout_SetSlotWeapon(int[] iClients, int iCount, RandomizedWeapon eList[MA
 {
 	for (int i = 0; i < sizeof(g_eLoadoutGroup); i++)
 	{
-		if (Group_IsPosSameForClients(iClients, iCount, i, RandomizedType_Weapons))
+		if (Group_CanRandomizePosForClients(i, RandomizedType_Weapons, iClients, iCount))
 		{
 			bool bSlot[WeaponSlot_Building+1];
 			
@@ -646,7 +666,7 @@ void Loadout_GiveWeapon(int[] iClients, int iCount, RandomizedWeapon eList[MAX_W
 {
 	for (int i = 0; i < sizeof(g_eLoadoutGroup); i++)
 	{
-		if (Group_IsPosSameForClients(iClients, iCount, i, RandomizedType_Weapons))
+		if (Group_CanRandomizePosForClients(i, RandomizedType_Weapons, iClients, iCount))
 		{
 			for (int j = 0; j < iCount; j++)
 				Loadout_AddWeapon(g_eLoadoutGroup[i], eList, iListCount);
@@ -666,28 +686,16 @@ void Loadout_GiveWeapon(int[] iClients, int iCount, RandomizedWeapon eList[MAX_W
 
 void Loadout_RandomizeCosmetics(RandomizedLoadout eLoadout)
 {
-	if (eLoadout.iClient != -1)
-	{
-		g_bRandomizeCosmetics[eLoadout.iClient] = true;
-	}
-	else if (eLoadout.iGroup != -1)
-	{
-		RandomizedInfo eInfo;
-		Group_GetInfoFromPos(eLoadout.iGroup, eInfo);
-		
-		int[] iClients = new int[MaxClients];
-		int iCount = Group_GetTargetList(eInfo.sGroup, iClients);
-		for (int i = 0; i < iCount; i++)
-			g_bRandomizeCosmetics[iClients[i]] = true;
-	}
+	eLoadout.iNextCosmeticId = g_iRandomizeCosmeticId;
+	g_iRandomizeCosmeticId++;
 }
 
-void Loadout_RefreshClientCosmetics(int iClient, const int[] iSlots, int iSlotCount)
+void Loadout_ApplyClientCosmetics(int iClient, const int[] iSlots, int iSlotCount)
 {
-	if (!g_bRandomizeCosmetics[iClient])
-		return;
+	if (g_eLoadoutClient[iClient].iCurrentCosmeticId == g_eLoadoutClient[iClient].iNextCosmeticId)
+		return;	//Dont need to reroll cosmetics
 	
-	g_eLoadoutClient[iClient].bRandomCosmetics = true;
+	g_eLoadoutClient[iClient].iCurrentCosmeticId = g_eLoadoutClient[iClient].iNextCosmeticId;
 	
 	//Destroy any cosmetics left
 	int iCosmetic;
@@ -779,26 +787,36 @@ void Loadout_RefreshClientCosmetics(int iClient, const int[] iSlots, int iSlotCo
 
 void Loadout_RandomizeRune(RandomizedLoadout eLoadout)
 {
-	eLoadout.SetRuneType(GetRandomInt(0, g_iRuneCount - 1));
-}
-
-int Loadout_GetClientRune(int iClient)
-{
-	return g_eLoadoutClient[iClient].iRuneType;
+	eLoadout.iNextRuneType = GetRandomInt(0, g_iRuneCount - 1);
 }
 
 void Loadout_SetRune(int[] iClients, int iCount, int iRuneType)
 {
 	for (int i = 0; i < sizeof(g_eLoadoutGroup); i++)
 	{
-		if (Group_IsPosSameForClients(iClients, iCount, i, RandomizedType_Rune))
-			g_eLoadoutGroup[i].SetRuneType(iRuneType);
+		if (Group_CanRandomizePosForClients(i, RandomizedType_Rune, iClients, iCount))
+			g_eLoadoutGroup[i].iNextRuneType = iRuneType;
 	}
 	
 	for (int i = 0; i < iCount; i++)
 	{
-		g_eLoadoutClient[iClients[i]].SetRuneType(iRuneType);
+		g_eLoadoutClient[iClients[i]].iNextRuneType = iRuneType;
 		Loadout_RefreshClient(iClients[i]);
+	}
+}
+
+void Loadout_ApplyClientRune(int iClient)
+{
+	SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), g_eLoadoutClient[iClient].iNextRuneType);
+	g_eLoadoutClient[iClient].iCurrentRuneType = g_eLoadoutClient[iClient].iNextRuneType;
+}
+
+void Loadout_ResetClientRune(int iClient)
+{
+	if (g_eLoadoutClient[iClient].iCurrentRuneType != -1)
+	{
+		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), -1);
+		g_eLoadoutClient[iClient].iCurrentRuneType = -1;
 	}
 }
 

@@ -1037,7 +1037,7 @@ public MRESReturn DHook_EventKilledPre(int iClient, Handle hParams)
 {
 	//Remove rune so it won't be dropped as pickupable
 	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
-		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), -1);
+		Loadout_ResetClientRune(iClient);
 }
 
 public MRESReturn DHook_ForceRespawnPre(int iClient)

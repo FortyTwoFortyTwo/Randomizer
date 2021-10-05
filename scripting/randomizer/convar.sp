@@ -20,7 +20,7 @@ void ConVar_Init()
 	g_cvHuds = CreateConVar("randomizer_huds", "1", "Hud to use to display weapons. 0 = none, 1 = hud text, 2 = menu.", _, true, 0.0, true, float(HudMode_MAX - 1));
 	
 	ConVar_AddType(RandomizedType_Class, "randomizer_class", "trigger=@all group=@me reroll=death reroll=round", "How should class be randomized?");
-	ConVar_AddType(RandomizedType_Weapons, "randomizer_weapons", "trigger=@all group=@me reroll=death reroll=round count=0 count-primary=1 count-secondary=1 count-melee=1", "How should weapons be randomized?");
+	ConVar_AddType(RandomizedType_Weapons, "randomizer_weapons", "trigger=@all group=@me reroll=death reroll=round count-primary=1 count-secondary=1 count-melee=1", "How should weapons be randomized?");
 	ConVar_AddType(RandomizedType_Cosmetics, "randomizer_cosmetics", "trigger=@all group=@me reroll=death reroll=round count=3 conflicts=1", "How should cosmetics be randomized?");
 	ConVar_AddType(RandomizedType_Rune, "randomizer_rune", "", "How should rune be randomized?");
 	ConVar_AddType(RandomizedType_Spells, "randomizer_spells", "", "How should spells be randomized?");

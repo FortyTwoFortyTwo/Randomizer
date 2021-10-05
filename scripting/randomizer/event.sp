@@ -54,7 +54,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	}
 	
 	if (Group_IsClientRandomized(iClient, RandomizedType_Weapons))
-		Loadout_RefreshClientWeapons(iClient);
+		Loadout_ApplyClientWeapons(iClient);
 }
 
 public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadcast)
@@ -68,7 +68,7 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 	
 	//Between post_inventory_application and player_spawn all conds were removed, so giving cond has to be done here
 	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
-		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), Loadout_GetClientRune(iClient));
+		Loadout_ApplyClientRune(iClient);
 }
 
 public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcast)

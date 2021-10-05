@@ -71,13 +71,6 @@ public Action Command_Class(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	char sBadName[MAX_TARGET_LENGTH];
-	if (!Group_RandomizeFromClients(RandomizedType_Class, iTargetList, iTargetCount, sBadName))
-	{
-		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sGroupName, sBadName);
-		return Plugin_Handled;
-	}
-	
 	Loadout_SetClass(iTargetList, iTargetCount, nClass);
 	
 	ReplyToCommand(iClient, "Set %s class to %s", sGroupName, sClass);
@@ -106,13 +99,6 @@ public Action Command_SetWeapon(int iClient, int iArgs)
 	if (iTargetCount <= 0)
 	{
 		ReplyToCommand(iClient, "Could not find anyone to set weapons");
-		return Plugin_Handled;
-	}
-	
-	char sBadName[MAX_TARGET_LENGTH];
-	if (!Group_RandomizeFromClients(RandomizedType_Weapons, iTargetList, iTargetCount, sBadName))
-	{
-		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sGroupName, sBadName);
 		return Plugin_Handled;
 	}
 	
@@ -163,13 +149,6 @@ public Action Command_SetSlotWeapon(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	char sBadName[MAX_TARGET_LENGTH];
-	if (!Group_RandomizeFromClients(RandomizedType_Weapons, iTargetList, iTargetCount, sBadName))
-	{
-		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sGroupName, sBadName);
-		return Plugin_Handled;
-	}
-	
 	RandomizedWeapon eWeapon[MAX_WEAPONS];
 	int iCount = GetWeaponsFromCommand(iClient, eWeapon);
 	if (iCount == 0)
@@ -214,13 +193,6 @@ public Action Command_GiveWeapon(int iClient, int iArgs)
 	if (iTargetCount <= 0)
 	{
 		ReplyToCommand(iClient, "Could not find anyone to give weapons");
-		return Plugin_Handled;
-	}
-	
-	char sBadName[MAX_TARGET_LENGTH];
-	if (!Group_RandomizeFromClients(RandomizedType_Weapons, iTargetList, iTargetCount, sBadName))
-	{
-		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sGroupName, sBadName);
 		return Plugin_Handled;
 	}
 	
@@ -284,13 +256,6 @@ public Action Command_Rune(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 	
-	char sBadName[MAX_TARGET_LENGTH];
-	if (!Group_RandomizeFromClients(RandomizedType_Rune, iTargetList, iTargetCount, sBadName))
-	{
-		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sGroupName, sBadName);
-		return Plugin_Handled;
-	}
-	
 	Loadout_SetRune(iTargetList, iTargetCount, iRuneType);
 	
 	ReplyToCommand(iClient, "Set %s rune to %d", sGroupName, iRuneType);
@@ -319,13 +284,6 @@ public Action Command_Generate(int iClient, int iArgs)
 	if (iTargetCount <= 0)
 	{
 		ReplyToCommand(iClient, "Could not find anyone to regenerate class and weapons");
-		return Plugin_Handled;
-	}
-	
-	char sBadName[MAX_TARGET_LENGTH];
-	if (!Group_RandomizeFromClients(RandomizedType_None, iTargetList, iTargetCount, sBadName))	//RandomizedType_None as all types
-	{
-		ReplyToCommand(iClient, "Could not target '%s' when some, but not all is '%s'", sGroupName, sBadName);
 		return Plugin_Handled;
 	}
 	

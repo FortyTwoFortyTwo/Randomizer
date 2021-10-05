@@ -614,11 +614,11 @@ public Action Event_DropItem(int iClient, const char[] sCommand, int iArgs)
 	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
 	{
 		//Call itself but without rune cond, so item flag can be dropped
-		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), -1);
+		Loadout_ResetClientRune(iClient);
 		bSkip = true;
 		FakeClientCommand(iClient, "dropitem");
 		bSkip = false;
-		SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), Loadout_GetClientRune(iClient));
+		Loadout_ApplyClientRune(iClient);
 		return Plugin_Handled;
 	}
 	
