@@ -9,6 +9,13 @@ static char g_sRandomizedReroll[][] = {
 	"capture",
 };
 
+enum ConVarResult
+{
+	ConVarResult_NotFound = 0,
+	ConVarResult_Found = 1,
+	ConVarResult_Error = 2,
+}
+
 void ConVar_Init()
 {
 	CreateConVar("randomizer_version", PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION, "Randomizer plugin version", FCVAR_SPONLY|FCVAR_NOTIFY|FCVAR_DONTRECORD);
@@ -46,20 +53,28 @@ public void ConVar_EnableChanged(ConVar convar, const char[] sOldValue, const ch
 
 public void ConVar_RandomizeChanged(ConVar convar, const char[] sOldValue, const char[] sNewValue)
 {
-	RandomizedType nType = ConVar_GetType(convar);
-	Group_ClearType(nType);
+	static bool bSkip;
+	if (bSkip)
+		return;
 	
-	//TODO revert convar value if error
+	RandomizedType nType = ConVar_GetType(convar);
 	
 	if (!sNewValue[0])	//Empty string
+	{
+		Group_ClearType(nType);
 		return;
+	}
+	
+	RandomizedInfo eInfoList[MAX_GROUPS];
+	int iInfoCount;
 	
 	char sGroups[32][256];
 	int iGroupCount = ExplodeString(sNewValue, ",", sGroups, sizeof(sGroups), sizeof(sGroups[]));
 	for (int i = 0; i < iGroupCount; i++)
 	{
-		RandomizedInfo eGroup;
-		eGroup.nType = nType;
+		RandomizedInfo eInfo;
+		eInfo.Reset();
+		eInfo.nType = nType;
 		
 		TrimString(sGroups[i]);
 		char sParams[16][256];
@@ -72,91 +87,45 @@ public void ConVar_RandomizeChanged(ConVar convar, const char[] sOldValue, const
 			if (ExplodeString(sParams[j], "=", sParam, sizeof(sParam), sizeof(sParam[])) != 2)
 			{
 				PrintToServer("Invalid param format '%s' (must be '<name>=<value>')", sParams[j]);
+				bSkip = true;
+				convar.SetString(sOldValue);
+				bSkip = false;
 				return;
 			}
 			
-			if (StrEqual(sParam[0], "trigger", false))
-			{
-				strcopy(eGroup.sTrigger, sizeof(eGroup.sTrigger), sParam[1]);
-			}
-			else if (StrEqual(sParam[0], "group", false))
-			{
-				strcopy(eGroup.sGroup, sizeof(eGroup.sGroup), sParam[1]);
-			}
-			else if (StrEqual(sParam[0], "reroll", false))
-			{
-				if (!ConVar_AddReroll(sParam[1], eGroup.nReroll))
-				{
-					PrintToServer("Invalid 'reroll' value '%s'", sParam[1]);
-					return;
-				}
-			}
-			else if (StrEqual(sParam[0], "same", false))
-			{
-				if (!StringToIntEx(sParam[1], eGroup.bSame))
-				{
-					PrintToServer("Invalid 'same' value '%s' (must be integer)", sParam[1]);
-					return;
-				}
-			}
-			else if (StrEqual(sParam[0], "count", false))
-			{
-				if (!StringToIntEx(sParam[1], eGroup.iCount))
-				{
-					PrintToServer("Invalid 'count' value '%s' (must be integer)", sParam[1]);
-					return;
-				}
-			}
-			else if (StrEqual(sParam[0], "count-primary", false))
-			{
-				if (!StringToIntEx(sParam[1], eGroup.iCountSlot[WeaponSlot_Primary]))
-				{
-					PrintToServer("Invalid 'count-primary' value '%s' (must be integer)", sParam[1]);
-					return;
-				}
-			}
-			else if (StrEqual(sParam[0], "count-secondary", false))
-			{
-				if (!StringToIntEx(sParam[1], eGroup.iCountSlot[WeaponSlot_Secondary]))
-				{
-					PrintToServer("Invalid 'count-secondary' value '%s' (must be integer)", sParam[1]);
-					return;
-				}
-			}
-			else if (StrEqual(sParam[0], "count-melee", false))
-			{
-				if (!StringToIntEx(sParam[1], eGroup.iCountSlot[WeaponSlot_Melee]))
-				{
-					PrintToServer("Invalid 'count' value '%s' (must be integer)", sParam[1]);
-					return;
-				}
-			}
-			else if (StrEqual(sParam[0], "defaultclass", false))
-			{
-				if (!StringToIntEx(sParam[1], eGroup.bDefaultClass))
-				{
-					PrintToServer("Invalid 'defaultclass' value '%s' (must be integer)", sParam[1]);
-					return;
-				}
-			}
-			else if (StrEqual(sParam[0], "conflicts", false))
-			{
-				if (!StringToIntEx(sParam[1], eGroup.bConflicts))
-				{
-					PrintToServer("Invalid 'conflicts' value '%s' (must be integer)", sParam[1]);
-					return;
-				}
-			}
-			else
-			{
+			ConVarResult nResult;
+			
+			nResult += ConVar_AddString("trigger", sParam, eInfo.sTrigger, sizeof(eInfo.sTrigger));
+			nResult += ConVar_AddString("group", sParam, eInfo.sGroup, sizeof(eInfo.sGroup));
+			nResult += ConVar_AddReroll("reroll", sParam, eInfo.nReroll);
+			nResult += ConVar_AddInt("same", sParam, eInfo.bSame);
+			nResult += ConVar_AddInt("count", sParam, eInfo.iCount);
+			nResult += ConVar_AddInt("count-primary", sParam, eInfo.iCountSlot[WeaponSlot_Primary]);
+			nResult += ConVar_AddInt("count-secondary", sParam, eInfo.iCountSlot[WeaponSlot_Secondary]);
+			nResult += ConVar_AddInt("count-melee", sParam, eInfo.iCountSlot[WeaponSlot_Melee]);
+			nResult += ConVar_AddInt("defaultclass", sParam, eInfo.bDefaultClass);
+			nResult += ConVar_AddInt("conflicts", sParam, eInfo.bConflicts);
+				
+			if (nResult == ConVarResult_NotFound)
 				PrintToServer("Invalid param name '%s'", sParam[0]);
+			
+			if (nResult != ConVarResult_Found)
+			{
+				bSkip = true;
+				convar.SetString(sOldValue);
+				bSkip = false;
 				return;
 			}
-			
 		}
 		
-		Group_Add(eGroup);
+		eInfoList[iInfoCount] = eInfo;
+		iInfoCount++;
 	}
+	
+	Group_ClearType(nType);
+	
+	for (int i = 0; i < iInfoCount; i++)
+		Group_Add(eInfoList[i]);
 }
 
 RandomizedType ConVar_GetType(ConVar convar)
@@ -168,16 +137,55 @@ RandomizedType ConVar_GetType(ConVar convar)
 	return RandomizedType_None;
 }
 
-bool ConVar_AddReroll(const char[] sBuffer, RandomizedReroll &nReroll)
+ConVarResult ConVar_AddString(const char[] sName, const char[][] sParam, char[] sBuffer, int iLength)
 {
+	if (!StrEqual(sParam[0], sName, false))
+		return ConVarResult_NotFound;
+	
+	if (sBuffer[0])
+	{
+		PrintToServer("Name '%s' must not be used multiple times in one group", sName);
+		return ConVarResult_Error;
+	}
+	
+	strcopy(sBuffer, iLength, sParam[1]);
+	return ConVarResult_Found;
+}
+
+ConVarResult ConVar_AddReroll(const char[] sName, const char[][] sParam, RandomizedReroll &nReroll)
+{
+	if (!StrEqual(sParam[0], sName, false))
+		return ConVarResult_NotFound;
+	
 	for (int i = 0; i < sizeof(g_sRandomizedReroll); i++)
 	{
-		if (StrContains(g_sRandomizedReroll[i], sBuffer, false) == 0)
+		if (StrEqual(g_sRandomizedReroll[i], sParam[1], false))
 		{
+			if (nReroll & view_as<RandomizedReroll>(1<<i))
+			{
+				PrintToServer("Invalid '%s' value '%s' (must not be used multiple times in one group)", sName, sParam[1]);
+				return ConVarResult_Error;
+			}
+			
 			nReroll |= view_as<RandomizedReroll>(1<<i);
-			return true;
+			return ConVarResult_Found;
 		}
 	}
 	
-	return false;
+	PrintToServer("Invalid '%s' value '%s'", sName, sParam[1]);
+	return ConVarResult_Error;
+}
+
+ConVarResult ConVar_AddInt(const char[] sName, const char[][] sParam, int &iValue)
+{
+	if (!StrEqual(sParam[0], sName, false))
+		return ConVarResult_NotFound;
+	
+	if (!StringToIntEx(sParam[1], iValue))
+	{
+		PrintToServer("Invalid '%s' value '%s' (must be integer)", sName, sParam[1]);
+		return ConVarResult_Error;
+	}
+	
+	return ConVarResult_Found;
 }
