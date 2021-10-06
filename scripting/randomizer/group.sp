@@ -138,7 +138,7 @@ bool Group_CanRandomizePosForClients(int iPos, RandomizedType nType, const int[]
 	return true;
 }
 
-void Group_TriggerRandomizeClient(int iClient, RandomizedReroll nReroll)
+void Group_TriggerRandomizeClient(int iClient, RandomizedAction nAction)
 {
 	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
 	{
@@ -147,7 +147,7 @@ void Group_TriggerRandomizeClient(int iClient, RandomizedReroll nReroll)
 		if (eInfo.nType == RandomizedType_None)
 			continue;
 		
-		if (!(eInfo.nReroll & nReroll))
+		if (!(eInfo.nAction & nAction))
 			continue;
 		
 		if (!Group_IsClientInTrigger(eInfo, iClient))
@@ -169,7 +169,7 @@ void Group_TriggerRandomizeClient(int iClient, RandomizedReroll nReroll)
 	}
 }
 
-void Group_TriggerRandomizeAll(RandomizedReroll nReroll)
+void Group_TriggerRandomizeAll(RandomizedAction nAction)
 {
 	for (int i = 0; i < sizeof(g_eGroupInfo); i++)
 	{
@@ -178,7 +178,7 @@ void Group_TriggerRandomizeAll(RandomizedReroll nReroll)
 		if (eInfo.nType == RandomizedType_None)
 			continue;
 		
-		if (!(eInfo.nReroll & nReroll))
+		if (!(eInfo.nAction & nAction))
 			continue;
 		
 		if (eInfo.bSame)

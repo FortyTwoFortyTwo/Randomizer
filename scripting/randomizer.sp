@@ -151,17 +151,20 @@ enum RandomizedType	//What to randomize
 	RandomizedType_MAX,
 }
 
-enum RandomizedReroll	//When should loadout be rerolled
+enum RandomizedAction	//When should loadout be rerolled
 {
-	RandomizedReroll_None			= 0,
-	RandomizedReroll_Death			= (1<<0),	//Non-environment death
-	RandomizedReroll_Environment	= (1<<1),	//Environment death
-	RandomizedReroll_Suicide		= (1<<2),	//Suicide death
-	RandomizedReroll_Kill			= (1<<3),	//Kill
-	RandomizedReroll_Assist			= (1<<4),	//Assist
-	RandomizedReroll_Round			= (1<<5),	//Round start
-	RandomizedReroll_FullRound		= (1<<6),	//Full round start
-	RandomizedReroll_Capture		= (1<<7),	//Control point or flag capture
+	RandomizedAction_None			= 0,
+	RandomizedAction_Death			= (1<<0),	//Any death
+	RandomizedAction_DeathKill		= (1<<1),	//Death from player kill
+	RandomizedAction_DeathEnv		= (1<<2),	//Death from environment
+	RandomizedAction_DeathSuicide	= (1<<3),	//Death from suicide
+	RandomizedAction_Kill			= (1<<4),	//Kill
+	RandomizedAction_Assist			= (1<<5),	//Assist
+	RandomizedAction_Round			= (1<<6),	//Round start
+	RandomizedAction_RoundFull		= (1<<7),	//Full round start
+	RandomizedAction_CPCapture		= (1<<8),	//Control point capture
+	RandomizedAction_FlagCapture	= (1<<9),	//Flag capture
+	RandomizedAction_PassScore		= (1<<10),	//Pass Goal
 }
 
 enum struct RandomizedInfo
@@ -169,7 +172,7 @@ enum struct RandomizedInfo
 	RandomizedType nType;				//What type to randomize
 	char sTrigger[MAX_TARGET_LENGTH];	//Who can trigger the reroll
 	char sGroup[MAX_TARGET_LENGTH];		//Who would get affected for randomization
-	RandomizedReroll nReroll;			//When to reroll loadout
+	RandomizedAction nAction;			//When to reroll loadout
 	bool bSame;							//Should everyone in group get same loadout
 	int iCount;							//Amount to reroll (weapons and cosmetics)
 	int iCountSlot[WeaponSlot_Melee+1];	//Amount to reroll for specific slot (weapons)
@@ -181,7 +184,7 @@ enum struct RandomizedInfo
 		this.nType = RandomizedType_None;
 		this.sGroup = "";
 		this.sTrigger = "";
-		this.nReroll = RandomizedReroll_None;
+		this.nAction = RandomizedAction_None;
 		this.bSame = false;
 		this.iCount = 0;
 		this.iCountSlot = { 0, 0, 0 };

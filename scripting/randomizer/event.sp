@@ -1,10 +1,13 @@
 void Event_Init()
 {
 	HookEvent("teamplay_round_start", Event_RoundStart);
+	HookEvent("teamplay_point_captured", Event_PointCaptured);
+	HookEvent("teamplay_flag_event", Event_FlagCaptured);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
 	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("player_hurt", Event_PlayerHurt);
 	HookEvent("player_death", Event_PlayerDeath);
+	HookEvent("pass_score", Event_PassScore);
 }
 
 public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
@@ -12,10 +15,33 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 	if (!g_bEnabled)
 		return;
 	
-	Group_TriggerRandomizeAll(RandomizedReroll_Round);
+	Group_TriggerRandomizeAll(RandomizedAction_Round);
 	
 	if (event.GetBool("full_reset"))
-		Group_TriggerRandomizeAll(RandomizedReroll_FullRound);
+		Group_TriggerRandomizeAll(RandomizedAction_RoundFull);
+}
+
+public Action Event_PointCaptured(Event hEvent, const char[] sName, bool bDontBroadcast)
+{
+	char[] sCappers = new char[MaxClients];
+	
+	hEvent.GetString("cappers", sCappers, MaxClients+1);
+	
+	for (int i = 0; i < MaxClients; i++)
+		if (sCappers[i])
+			Group_TriggerRandomizeClient(view_as<int>(sCappers[i]), RandomizedAction_CPCapture);
+}
+
+public Action Event_FlagCaptured(Event hEvent, const char[] sName, bool bDontBroadcast)
+{
+	if (hEvent.GetInt("eventtype") != 2)	//Check if it actually capture and not other events
+		return;
+	
+	int iClient = hEvent.GetInt("player");
+	if (iClient <= 0 || iClient > MaxClients)
+		return;
+	
+	Group_TriggerRandomizeClient(iClient, RandomizedAction_FlagCapture);
 }
 
 public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
@@ -107,6 +133,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
 	int iAssister = GetClientOfUserId(event.GetInt("assister"));
 	bool bDeadRinger = (event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER) != 0;
+	int iCustomKill = event.GetInt("customkill");
 	
 	if (bDeadRinger)
 	{
@@ -114,16 +141,27 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	}
 	else
 	{
+		Group_TriggerRandomizeClient(iVictim, RandomizedAction_Death);
+		
 		if (0 < iAttacker <= MaxClients && iVictim != iAttacker)
-			Group_TriggerRandomizeClient(iVictim, RandomizedReroll_Death);
-		else if (iVictim == iAttacker)
-			Group_TriggerRandomizeClient(iVictim, RandomizedReroll_Suicide);
+			Group_TriggerRandomizeClient(iVictim, RandomizedAction_DeathKill);
+		else if (iCustomKill == TF_CUSTOM_SUICIDE)
+			Group_TriggerRandomizeClient(iVictim, RandomizedAction_DeathSuicide);
 		else
-			Group_TriggerRandomizeClient(iVictim, RandomizedReroll_Environment);
+			Group_TriggerRandomizeClient(iVictim, RandomizedAction_DeathEnv);
 	}
 	
 	if (0 < iAttacker <= MaxClients && iVictim != iAttacker)
-		Group_TriggerRandomizeClient(iAttacker, RandomizedReroll_Kill);
+		Group_TriggerRandomizeClient(iAttacker, RandomizedAction_Kill);
 	if (0 < iAssister <= MaxClients && iVictim != iAssister)
-		Group_TriggerRandomizeClient(iAssister, RandomizedReroll_Assist);
+		Group_TriggerRandomizeClient(iAssister, RandomizedAction_Assist);
+}
+
+public Action Event_PassScore(Event event, const char[] sName, bool bDontBroadcast)
+{
+	if (!g_bEnabled)
+		return;
+	
+	int iClient = event.GetInt("scorer");
+	Group_TriggerRandomizeClient(iClient, RandomizedAction_PassScore);
 }

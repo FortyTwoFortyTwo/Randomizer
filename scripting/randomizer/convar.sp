@@ -1,12 +1,15 @@
-static char g_sRandomizedReroll[][] = {
+static char g_sRandomizedAction[][] = {
 	"death",
-	"environment",
-	"suicide",
+	"death-kill",
+	"death-env",
+	"death-suicide",
 	"kill",
 	"assist",
 	"round",
-	"fullround",
-	"capture",
+	"round-full",
+	"cp-capture",
+	"flag-capture",
+	"pass-score",
 };
 
 enum ConVarResult
@@ -26,9 +29,9 @@ void ConVar_Init()
 	g_cvDroppedWeapons = CreateConVar("randomizer_droppedweapons", "0", "Allow dropped weapons?", _, true, 0.0, true, 1.0);
 	g_cvHuds = CreateConVar("randomizer_huds", "1", "Hud to use to display weapons. 0 = none, 1 = hud text, 2 = menu.", _, true, 0.0, true, float(HudMode_MAX - 1));
 	
-	ConVar_AddType(RandomizedType_Class, "randomizer_class", "trigger=@all group=@me reroll=death reroll=round", "How should class be randomized?");
-	ConVar_AddType(RandomizedType_Weapons, "randomizer_weapons", "trigger=@all group=@me reroll=death reroll=round count-primary=1 count-secondary=1 count-melee=1", "How should weapons be randomized?");
-	ConVar_AddType(RandomizedType_Cosmetics, "randomizer_cosmetics", "trigger=@all group=@me reroll=death reroll=round count=3 conflicts=1", "How should cosmetics be randomized?");
+	ConVar_AddType(RandomizedType_Class, "randomizer_class", "trigger=@all group=@me action=death-kill action=round", "How should class be randomized?");
+	ConVar_AddType(RandomizedType_Weapons, "randomizer_weapons", "trigger=@all group=@me action=death-kill action=round count-primary=1 count-secondary=1 count-melee=1", "How should weapons be randomized?");
+	ConVar_AddType(RandomizedType_Cosmetics, "randomizer_cosmetics", "trigger=@all group=@me action=death-kill action=round count=3 conflicts=1", "How should cosmetics be randomized?");
 	ConVar_AddType(RandomizedType_Rune, "randomizer_rune", "", "How should rune be randomized?");
 	ConVar_AddType(RandomizedType_Spells, "randomizer_spells", "", "How should spells be randomized?");
 }
@@ -97,7 +100,7 @@ public void ConVar_RandomizeChanged(ConVar convar, const char[] sOldValue, const
 			
 			nResult += ConVar_AddString("trigger", sParam, eInfo.sTrigger, sizeof(eInfo.sTrigger));
 			nResult += ConVar_AddString("group", sParam, eInfo.sGroup, sizeof(eInfo.sGroup));
-			nResult += ConVar_AddReroll("reroll", sParam, eInfo.nReroll);
+			nResult += ConVar_AddAction("action", sParam, eInfo.nAction);
 			nResult += ConVar_AddInt("same", sParam, eInfo.bSame);
 			nResult += ConVar_AddInt("count", sParam, eInfo.iCount);
 			nResult += ConVar_AddInt("count-primary", sParam, eInfo.iCountSlot[WeaponSlot_Primary]);
@@ -152,22 +155,22 @@ ConVarResult ConVar_AddString(const char[] sName, const char[][] sParam, char[] 
 	return ConVarResult_Found;
 }
 
-ConVarResult ConVar_AddReroll(const char[] sName, const char[][] sParam, RandomizedReroll &nReroll)
+ConVarResult ConVar_AddAction(const char[] sName, const char[][] sParam, RandomizedAction &nAction)
 {
 	if (!StrEqual(sParam[0], sName, false))
 		return ConVarResult_NotFound;
 	
-	for (int i = 0; i < sizeof(g_sRandomizedReroll); i++)
+	for (int i = 0; i < sizeof(g_sRandomizedAction); i++)
 	{
-		if (StrEqual(g_sRandomizedReroll[i], sParam[1], false))
+		if (StrEqual(g_sRandomizedAction[i], sParam[1], false))
 		{
-			if (nReroll & view_as<RandomizedReroll>(1<<i))
+			if (nAction & view_as<RandomizedAction>(1<<i))
 			{
 				PrintToServer("Invalid '%s' value '%s' (must not be used multiple times in one group)", sName, sParam[1]);
 				return ConVarResult_Error;
 			}
 			
-			nReroll |= view_as<RandomizedReroll>(1<<i);
+			nAction |= view_as<RandomizedAction>(1<<i);
 			return ConVarResult_Found;
 		}
 	}
