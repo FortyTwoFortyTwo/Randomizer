@@ -209,7 +209,7 @@ void Loadout_ApplyClientLoadout(int iClient, RandomizedType nType)
 {
 	switch (nType)
 	{
-		case RandomizedType_Class: TF2_SetPlayerClass(iClient, g_eLoadoutClient[iClient].nClass);
+		case RandomizedType_Class: Loadout_ApplyClientClass(iClient);
 		case RandomizedType_Weapons: Loadout_ApplyClientWeapons(iClient);
 		case RandomizedType_Cosmetics: Loadout_ApplyClientCosmetics(iClient, g_iLoadoutSlotCosmetics, sizeof(g_iLoadoutSlotCosmetics));
 		case RandomizedType_Rune: Loadout_ApplyClientRune(iClient);
@@ -360,6 +360,18 @@ void Loadout_SetClass(int[] iClients, int iCount, TFClassType nClass)
 TFClassType Loadout_GetClientClass(int iClient)
 {
 	return g_eLoadoutClient[iClient].nClass;
+}
+
+void Loadout_ApplyClientClass(int iClient)
+{
+	int iOldMaxHealth = SDKCall_GetMaxHealth(iClient);
+	int iOldHealth = GetEntProp(iClient, Prop_Send, "m_iHealth");
+	
+	TF2_SetPlayerClass(iClient, g_eLoadoutClient[iClient].nClass);
+	
+	int iMaxHealth = SDKCall_GetMaxHealth(iClient);
+	int iHealth = RoundToCeil(float(iMaxHealth) / float(iOldMaxHealth) * float(iOldHealth));
+	SetEntProp(iClient, Prop_Send, "m_iHealth", iHealth);
 }
 
 // Weapons

@@ -368,6 +368,11 @@
 				"linux"		"67"
 				"windows"	"66"
 			}
+			"CBaseEntity::GetMaxHealth"
+			{
+				"linux"		"118"
+				"windows"	"117"
+			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"linux"		"287"

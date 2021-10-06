@@ -425,6 +425,10 @@ public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
 
 public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
 {
+	//Give rune so health and ammo can be calculated correctly, but TF2 will remove it after validate
+	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
+		Loadout_ApplyClientRune(iClient);
+	
 	g_iWeaponGetLoadoutItem = 0;
 }
 

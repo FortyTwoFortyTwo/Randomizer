@@ -87,7 +87,7 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
 	
-	//Between post_inventory_application and player_spawn all conds were removed, so giving cond has to be done here
+	//Between post_inventory_application and player_spawn all conds were removed, so have to refresh here
 	Loadout_RefreshClient(iClient);
 }
 
