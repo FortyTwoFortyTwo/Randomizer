@@ -26,7 +26,7 @@ static Handle g_hDHookFrameUpdatePostEntityThink;
 
 static bool g_bSkipGetMaxAmmo;
 static int g_iClientGetChargeEffectBeingProvided;
-static int g_iWeaponGetLoadoutItem = INVALID_ENT_REFERENCE;
+static int g_iWeaponGetLoadoutItem = -1;
 static bool g_bManageBuilderWeapons;
 static ArrayList g_aValidateWearables;
 static bool g_bValidateWearablesDisguised;
@@ -447,6 +447,9 @@ public MRESReturn DHook_ValidateWearablesPre(int iClient, Handle hParams)
 		if (GetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity") == iClient)
 		{
 			int iIndex = GetEntProp(iWearable, Prop_Send, "m_iItemDefinitionIndex");
+			if (iIndex < 0 || iIndex >= 65535)	//Probably extra wearable for weapon
+				continue;
+			
 			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 			{
 				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
@@ -475,8 +478,7 @@ public MRESReturn DHook_ValidateWearablesPre(int iClient, Handle hParams)
 	
 	if (g_aValidateWearables)
 	{
-		SetClientClass(iClient, TFClass_Spy);
-		
+		//There already memory patch to skip spy check
 		if (!TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
 		{
 			TF2_AddConditionFake(iClient, TFCond_Disguised);
@@ -487,21 +489,19 @@ public MRESReturn DHook_ValidateWearablesPre(int iClient, Handle hParams)
 
 public MRESReturn DHook_ValidateWearablesPost(int iClient, Handle hParams)
 {
-	if (!g_aValidateWearables)
-		return;
-	
-	int iLength = g_aValidateWearables.Length;
-	for (int i = 0; i < iLength; i++)
-		SetEntProp(g_aValidateWearables.Get(i), Prop_Send, "m_bDisguiseWearable", false);
-	
-	delete g_aValidateWearables;
-	
-	RevertClientClass(iClient);
-	
-	if (g_bValidateWearablesDisguised)
-		TF2_RemoveConditionFake(iClient, TFCond_Disguised);
-	
-	g_bValidateWearablesDisguised = false;
+	if (g_aValidateWearables)
+	{
+		int iLength = g_aValidateWearables.Length;
+		for (int i = 0; i < iLength; i++)
+			SetEntProp(g_aValidateWearables.Get(i), Prop_Send, "m_bDisguiseWearable", false);
+		
+		delete g_aValidateWearables;
+		
+		if (g_bValidateWearablesDisguised)
+			TF2_RemoveConditionFake(iClient, TFCond_Disguised);
+		
+		g_bValidateWearablesDisguised = false;
+	}
 }
 
 public MRESReturn DHook_ManageBuilderWeaponsPre(int iClient, Handle hParams)
@@ -607,19 +607,37 @@ public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hPa
 
 public MRESReturn DHook_GetLoadoutItemPre(int iClient, Handle hReturn, Handle hParams)
 {
-	if (g_iWeaponGetLoadoutItem == -1 || !Group_IsClientRandomized(iClient, RandomizedType_Weapons))	//not inside ValidateWeapons
+	if (g_iWeaponGetLoadoutItem == -1)	//Not inside ValidateWeapons
 		return MRES_Ignored;
 	
-	int iWeapon = -1;
+	int iWeapon = INVALID_ENT_REFERENCE;
 	
-	//We want to return item the same as whatever client is equipped, so ValidateWeapons dont need to delete any weapons
 	do
 	{
 		iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", g_iWeaponGetLoadoutItem);
 		g_iWeaponGetLoadoutItem++;
 	}
-	while (iWeapon == -1);
+	while (iWeapon == INVALID_ENT_REFERENCE);
 	
+	if (Group_IsClientRandomized(iClient, RandomizedType_Spells))
+	{
+		if (IsClassname(iWeapon, "tf_weapon_spellbook") || (FindConVar("tf_grapplinghook_enable").BoolValue && IsClassname(iWeapon, "tf_weapon_grapplinghook")))
+		{
+			//Skip CanEquipIndex and allow keep action weapons without deleting it
+			DHookSetReturn(hReturn, GetEntityAddress(iWeapon) + view_as<Address>(GetEntSendPropOffs(iWeapon, "m_Item", true)));
+			return MRES_Supercede;
+		}
+	}
+	
+	if (CanEquipIndex(iClient, GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex")))
+	{
+		//Revert class back to what it was
+		RevertClientClass(iClient);
+		DHookSetParam(hParams, 1, TF2_GetPlayerClass(iClient));
+		return MRES_ChangedHandled;
+	}
+	
+	//We want to return item the same as whatever client is equipped, so ValidateWeapons dont need to delete any weapons
 	//There also class type and weapon classname checks if they should have correct classname by class type
 	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
 	
@@ -1108,11 +1126,11 @@ public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hPa
 		return MRES_Supercede;
 	}
 	
-	char sClassname[256];
-	DHookGetParamString(hParams, 1, sClassname, sizeof(sClassname));
-	int iIndex = DHookGetParamObjectPtrVar(hParams, 3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
+	if (g_bAllowGiveNamedItem)
+		return MRES_Ignored;
 	
-	if (CanKeepWeapon(iClient, sClassname, iIndex))
+	int iIndex = DHookGetParamObjectPtrVar(hParams, 3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
+	if (CanEquipIndex(iClient, iIndex))
 		return MRES_Ignored;
 	
 	DHookSetReturn(hReturn, 0);

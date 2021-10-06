@@ -112,6 +112,18 @@
 					"offset"	"2816"
 				}
 			}
+			"Patch_10"	//Spy class check for disguise wearables
+			{
+				"signature" "CTFPlayer::ValidateWearables"
+				"linux"
+				{
+					"offset"	"68"
+				}
+				"windows"
+				{
+					"offset"	"62"
+				}
+			}
 		}
 		"Keys"
 		{
@@ -158,6 +170,11 @@
 			"Patch_9"
 			{
 				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
+				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
+			}
+			"Patch_10"
+			{
+				"linux"		"\x90\x90"	// Replace 'jnz short' to NOP (skip)
 				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
 			}
 		}

@@ -661,45 +661,6 @@ stock bool ItemIsAllowed(int iIndex)
 	return true;
 }
 
-stock bool CanKeepWeapon(int iClient, const char[] sClassname, int iIndex)
-{
-	if (g_bAllowGiveNamedItem)
-		return true;
-	
-	//Allow grappling hook and passtime gun
-	if (StrEqual(sClassname, "tf_weapon_grapplinghook") || StrEqual(sClassname, "tf_weapon_passtime_gun"))
-		return true;
-	
-	int iSlot = -1;
-	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-	{
-		iSlot = TF2Econ_GetItemLoadoutSlot(iIndex, view_as<TFClassType>(iClass));
-		if (iSlot != -1)
-			break;
-	}
-	
-	//Allow action items
-	if (iSlot == LoadoutSlot_Action)
-		return true;
-	
-	if (Group_IsClientRandomized(iClient, RandomizedType_Weapons))
-	{
-		//Dont allow weapons
-		if (LoadoutSlot_Primary <= iSlot <= LoadoutSlot_PDA2)
-			return false;
-	}
-	
-	if (Group_IsClientRandomized(iClient, RandomizedType_Cosmetics))
-	{
-		//Dont allow cosmetics
-		if (iSlot == LoadoutSlot_Misc)
-			return false;
-	}
-	
-	//Should be allowed
-	return true;
-}
-
 stock int GetMaxWeapons()
 {
 	static int iMaxWeapons;

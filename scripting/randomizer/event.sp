@@ -53,23 +53,8 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
 	
-	//Because of blocking ValidateWeapons and ValidateWearables, make sure action weapon is correct
-	Address pActionItem = SDKCall_GetLoadoutItem(iClient, TF2_GetPlayerClass(iClient), LoadoutSlot_Action);
-	bool bFound;
-	
-	int iWeapon, iPos;
-	while (TF2_GetItemFromLoadoutSlot(iClient, LoadoutSlot_Action, iWeapon, iPos))
-	{
-		if (!TF2_IsValidEconItemView(pActionItem) || GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex") != LoadFromAddress(pActionItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16))
-			TF2_RemoveItem(iClient, iWeapon);
-		else
-			bFound = true;
-	}
-	
-	if (!bFound && TF2_IsValidEconItemView(pActionItem))
-		TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pActionItem));
-	
 	//Refill charge meters
+	int iWeapon, iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
 		float flVal;

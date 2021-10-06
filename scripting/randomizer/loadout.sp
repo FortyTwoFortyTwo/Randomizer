@@ -213,7 +213,7 @@ void Loadout_ApplyClientLoadout(int iClient, RandomizedType nType)
 		case RandomizedType_Weapons: Loadout_ApplyClientWeapons(iClient);
 		case RandomizedType_Cosmetics: Loadout_ApplyClientCosmetics(iClient, g_iLoadoutSlotCosmetics, sizeof(g_iLoadoutSlotCosmetics));
 		case RandomizedType_Rune: Loadout_ApplyClientRune(iClient);
-		case RandomizedType_Spells: Loadout_RefreshClientSpells(iClient);
+		case RandomizedType_Spells: Loadout_ApplyClientSpells(iClient);
 	}
 }
 
@@ -498,11 +498,8 @@ void Loadout_ApplyClientWeapons(int iClient)
 	int iWeapon, iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
-		char sClassname[256];
-		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
 		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-		
-		if (CanKeepWeapon(iClient, sClassname, iIndex))
+		if (CanEquipIndex(iClient, iIndex))
 			continue;
 		
 		if (!g_eLoadoutClient[iClient].HasWeapon(iWeapon, nClass))
@@ -846,28 +843,65 @@ void Loadout_RandomizeSpells(RandomizedLoadout eLoadout)
 	eLoadout.iSpellIndex = -1;
 }
 
-void Loadout_RefreshClientSpells(int iClient)
+void Loadout_ApplyClientSpells(int iClient)
 {
+	//If randomized spells is enabled and player dont have spellbook, give em one
+	bool bEquip;
+	int iSpellbook, iPos;
+	if (!TF2_GetItemFromClassname(iClient, "tf_weapon_spellbook", iSpellbook, iPos))
+	{
+		iSpellbook = TF2_CreateWeapon(iClient, 1132, WeaponSlot_Building);
+		bEquip = true;
+	}
+	
+	//Spellbook should appear before other action items in m_hMyWeapons so HUD can appear
+	int iMaxWeapons = GetMaxWeapons();
+	int iActionItem = INVALID_ENT_REFERENCE;
+	for (iPos = 0; iPos < iMaxWeapons; iPos++)
+	{
+		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iPos);
+		if (iWeapon == INVALID_ENT_REFERENCE)
+		{
+			if (iActionItem != INVALID_ENT_REFERENCE)
+				SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iActionItem, iPos);
+			
+			break;
+		}
+		
+		if (iWeapon == iSpellbook && iActionItem == INVALID_ENT_REFERENCE)	//Spellbook already first
+			break;
+		
+		int iLoadoutSlot = TF2Econ_GetItemLoadoutSlot(GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"), TF2_GetPlayerClass(iClient));
+		if (iLoadoutSlot == LoadoutSlot_Action)
+		{
+			iActionItem = iWeapon;
+			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", INVALID_ENT_REFERENCE, iPos);
+		}
+	}
+	
+	if (bEquip)
+		TF2_EquipWeapon(iClient, iSpellbook);
+	
+	int iGrapplingHook;
+	if (FindConVar("tf_grapplinghook_enable").BoolValue && !TF2_GetItemFromClassname(iClient, "tf_weapon_grapplinghook", iGrapplingHook, iPos))
+		TF2_EquipWeapon(iClient, TF2_CreateWeapon(iClient, 1152, WeaponSlot_Building));	//Auto-equip grappling hook if forced to equip spell
+	
 	if (!g_eLoadoutClient[iClient].bRerollSpell)
 		return;
 	
-	int iSpellBook, iPos;
-	if (!TF2_GetItemFromClassname(iClient, "tf_weapon_spellbook", iSpellBook, iPos))
-		return;
-	
-	SDKCall_RollNewSpell(iSpellBook, 0, true);
+	SDKCall_RollNewSpell(iSpellbook, 0, true);
 	g_eLoadoutClient[iClient].bRerollSpell = false;
 	
 	int iOffset = FindSendPropInfo("CTFSpellBook", "m_flTimeNextSpell") - 8;
 	if (g_eLoadoutClient[iClient].iSpellIndex != -1)
 	{
 		//Force set next spell index
-		SetEntData(iSpellBook, iOffset, g_eLoadoutClient[iClient].iSpellIndex);
+		SetEntData(iSpellbook, iOffset, g_eLoadoutClient[iClient].iSpellIndex);
 	}
 	else
 	{
 		//Dont have force spell index, use whatever rolled value as so, for all groups aswell
-		g_eLoadoutClient[iClient].iSpellIndex = GetEntData(iSpellBook, iOffset);
+		g_eLoadoutClient[iClient].iSpellIndex = GetEntData(iSpellbook, iOffset);
 		
 		iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Spells);
 		if (iPos != -1)

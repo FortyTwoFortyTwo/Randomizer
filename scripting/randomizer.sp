@@ -613,6 +613,39 @@ void LoadRuneCount()
 	while (!StrEqual(sModel, sDefaultModel));
 }
 
+bool CanEquipIndex(int iClient, int iIndex)
+{
+	int iSlot = -1;
+	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+	{
+		iSlot = TF2Econ_GetItemLoadoutSlot(iIndex, view_as<TFClassType>(iClass));
+		if (iSlot != -1)
+			break;
+	}
+	
+	//Allow utility (passtime gun)
+	if (iSlot == LoadoutSlot_Utility)
+		return true;
+	
+	if (LoadoutSlot_Primary <= iSlot <= LoadoutSlot_PDA2 && Group_IsClientRandomized(iClient, RandomizedType_Weapons))	//Dont allow weapons
+		return false;
+	
+	if (iSlot == LoadoutSlot_Misc && Group_IsClientRandomized(iClient, RandomizedType_Cosmetics))	//Dont allow cosmetics
+		return false;
+	
+	if (iSlot == LoadoutSlot_Action && Group_IsClientRandomized(iClient, RandomizedType_Spells))
+	{
+		//Don't allow wearable action items, so auto-equip spellbook HUD can appear properly client-side
+		char sClassname[256];
+		TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
+		if (StrContains(sClassname, "tf_weapon") != 0)
+			return false;
+	}
+	
+	//Should be allowed
+	return true;
+}
+
 public Action Event_EurekaTeleport(int iClient, const char[] sCommand, int iArgs)
 {
 	g_iClientEurekaTeleporting = iClient;
@@ -681,10 +714,10 @@ void RevertClientClass(int iClient)
 
 public Action TF2Items_OnGiveNamedItem(int iClient, char[] sClassname, int iIndex, Handle &hItem)
 {
-	if (!g_bEnabled)
+	if (!g_bEnabled || g_bAllowGiveNamedItem)
 		return Plugin_Continue;
 	
-	if (CanKeepWeapon(iClient, sClassname, iIndex))
+	if (CanEquipIndex(iClient, iIndex))
 		return Plugin_Continue;
 	
 	return Plugin_Handled;
