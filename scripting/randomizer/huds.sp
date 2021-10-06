@@ -426,7 +426,7 @@ void Huds_ClientDisplayText(int iClient)
 			strcopy(sDisplay, sizeof(sDisplay), sBuffer);
 	}
 	
-	SetHudTextParams(0.2, 1.0, 0.5, 255, 255, 255, 255);
+	SetHudTextParams(0.28, 1.0, 0.5, 255, 255, 255, 255);
 	ShowHudText(iClient, 0, sDisplay);
 }
 
