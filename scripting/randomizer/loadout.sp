@@ -621,19 +621,14 @@ void Loadout_SetWeapon(int[] iClients, int iCount, RandomizedWeapon eList[MAX_WE
 		if (Group_CanRandomizePosForClients(i, RandomizedType_Weapons, iClients, iCount))
 		{
 			g_eLoadoutGroup[i].ResetWeapon();
-			
-			for (int j = 0; j < iCount; j++)
-				Loadout_AddWeapon(g_eLoadoutGroup[i], eList, iListCount);
+			Loadout_AddWeapon(g_eLoadoutGroup[i], eList, iListCount);
 		}
 	}
 	
 	for (int i = 0; i < iCount; i++)
 	{
 		g_eLoadoutClient[iClients[i]].ResetWeapon();
-		
-		for (int j = 0; j < iCount; j++)
-			Loadout_AddWeapon(g_eLoadoutClient[iClients[i]], eList, iListCount);
-		
+		Loadout_AddWeapon(g_eLoadoutClient[iClients[i]], eList, iListCount);
 		Loadout_RefreshClient(iClients[i]);
 	}
 }
@@ -682,17 +677,12 @@ void Loadout_GiveWeapon(int[] iClients, int iCount, RandomizedWeapon eList[MAX_W
 	for (int i = 0; i < sizeof(g_eLoadoutGroup); i++)
 	{
 		if (Group_CanRandomizePosForClients(i, RandomizedType_Weapons, iClients, iCount))
-		{
-			for (int j = 0; j < iCount; j++)
-				Loadout_AddWeapon(g_eLoadoutGroup[i], eList, iListCount);
-		}
+			Loadout_AddWeapon(g_eLoadoutGroup[i], eList, iListCount);
 	}
 	
 	for (int i = 0; i < iCount; i++)
 	{
-		for (int j = 0; j < iCount; j++)
-			Loadout_AddWeapon(g_eLoadoutClient[iClients[i]], eList, iListCount);
-		
+		Loadout_AddWeapon(g_eLoadoutClient[iClients[i]], eList, iListCount);
 		Loadout_RefreshClient(iClients[i]);
 	}
 }

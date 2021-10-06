@@ -320,6 +320,7 @@ int GetWeaponsFromCommand(int iClient, RandomizedWeapon eWeapon[MAX_WEAPONS])
 	for (int i = 0; i < iCount; i++)
 	{
 		TrimString(sWeapons[i]);
+		eWeapon[i].Reset();
 		eWeapon[i].iSlot = RemoveSlotFromCommand(sWeapons[i], sizeof(sWeapons[]));
 		
 		if (!StringToIntEx(sWeapons[i], eWeapon[i].iIndex))
