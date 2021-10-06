@@ -372,6 +372,9 @@ void Loadout_ApplyClientClass(int iClient)
 	int iMaxHealth = SDKCall_GetMaxHealth(iClient);
 	int iHealth = RoundToCeil(float(iMaxHealth) / float(iOldMaxHealth) * float(iOldHealth));
 	SetEntProp(iClient, Prop_Send, "m_iHealth", iHealth);
+	
+	if (g_eLoadoutClient[iClient].nClass != TFClass_Spy && TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
+		TF2_RemoveCondition(iClient, TFCond_Disguised);
 }
 
 // Weapons

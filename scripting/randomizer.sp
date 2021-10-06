@@ -512,8 +512,16 @@ public void TF2_OnConditionAdded(int iClient, TFCond nCond)
 	
 	if (nCond == TFCond_RuneKnockout)	//Just giving knockout rune isnt enough, TF2 gave both knockout and melee only cond
 		TF2_AddCondition(iClient, TFCond_RestrictToMelee, TFCondDuration_Infinite);
+}
+
+public void TF2_OnConditionRemoved(int iClient, TFCond nCond)
+{
+	if (!g_bEnabled)
+		return;
 	
-	//TODO remove melee cond when knockout cond removed aswell
+	//TODO dont remove cond if under steak effect, steak itself is already buggy that needs to be fixed
+	if (nCond == TFCond_RuneKnockout)
+		TF2_RemoveCondition(iClient, TFCond_RestrictToMelee);
 }
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)
