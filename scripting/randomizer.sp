@@ -487,6 +487,9 @@ public void OnClientDisconnect(int iClient)
 	if (!g_bEnabled)
 		return;
 	
+	//Dont drop rune from disconnect
+	Loadout_ResetClientRune(iClient);
+	
 	g_hTimerClientHud[iClient] = null;
 	DHook_UnhookGiveNamedItem(iClient);
 	DHook_UnhookClient(iClient);

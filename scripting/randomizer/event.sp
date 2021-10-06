@@ -53,8 +53,6 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
 	
-	g_bClientRefresh[iClient] = false;	//Client respawned, dont need force refresh demand
-	
 	//Because of blocking ValidateWeapons and ValidateWearables, make sure action weapon is correct
 	Address pActionItem = SDKCall_GetLoadoutItem(iClient, TF2_GetPlayerClass(iClient), LoadoutSlot_Action);
 	bool bFound;
@@ -78,9 +76,6 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 		if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_resupply_denied", flVal) || flVal == 0.0)
 			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
 	}
-	
-	if (Group_IsClientRandomized(iClient, RandomizedType_Weapons))
-		Loadout_ApplyClientWeapons(iClient);
 }
 
 public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadcast)
@@ -93,8 +88,7 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 		return;
 	
 	//Between post_inventory_application and player_spawn all conds were removed, so giving cond has to be done here
-	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
-		Loadout_ApplyClientRune(iClient);
+	Loadout_RefreshClient(iClient);
 }
 
 public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcast)
