@@ -60,7 +60,6 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::IsPlayerClass", DHook_IsPlayerClassPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetLoadoutItem", DHook_GetLoadoutItemPre, _);
-	DHook_CreateDetour(hGameData, "CTFPlayer::GetEntityForLoadoutSlot", DHook_GetEntityForLoadoutSlotPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxHealthForBuffing", DHook_GetMaxHealthForBuffingPre, DHook_GetMaxHealthForBuffingPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::TeamFortress_CalculateMaxSpeed", DHook_CalculateMaxSpeedPre, DHook_CalculateMaxSpeedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::TakeHealth", DHook_TakeHealthPre, _);
@@ -609,27 +608,6 @@ public MRESReturn DHook_GetLoadoutItemPre(int iClient, Handle hReturn, Handle hP
 	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
 	
 	DHookSetReturn(hReturn, GetEntityAddress(iWeapon) + view_as<Address>(GetEntSendPropOffs(iWeapon, "m_Item", true)));
-	return MRES_Supercede;
-}
-
-public MRESReturn DHook_GetEntityForLoadoutSlotPre(int iClient, Handle hReturn, Handle hParams)
-{
-	if (iClient <= 0 || iClient > MaxClients || !IsClientInGame(iClient))
-		return MRES_Ignored;
-	
-	int iSlot = DHookGetParam(hParams, 1);
-	if (iSlot < 0 || iSlot > WeaponSlot_Building)
-		return MRES_Ignored;
-	
-	//This function sucks as it have default class check, lets use GetPlayerWeaponSlot instead
-	int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
-	if (iWeapon > MaxClients)
-	{
-		DHookSetReturn(hReturn, iWeapon);
-		return MRES_Supercede;
-	}
-	
-	DHookSetReturn(hReturn, 0);
 	return MRES_Supercede;
 }
 

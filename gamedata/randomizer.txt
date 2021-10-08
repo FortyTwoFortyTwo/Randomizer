@@ -228,12 +228,6 @@
 				"linux"		"@_ZN9CTFPlayer14GetLoadoutItemEiib"
 				"windows"	"\x55\x8B\xEC\x51\x53\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x57\x89\x75\xFC"
 			}
-			"CTFPlayer::GetEntityForLoadoutSlot"
-			{
-				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer23GetEntityForLoadoutSlotEib"
-				"windows"	"\x55\x8B\xEC\x51\x53\x8B\x5D\x08\x57\x8B\xF9\x89\x7D\xFC\x83\xFB\x07"
-			}
 			"CTFPlayer::GetMaxHealthForBuffing"
 			{
 				"library"	"server"
@@ -575,24 +569,6 @@
 						"type"	"int"
 					}
 					"bReportWhitelistFails"
-					{
-						"type"	"bool"
-					}
-				}
-			}
-			"CTFPlayer::GetEntityForLoadoutSlot"
-			{
-				"signature"	"CTFPlayer::GetEntityForLoadoutSlot"
-				"callconv"	"thiscall"
-				"return"	"cbaseentity"
-				"this"		"entity"
-				"arguments"
-				{
-					"iSlot"
-					{
-						"type"	"int"
-					}
-					"bool"
 					{
 						"type"	"bool"
 					}
