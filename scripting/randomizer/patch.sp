@@ -25,25 +25,28 @@ enum struct Patch
 	
 	bool Load(GameData hGameData, int iNumber)
 	{
+		//PatchReplace should be checked for more numbers instead of PatchSig,
+		// would help report error if PatchSig broke from TF2 update
+		
 		char sBuffer[32];
-		Format(sBuffer, sizeof(sBuffer), PATCH_SEARCH ... "_%02d", iNumber);
-		
-		this.pAddress = hGameData.GetAddress(sBuffer);
-		if (!this.pAddress)	//No more numbers to search
-			return false;
-		
 		char sReplaceValue[PATCH_MAX * 4];
 		Format(sBuffer, sizeof(sBuffer), PATCH_REPLACE ... "_%02d", iNumber);
 		if (!hGameData.GetKeyValue(sBuffer, sReplaceValue, sizeof(sReplaceValue)))
-		{
-			LogError("Failed to find Gamedata key for '%s'", sBuffer);
-			return true;
-		}
+			return false;	//No more numbers to search
 		
 		this.iPatchCount = Patch_StringToMemory(sReplaceValue, this.iValueReplacement);
 		if (this.iPatchCount <= 0)
 		{
 			LogError("Gamedata key '%s' has invalid memory value '%s'", sBuffer, sReplaceValue);
+			return true;
+		}
+		
+		Format(sBuffer, sizeof(sBuffer), PATCH_SEARCH ... "_%02d", iNumber);
+		this.pAddress = hGameData.GetAddress(sBuffer);
+		if (!this.pAddress)
+		{
+			LogError("Could not find Gamedata address or invalid value '%s'", sBuffer);
+			this.iPatchCount = 0;
 			return true;
 		}
 		
