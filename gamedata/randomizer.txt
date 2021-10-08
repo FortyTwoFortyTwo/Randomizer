@@ -2,140 +2,148 @@
 {
 	"tf"
 	{
-		"Addresses"
-		{
-			"PatchStart_01"
-			{
-				"signature" "CTFPlayer::GetMaxHealthForBuffing"
-			}
-			"PatchStart_02"
-			{
-				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
-			}
-			"PatchStart_03"
-			{
-				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
-			}
-			"PatchStart_04"
-			{
-				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
-			}
-			"PatchStart_05"
-			{
-				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
-			}
-			"PatchStart_06"
-			{
-				"signature" "CTFPlayer::TeamFortress_CalculateMaxSpeed"
-			}
-			"PatchStart_07"
-			{
-				"signature" "CTFPlayer::Event_KilledOther"
-			}
-			"PatchStart_08"
-			{
-				"signature" "CTFPlayer::Event_KilledOther"
-			}
-			"PatchStart_09"
-			{
-				"signature" "CTFPlayer::Event_KilledOther"
-			}
-		}
 		"Keys"
 		{
-			"PatchSearch_01"	//Demoman class check for eyelander health
-			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x89\x3C\x24"
-				"windows"	"\x75\x30\x6A\x00\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x6A\x00"
-			}
-			"PatchReplace_01"
+			"PatchReplace_01"	//Demoman class check for eyelander health
 			{
 				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
 				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
 			}
-			"PatchSearch_02"	//Demoman class check for eyelander speed and charging
-			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x80\xBB\x2A\x2A\x2A\x2A\x00"
-				"windows"	"\x74\x21\xA1\x2A\x2A\x2A\x2A\xF3\x0F\x10\x45\xF4"
-			}
-			"PatchReplace_02"
+			"PatchReplace_02"	//Demoman class check for eyelander speed and charging
 			{
 				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
 				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
 			}
-			"PatchSearch_03"	//Medic class check for healing charging
-			{
-				"linux"		"\x0F\x85\x2A\x2A\x2A\x2A\x8B\x85\x2A\x2A\x2A\x2A\x85\xC0"
-				"windows"	"\x0F\x85\xE8\x00\x00\x00\x85\xDB"
-			}
-			"PatchReplace_03"
+			"PatchReplace_03"	//Medic class check for healing charging
 			{
 				"linux"		"\x90\x90\x90\x90\x90\x90"	// Replace 'jz' (if '==' jump) to NOP (skip)
 				"windows"	"\x90\x90\x90\x90\x90\x90"	// Replace 'jz' (if '==' jump) to NOP (skip)
 			}
-			"PatchSearch_04"	//Medic class check for Overdose speed
-			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\xC7\x45\x2A\x2A\x2A\x2A\x00"
-				"windows"	"\x75\x63\x6A\x00\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x6A\x00"
-			}
-			"PatchReplace_04"
+			"PatchReplace_04"	//Medic class check for Overdose speed
 			{
 				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
 				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
 			}
-			"PatchSearch_05"	//Heavy class check for steak speed
-			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x83\xFF\x01\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x85\xC0"
-				"windows"	"\x75\x4E\xF3\x0F\x10\x45\xE8\x8B\xCF"
-			}
-			"PatchReplace_05"
+			"PatchReplace_05"	//Heavy class check for steak speed
 			{
 				"linux"		"\x90\x90\x90\x90\x90\x90"	// Replace 'jz' (if '==' jump) to to NOP (skip)
 				"windows"	"\xEB"	// Replace 'jnz short' to 'jmp short' (always jump)
 			}
-			"PatchSearch_06"	//Scout class check for Baby Face Blaster and Crit-A-Cola speed
-			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x85\xC0\x74\x1A"
-				"windows"	"\x75\x51\x6A\x55\x8B\xCE\xE8\x2A\x2A\x2A\x2A\x85\xC0"
-			}
-			"PatchReplace_06"
+			"PatchReplace_06"	//Scout class check for Baby Face Blaster and Crit-A-Cola speed
 			{
 				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
 				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
 			}
-			"PatchSearch_07"	//Spy class check for Your Eternal Reward silent kill
-			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x8B\x03\x8D\x95"
-				"windows"	"\x74\x4B\x56\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\x83\xC4\x08"
-			}
-			"PatchReplace_07"
+			"PatchReplace_07"	//Spy class check for Your Eternal Reward silent kill
 			{
 				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
 				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
 			}
-			"PatchSearch_08"	//Demoman class check for kill refilling meter
-			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x83\xF8\x02\x0F\x84"
-				"windows"	"\x0F\x84\x2A\x2A\x2A\x2A\x8B\x4D\x08\xDD\xD8"
-			}
-			"PatchReplace_08"
+			"PatchReplace_08"	//Demoman class check for kill refilling meter
 			{
 				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
 				"windows"	"\x90\x90\x90\x90\x90\x90"	// Replace 'jz' (if '==' jump) to to NOP (skip)
 			}
-			"PatchSearch_09"	//Sniper class check for Hitman's Heatmaker rage on kill
-			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x8B\x83\x2A\x2A\x2A\x2A\x31\xF6\x31\xFF"
-				"windows"	"\x74\x35\x6A\x01\x6A\x00\x53"
-			}
-			"PatchReplace_09"
+			"PatchReplace_09"	//Sniper class check for Hitman's Heatmaker rage on kill
 			{
 				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
 				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
 			}
 		}
+		"Addresses"
+		{
+			"PatchSig_01"
+			{
+				"signature" "PatchSig_01"
+				"windows"
+				{
+					"offset"	"7"	//Start is pushed back by 7 to make good unique sig
+				}
+			}
+			"PatchSig_02"
+			{
+				"signature" "PatchSig_02"
+			}
+			"PatchSig_03"
+			{
+				"signature" "PatchSig_03"
+			}
+			"PatchSig_04"
+			{
+				"signature" "PatchSig_04"
+				"linux"
+				{
+					"offset"	"3"	//Start is pushed back by 3 to make good unique sig
+				}
+			}
+			"PatchSig_05"
+			{
+				"signature" "PatchSig_05"
+			}
+			"PatchSig_06"
+			{
+				"signature" "PatchSig_06"
+			}
+			"PatchSig_07"
+			{
+				"signature" "PatchSig_07"
+			}
+			"PatchSig_08"
+			{
+				"signature" "PatchSig_08"
+			}
+			"PatchSig_09"
+			{
+				"signature" "PatchSig_09"
+			}
+		}
 		"Signatures"
 		{
+			"PatchSig_01"
+			{
+				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x89\x3C\x24\xE8\x2A\x2A\x2A\x2A\xC7\x44\x24\x2A\x2A\x2A\x2A\x00\x01\xD8"
+				"windows"	"\x83\xBF\x2A\x2A\x2A\x2A\x04\x75\x2A\x6A\x00"
+			}
+			"PatchSig_02"
+			{
+				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x80\xBB\x2A\x1D\x00\x00\x00"
+				"windows"	"\x75\x2A\x6A\x00\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x6A\x00\x6A\x40\x8B\xCE"
+			}
+			"PatchSig_03"
+			{
+				"linux"		"\x0F\x85\x2A\x2A\x2A\x2A\x8B\x85\x2A\x2A\x2A\x2A\x85\xC0\x74\x2A\xC7\x44\x24\x2A\x2A\x2A\x2A\x00"
+				"windows"	"\x0F\x85\x2A\x2A\x2A\x2A\x85\xDB\x0F\x84\x2A\x2A\x2A\x2A\x6A\x00"
+			}
+			"PatchSig_04"
+			{
+				"linux"		"\x83\xFF\x05\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A"
+				"windows"	"\x75\x2A\x6A\x00\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x6A\x00\x6A\x32"
+			}
+			"PatchSig_05"
+			{
+				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x83\xFF\x01\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x85\xC0"
+				"windows"	"\x75\x2A\xF3\x0F\x10\x45\xE8\x8B\xCF"
+			}
+			"PatchSig_06"
+			{
+				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x85\xC0\x74\x2A\x80\xB8\x2A\x09\x00\x00\x00\x74\x2A\x89\x1C\x24"
+				"windows"	"\x75\x2A\x6A\x55\x8B\xCE\xE8\x2A\x2A\x2A\x2A\x85\xC0"
+			}
+			"PatchSig_07"
+			{
+				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x8B\x03\x8D\x95\x2A\x2A\x2A\x2A\xC7\x44\x24\x2A\x2A\x2A\x2A\x00"
+				"windows"	"\x74\x2A\x56\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\x83\xC4\x08\x85\xC0\x75\x2A"
+			}
+			"PatchSig_08"
+			{
+				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x83\xF8\x02\x0F\x84\x2A\x2A\x2A\x2A\x8B\x83\x2A\x2A\x2A\x2A"
+				"windows"	"\x0F\x84\x2A\x2A\x2A\x2A\x8B\x4D\x08\xDD\xD8"
+			}
+			"PatchSig_09"
+			{
+				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x8B\x83\x2A\x2A\x2A\x2A\x31\xF6\x31\xFF\x85\xC0\x7E\x2A"
+				"windows"	"\x74\x2A\x6A\x01\x6A\x00\x53\x68\x2A\x2A\x2A\x2A\x51\xD9\x1C\x24\xE8\x2A\x2A\x2A\x2A\xD9\xEE"
+			}
 			"CTFPlayer::GiveAmmo"
 			{
 				"library"	"server"
@@ -237,12 +245,6 @@
 				"library"	"server"
 				"linux"		"@_ZNK9CTFPlayer30TeamFortress_CalculateMaxSpeedEb"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x18\x83\x3D\x2A\x2A\x2A\x2A\x00"
-			}
-			"CTFPlayer::Event_KilledOther"
-			{
-				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer17Event_KilledOtherEP11CBaseEntityRK15CTakeDamageInfo"
-				"windows"	"\x55\x8B\xEC\x81\xEC\xA4\x00\x00\x00\x53\x56\x8B\x75\x0C"
 			}
 			"CTFPlayer::TakeHealth"
 			{
