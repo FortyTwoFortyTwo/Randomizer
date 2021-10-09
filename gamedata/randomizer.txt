@@ -49,6 +49,17 @@
 				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
 				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
 			}
+			"PatchReplace_IsPlayerClass"	//Given class check, this patch makes it always return true
+			{
+				// \xB8\x01\x00\x00\x00                            mov     eax, 1
+				// \x5D                                            pop     ebp
+				// \xC3                                            retn
+				"linux"		"\xB8\x01\x00\x00\x00\x5D\xC3"
+				
+				// \xB8\x01\x00\x00\x00                            mov     eax, 1
+				// \x90                                            nop
+				"windows"	"\xB8\x01\x00\x00\x00\x90"
+			}
 		}
 		"Addresses"
 		{
@@ -95,6 +106,18 @@
 			"PatchSig_09"
 			{
 				"signature" "PatchSig_09"
+			}
+			"PatchSig_IsPlayerClass"
+			{
+				"signature" "PatchSig_IsPlayerClass"
+				"linux"
+				{
+					"offset"	"2"	//Start is pushed back by 2 to make good unique sig
+				}
+				"windows"
+				{
+					"offset"	"3"	//Start is pushed back by 3 to make good unique sig
+				}
 			}
 		}
 		"Signatures"
@@ -143,6 +166,11 @@
 			{
 				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x8B\x83\x2A\x2A\x2A\x2A\x31\xF6\x31\xFF\x85\xC0\x7E\x2A"
 				"windows"	"\x74\x2A\x6A\x01\x6A\x00\x53\x68\x2A\x2A\x2A\x2A\x51\xD9\x1C\x24\xE8\x2A\x2A\x2A\x2A\xD9\xEE"
+			}
+			"PatchSig_IsPlayerClass"	//CTFPlayer::IsPlayerClass
+			{
+				"linux"		"\x74\x2A\x8B\x80\x2A\x2A\x2A\x2A\x39\x45\x0C"
+				"windows"	"\x8B\x40\x04\x3B\x45\x08"
 			}
 			"CTFPlayer::GiveAmmo"
 			{
@@ -215,12 +243,6 @@
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer28GetChargeEffectBeingProvidedEv"
 				"windows"	"\x55\x8B\xEC\x51\x56\x8B\xF1\x8D\x86\x0C\x21\x00\x00"
-			}
-			"CTFPlayer::IsPlayerClass"
-			{
-				"library"	"server"
-				"linux"		"@_ZNK9CTFPlayer13IsPlayerClassEi"
-				"windows"	"\x55\x8B\xEC\x8D\x81\x0C\x21\x00\x00"
 			}
 			"CTFPlayer::GetLoadoutItem"
 			{
@@ -537,20 +559,6 @@
 				"callconv"	"thiscall"
 				"return"	"int"
 				"this"		"entity"
-			}
-			"CTFPlayer::IsPlayerClass"
-			{
-				"signature"	"CTFPlayer::IsPlayerClass"
-				"callconv"	"thiscall"
-				"return"	"bool"
-				"this"		"entity"
-				"arguments"
-				{
-					"iClass"
-					{
-						"type"	"int"
-					}
-				}
 			}
 			"CTFPlayer::GetLoadoutItem"
 			{

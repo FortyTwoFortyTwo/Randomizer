@@ -351,7 +351,6 @@ RandomizedWeapon g_eClientWeapon[TF_MAXPLAYERS][CLASS_MAX+1];
 TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
 bool g_bClientRefreshWeapons[TF_MAXPLAYERS];
 bool g_bClientRefreshCosmetics[TF_MAXPLAYERS];
-int g_iAllowPlayerClass[TF_MAXPLAYERS];
 bool g_bFeignDeath[TF_MAXPLAYERS];
 bool g_bWeaponDecap[TF_MAXPLAYERS];
 Handle g_hTimerClientHud[TF_MAXPLAYERS];
@@ -1070,7 +1069,7 @@ void ResetWeaponIndex(RandomizedWeapon eRandomized[CLASS_MAX+1])
 public Action Event_EurekaTeleport(int iClient, const char[] sCommand, int iArgs)
 {
 	g_iClientEurekaTeleporting = iClient;
-	return Plugin_Continue;
+	SetClientClass(iClient, TFClass_Engineer);
 }
 
 KeyValues LoadConfig(const char[] sFilepath, const char[] sName)

@@ -58,7 +58,6 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::EndClassSpecialSkill", DHook_EndClassSpecialSkillPre, DHook_EndClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
-	DHook_CreateDetour(hGameData, "CTFPlayer::IsPlayerClass", DHook_IsPlayerClassPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetLoadoutItem", DHook_GetLoadoutItemPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxHealthForBuffing", DHook_GetMaxHealthForBuffingPre, DHook_GetMaxHealthForBuffingPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::TeamFortress_CalculateMaxSpeed", DHook_CalculateMaxSpeedPre, DHook_CalculateMaxSpeedPost);
@@ -572,23 +571,6 @@ public MRESReturn DHook_GetChargeEffectBeingProvidedPost(int iClient, Handle hRe
 	g_iClientGetChargeEffectBeingProvided = 0;
 }
 
-public MRESReturn DHook_IsPlayerClassPre(int iClient, Handle hReturn, Handle hParams)
-{
-	if (g_iAllowPlayerClass[iClient] > 0)
-	{
-		DHookSetReturn(hReturn, true);
-		return MRES_Supercede;
-	}
-	
-	if (g_iClientEurekaTeleporting == iClient) 
-	{
-		DHookSetReturn(hReturn, true);
-		return MRES_Supercede;
-	}
-	
-	return MRES_Ignored;
-}
-
 public MRESReturn DHook_GetLoadoutItemPre(int iClient, Handle hReturn, Handle hParams)
 {
 	if (g_iWeaponGetLoadoutItem == -1 || !IsWeaponRandomized(iClient))	//not inside ValidateWeapons
@@ -819,7 +801,7 @@ public MRESReturn DHook_MyTouchPre(int iHealthKit, Handle hReturn, Handle hParam
 	int iClient = DHookGetParam(hParams, 1);
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
 	{
-		g_iAllowPlayerClass[iClient]++;
+		Patch_EnableIsPlayerClass();
 		
 		//Find sandvich to use to refill
 		g_iMyTouchLunchbox = INVALID_ENT_REFERENCE;
@@ -854,7 +836,7 @@ public MRESReturn DHook_MyTouchPost(int iHealthKit, Handle hReturn, Handle hPara
 	int iClient = DHookGetParam(hParams, 1);
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
 	{
-		g_iAllowPlayerClass[iClient]--;
+		Patch_DisableIsPlayerClass();
 		
 		Properties_ResetForceWeaponAmmo();
 		
@@ -870,7 +852,7 @@ public MRESReturn DHook_PipebombTouchPre(int iStunBall, Handle hParams)
 	int iClient = GetEntPropEnt(iStunBall, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
 	{
-		g_iAllowPlayerClass[iClient]++;	//Has scout class check
+		Patch_EnableIsPlayerClass();	//Has scout class check
 		
 		if (IsClassname(iStunBall, "tf_projectile_stun_ball"))
 		{
@@ -900,7 +882,7 @@ public MRESReturn DHook_PipebombTouchPost(int iStunBall, Handle hParams)
 	int iClient = GetEntPropEnt(iStunBall, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
 	{
-		g_iAllowPlayerClass[iClient]--;
+		Patch_DisableIsPlayerClass();
 		Properties_ResetForceWeaponAmmo(1);
 	}
 }
@@ -1089,8 +1071,11 @@ public void DHook_GiveNamedItemRemoved(int iHookId)
 
 public MRESReturn DHook_ClientCommandPost(int iClient, Handle hReturn, Handle hParams)
 {
-	if (iClient == g_iClientEurekaTeleporting)
+	if (g_iClientEurekaTeleporting)
+	{
+		RevertClientClass(iClient);
 		g_iClientEurekaTeleporting = 0;
+	}
 }
 
 public MRESReturn DHook_TakeHealthPre(int iClient, Handle hReturn, Handle hParams)
@@ -1167,12 +1152,10 @@ public MRESReturn DHook_CanPickupBuildingPost(int iClient, Handle hReturn, Handl
 public MRESReturn DHook_FrameUpdatePostEntityThinkPre()
 {
 	//This function call all clients to reduce medigun charge from medic class check
-	for (int iClient = 1; iClient <= MaxClients; iClient++)
-		g_iAllowPlayerClass[iClient]++;
+	Patch_EnableIsPlayerClass();
 }
 
 public MRESReturn DHook_FrameUpdatePostEntityThinkPost()
 {
-	for (int iClient = 1; iClient <= MaxClients; iClient++)
-		g_iAllowPlayerClass[iClient]--;
+	Patch_DisableIsPlayerClass();
 }

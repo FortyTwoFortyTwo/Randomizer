@@ -43,9 +43,7 @@ void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &flDamage, int &iDamageType, int &iWeapon, float vecDamageForce[3], float vecDamagePosition[3], int iDamageCustom)
 {
 	//Allow IsPlayerClass for everyone, we want assister too which would be tough to get without gamedata
-	for (int iClient = 1; iClient <= MaxClients; iClient++)
-		if (IsClientInGame(iClient))
-			g_iAllowPlayerClass[iClient]++;
+	Patch_EnableIsPlayerClass();
 	
 	if (0 < iAttacker <= MaxClients)
 	{
@@ -63,9 +61,7 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 
 public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, float flDamage, int iDamageType, int iWeapon, const float vecDamageForce[3], const float vecDamagePosition[3], int iDamageCustom)
 {
-	for (int iClient = 1; iClient <= MaxClients; iClient++)
-		if (IsClientInGame(iClient))
-			g_iAllowPlayerClass[iClient]--;
+	Patch_DisableIsPlayerClass();
 	
 	g_bFeignDeath[iVictim] = false;
 	
@@ -124,7 +120,7 @@ public void Client_PreThink(int iClient)
 	}
 	
 	//PreThink have way too many IsPlayerClass check, always return true during it
-	g_iAllowPlayerClass[iClient]++;
+	Patch_EnableIsPlayerClass();
 	
 	// Medigun beams doesnt show if player is not medic, and we can't fix that in SDK because it all in clientside
 	if (TF2_GetPlayerClass(iClient) == TFClass_Medic)
@@ -174,7 +170,7 @@ public void Client_PreThink(int iClient)
 
 public void Client_PreThinkPost(int iClient)
 {
-	g_iAllowPlayerClass[iClient]--;
+	Patch_DisableIsPlayerClass();
 	
 	//m_flEnergyDrinkMeter meant to be used for scout drinks, but TFCond_CritCola shared Buffalo Steak and Cleaner's Carbine
 	//TODO fix this when player have multiple weapons
