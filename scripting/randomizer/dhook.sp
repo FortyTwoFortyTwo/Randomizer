@@ -24,7 +24,6 @@ static Handle g_hDHookClientCommand;
 static Handle g_hDHookFrameUpdatePostEntityThink;
 
 static bool g_bSkipGetMaxAmmo;
-static int g_iClientGetChargeEffectBeingProvided;
 static int g_iWeaponGetLoadoutItem = INVALID_ENT_REFERENCE;
 static bool g_bManageBuilderWeapons;
 static ArrayList g_aValidateWearables;
@@ -555,20 +554,13 @@ public MRESReturn DHook_EndClassSpecialSkillPost(int iClient, Handle hReturn)
 public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, Handle hReturn)
 {
 	if (IsClientInGame(iClient))
-	{
-		//Has medic class check for getting uber types
-		SetClientClass(iClient, TFClass_Medic);
-		g_iClientGetChargeEffectBeingProvided = iClient;
-	}
+		SetClientClass(iClient, TFClass_Medic);	//Has medic class check for getting uber types
 }
 
 public MRESReturn DHook_GetChargeEffectBeingProvidedPost(int iClient, Handle hReturn)
 {
-	// iClient is a lie in this detour
-	if (g_iClientGetChargeEffectBeingProvided)
-		RevertClientClass(g_iClientGetChargeEffectBeingProvided);
-	
-	g_iClientGetChargeEffectBeingProvided = 0;
+	if (IsClientInGame(iClient))
+		RevertClientClass(iClient);
 }
 
 public MRESReturn DHook_GetLoadoutItemPre(int iClient, Handle hReturn, Handle hParams)
