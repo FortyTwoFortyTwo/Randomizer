@@ -332,7 +332,6 @@ ConVar g_cvRandomize[view_as<int>(RandomizedType_MAX)];
 bool g_bClientRefresh[TF_MAXPLAYERS];
 
 TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
-int g_iAllowPlayerClass[TF_MAXPLAYERS];
 bool g_bFeignDeath[TF_MAXPLAYERS];
 bool g_bWeaponDecap[TF_MAXPLAYERS];
 Handle g_hTimerClientHud[TF_MAXPLAYERS];
@@ -649,7 +648,7 @@ bool CanEquipIndex(int iClient, int iIndex)
 public Action Event_EurekaTeleport(int iClient, const char[] sCommand, int iArgs)
 {
 	g_iClientEurekaTeleporting = iClient;
-	return Plugin_Continue;
+	SetClientClass(iClient, TFClass_Engineer);
 }
 
 public Action Event_DropItem(int iClient, const char[] sCommand, int iArgs)

@@ -23,16 +23,21 @@ enum struct Patch
 	int iValueOriginal[PATCH_MAX];
 	int iValueReplacement[PATCH_MAX];
 	
-	bool Load(GameData hGameData, int iNumber)
+	bool Load(GameData hGameData, const char[] sName, bool bSkipWarning = false)
 	{
 		//PatchReplace should be checked for more numbers instead of PatchSig,
 		// would help report error if PatchSig broke from TF2 update
 		
 		char sBuffer[32];
 		char sReplaceValue[PATCH_MAX * 4];
-		Format(sBuffer, sizeof(sBuffer), PATCH_REPLACE ... "_%02d", iNumber);
+		Format(sBuffer, sizeof(sBuffer), PATCH_REPLACE ... "_%s", sName);
 		if (!hGameData.GetKeyValue(sBuffer, sReplaceValue, sizeof(sReplaceValue)))
+		{
+			if (!bSkipWarning)
+				LogError("Could not find Gamedata key value '%s'", sBuffer);
+			
 			return false;	//No more numbers to search
+		}
 		
 		this.iPatchCount = Patch_StringToMemory(sReplaceValue, this.iValueReplacement);
 		if (this.iPatchCount <= 0)
@@ -41,7 +46,7 @@ enum struct Patch
 			return true;
 		}
 		
-		Format(sBuffer, sizeof(sBuffer), PATCH_SEARCH ... "_%02d", iNumber);
+		Format(sBuffer, sizeof(sBuffer), PATCH_SEARCH ... "_%s", sName);
 		this.pAddress = hGameData.GetAddress(sBuffer);
 		if (!this.pAddress)
 		{
@@ -58,6 +63,7 @@ enum struct Patch
 	
 	void Enable()
 	{
+		//TODO whem SM 1.11 becomes stable, set new param to false so memory patching wouldn't cause huge lag
 		for (int i = 0; i < this.iPatchCount; i++)
 			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueReplacement[i], NumberType_Int8);
 	}
@@ -70,6 +76,8 @@ enum struct Patch
 }
 
 static ArrayList g_aPatches;	//Arrays of Patch
+static Patch g_pIsPlayerClass;
+int g_iAllowPlayerClass;
 
 void Patch_Init(GameData hGameData)
 {
@@ -79,14 +87,18 @@ void Patch_Init(GameData hGameData)
 	do
 	{
 		iCount++;
+		char sNumber[16];
+		Format(sNumber, sizeof(sNumber), "%02d", iCount);
 		
 		Patch patch;
-		if (!patch.Load(hGameData, iCount))
+		if (!patch.Load(hGameData, sNumber, true))
 			break;
 		
 		g_aPatches.PushArray(patch);
 	}
 	while (iCount);	//Infinite loop until break
+	
+	g_pIsPlayerClass.Load(hGameData, "IsPlayerClass");
 }
 
 void Patch_Enable()
@@ -109,6 +121,22 @@ void Patch_Disable()
 		g_aPatches.GetArray(i, patch);
 		patch.Disable();
 	}
+}
+
+void Patch_EnableIsPlayerClass()
+{
+	if (g_iAllowPlayerClass == 0)
+		g_pIsPlayerClass.Enable();
+	
+	g_iAllowPlayerClass++;
+}
+
+void Patch_DisableIsPlayerClass()
+{
+	g_iAllowPlayerClass--;
+	
+	if (g_iAllowPlayerClass == 0)
+		g_pIsPlayerClass.Disable();
 }
 
 int Patch_StringToMemory(const char[] sValue, int iMemory[PATCH_MAX])
