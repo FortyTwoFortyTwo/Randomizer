@@ -529,20 +529,6 @@
 				"return"	"int"
 				"this"		"entity"
 			}
-			"CTFPlayer::GetLoadoutItem"
-			{
-				"signature"	"CTFPlayer::GetLoadoutItem"
-				"callconv"	"thiscall"
-				"return"	"int"
-				"this"		"entity"
-				"arguments"
-				{
-					"iClass"
-					{
-						"type"	"int"
-					}
-				}
-			}
 			"CTFPlayer::GetMaxHealthForBuffing"
 			{
 				"signature"	"CTFPlayer::GetMaxHealthForBuffing"
