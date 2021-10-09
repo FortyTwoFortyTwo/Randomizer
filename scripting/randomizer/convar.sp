@@ -40,10 +40,17 @@ void ConVar_AddType(RandomizedType nType, const char[] sName, const char[] sDefa
 {
 	g_cvRandomize[nType] = CreateConVar(sName, sDefault, sDesp);
 	g_cvRandomize[nType].AddChangeHook(ConVar_RandomizeChanged);
-	
-	char sBuffer[1024];
-	g_cvRandomize[nType].GetString(sBuffer, sizeof(sBuffer));
-	ConVar_RandomizeChanged(g_cvRandomize[nType], "", sBuffer);
+}
+
+void ConVar_Refresh()
+{
+	for (RandomizedType nType; nType < RandomizedType_MAX; nType++)
+	{
+		char sBuffer[1024];
+		g_cvRandomize[nType].GetString(sBuffer, sizeof(sBuffer));
+		PrintToServer(sBuffer);
+		ConVar_RandomizeChanged(g_cvRandomize[nType], "", sBuffer);
+	}
 }
 
 public void ConVar_EnableChanged(ConVar convar, const char[] sOldValue, const char[] sNewValue)

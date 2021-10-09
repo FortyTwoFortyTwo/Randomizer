@@ -385,12 +385,11 @@ public void OnPluginStart()
 	
 	delete hGameData;
 	
-	Group_Init();	//Group before convar
-	
 	Commands_Init();
 	ConVar_Init();
 	Controls_Init();
 	Event_Init();
+	Group_Init();
 	Huds_Init();
 	Loadout_Init();
 	ViewModels_Init();
@@ -415,6 +414,8 @@ public void OnMapStart()
 	Huds_Refresh();
 	ViewModels_Refresh();
 	Weapons_Refresh();
+	
+	ConVar_Refresh();	//After Weapons_Refresh
 	
 	if (!g_iRuneCount)
 		LoadRuneCount();
