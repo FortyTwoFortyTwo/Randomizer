@@ -1029,10 +1029,15 @@ public MRESReturn DHook_InitClassPre(int iClient)
 			}
 		}
 		
-		if (CanEquipIndex(iClient, GetEntProp(g_iInitClassWeapons[i], Prop_Send, "m_iItemDefinitionIndex")))
-			continue;	//Weapon is not from randomizer-generated
+		//Check if weapon is randomizer-generated
+		if (!CanEquipIndex(iClient, GetEntProp(g_iInitClassWeapons[i], Prop_Send, "m_iItemDefinitionIndex")))
+		{
+			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", INVALID_ENT_REFERENCE, i);
+			continue;
+		}
 		
-		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", INVALID_ENT_REFERENCE, i);
+		//If we reached here, TF2 can manage this weapon, forget weapon in the list when readding later
+		g_iInitClassWeapons[i] = INVALID_ENT_REFERENCE;
 	}
 	
 	int iOffset = FindSendPropInfo("CTFWearable", "m_bValidatedAttachedEntity") + 16;	//m_bAlwaysAllow
@@ -1078,7 +1083,17 @@ public MRESReturn DHook_InitClassPost(int iClient)
 {
 	for (int i = 0; i < sizeof(g_iInitClassWeapons); i++)
 	{
-		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", g_iInitClassWeapons[i], i);
+		int iMaxWeapons = GetMaxWeapons();
+		for (int j = 0; j < iMaxWeapons; j++)
+		{
+			//Check if TF2 didn't generated a new weapon in this position
+			if (GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", j) == INVALID_ENT_REFERENCE)
+			{
+				SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", g_iInitClassWeapons[i], j);
+				break;
+			}
+		}
+		
 		g_iInitClassWeapons[i] = INVALID_ENT_REFERENCE;
 		
 		if (g_iInitClassWeapons[i] != INVALID_ENT_REFERENCE)

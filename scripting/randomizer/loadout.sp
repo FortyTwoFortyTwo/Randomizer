@@ -313,7 +313,7 @@ void Loadout_ResetClientLoadout(int iClient, const int[] iSlots, int iCount)
 		int iIndex = GetEntProp(iItem, Prop_Send, "m_iItemDefinitionIndex");
 		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 		{
-			int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+			int iSlot = TF2Econ_GetItemLoadoutSlot(iIndex, view_as<TFClassType>(iClass));
 			for (int i = 0; i < iCount; i++)
 			{
 				if (iSlot == iSlots[i])
