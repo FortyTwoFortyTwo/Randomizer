@@ -510,8 +510,54 @@ public void TF2_OnConditionAdded(int iClient, TFCond nCond)
 	if (!g_bEnabled)
 		return;
 	
-	if (nCond == TFCond_RuneKnockout)	//Just giving knockout rune isnt enough, TF2 gave both knockout and melee only cond
+	if (nCond == TFCond_RuneKnockout)
+	{
+		//Just giving knockout rune isnt enough, TF2 gave both knockout and melee only cond
 		TF2_AddCondition(iClient, TFCond_RestrictToMelee, TFCondDuration_Infinite);
+		
+		bool bSwitched;
+		
+		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+		if (iActiveWeapon != INVALID_ENT_REFERENCE && (TF2_GetSlot(iActiveWeapon) == WeaponSlot_Melee || IsClassname(iActiveWeapon, "tf_weapon_grapplinghook")))
+			bSwitched = true;	//Active weapon is already good, dont need to switch
+		
+		int iWeapon, iPos;
+		while (TF2_GetItemFromLoadoutSlot(iClient, LoadoutSlot_Melee, iWeapon, iPos))
+		{
+			if (iActiveWeapon == iWeapon || !TF2_CanSwitchTo(iClient, iWeapon))
+				continue;
+			
+			if (!bSwitched)
+			{
+				TF2_SwitchToWeapon(iClient, iWeapon);
+				bSwitched = true;
+			}
+			else
+			{
+				SetEntPropEnt(iClient, Prop_Send, "m_hLastWeapon", iWeapon);
+				return;
+			}
+		}
+		
+		while (TF2_GetItemFromClassname(iClient, "tf_weapon_grapplinghook", iWeapon, iPos))
+		{
+			if (iActiveWeapon == iWeapon || !TF2_CanSwitchTo(iClient, iWeapon))
+				continue;
+			
+			if (!bSwitched)
+			{
+				TF2_SwitchToWeapon(iClient, iWeapon);
+				bSwitched = true;
+			}
+			else
+			{
+				SetEntPropEnt(iClient, Prop_Send, "m_hLastWeapon", iWeapon);
+				return;
+			}
+		}
+		
+		SetEntPropEnt(iClient, Prop_Send, "m_hLastWeapon", INVALID_ENT_REFERENCE);
+	}
 }
 
 public void TF2_OnConditionRemoved(int iClient, TFCond nCond)

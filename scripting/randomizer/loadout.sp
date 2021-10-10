@@ -568,21 +568,6 @@ void Loadout_ApplyClientWeapons(int iClient)
 		
 		aWeapons.Set(i, EntIndexToEntRef(iWeapon), RandomizedWeapon::iRef);
 	}
-	
-	//Set active weapon if dont have one
-	//TODO update this
-	if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") == INVALID_ENT_REFERENCE)
-	{
-		for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
-		{
-			iWeapon = GetPlayerWeaponSlot(iClient, iSlot);	//Dont want wearable
-			if (iWeapon != INVALID_ENT_REFERENCE)
-			{
-				TF2_SwitchToWeapon(iClient, iWeapon);
-				break;
-			}
-		}
-	}
 }
 
 void Loadout_AddWeapon(RandomizedLoadout eLoadout, RandomizedWeapon eList[MAX_WEAPONS], int iListCount)
