@@ -351,16 +351,6 @@
 				"linux"		"479"
 				"windows"	"472"
 			}
-			"CItem::MyTouch"
-			{
-				"linux"		"223"
-				"windows"	"222"
-			}
-			"CTFGrenadePipebombProjectile::PipebombTouch"
-			{
-				"linux"		"255"
-				"windows"	"254"
-			}
 			"CTFDecapitationMeleeWeaponBase::OnDecapitation"
 			{
 				"linux"		"483"
@@ -410,11 +400,6 @@
 			{
 				"linux"		"16"
 				"windows"	"15"
-			}
-			"CEconItemView::m_iItemDefinitionIndex"
-			{
-				"linux"		"4"
-				"windows"	"4"
 			}
 		}
 		"Functions"
@@ -785,34 +770,6 @@
 				"arguments"
 				{
 					"pPlayer"
-					{
-						"type"	"cbaseentity"
-					}
-				}
-			}
-			"CItem::MyTouch"
-			{
-				"offset"	"CItem::MyTouch"
-				"hooktype"	"entity"
-				"return"	"bool"
-				"this"		"entity"
-				"arguments"
-				{
-					"pPlayer"
-					{
-						"type"	"cbaseentity"
-					}
-				}
-			}
-			"CTFGrenadePipebombProjectile::PipebombTouch"
-			{
-				"offset"	"CTFGrenadePipebombProjectile::PipebombTouch"
-				"hooktype"	"entity"
-				"return"	"void"
-				"this"		"entity"
-				"arguments"
-				{
-					"pOther"
 					{
 						"type"	"cbaseentity"
 					}

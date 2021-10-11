@@ -11,8 +11,6 @@ static ArrayList g_aDHookDetours;
 static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookGetEffectBarAmmo;
 static Handle g_hDHookSwing;
-static Handle g_hDHookMyTouch;
-static Handle g_hDHookPipebombTouch;
 static Handle g_hDHookOnDecapitation;
 static Handle g_hDHookKilled;
 static Handle g_hDHookCanBeUpgraded;
@@ -29,7 +27,6 @@ static bool g_bManageBuilderWeapons;
 static ArrayList g_aValidateWearables;
 static bool g_bValidateWearablesDisguised;
 static int g_iBuildingKilledSapper = INVALID_ENT_REFERENCE;
-static int g_iMyTouchLunchbox = INVALID_ENT_REFERENCE;
 
 static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS];
 static int g_iHookIdClientCommand[TF_MAXPLAYERS];
@@ -75,8 +72,6 @@ public void DHook_Init(GameData hGameData)
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookGetEffectBarAmmo = DHook_CreateVirtual(hGameData, "CTFWeaponBase::GetEffectBarAmmo");
 	g_hDHookSwing = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Swing");
-	g_hDHookMyTouch = DHook_CreateVirtual(hGameData, "CItem::MyTouch");
-	g_hDHookPipebombTouch = DHook_CreateVirtual(hGameData, "CTFGrenadePipebombProjectile::PipebombTouch");
 	g_hDHookOnDecapitation = DHook_CreateVirtual(hGameData, "CTFDecapitationMeleeWeaponBase::OnDecapitation");
 	g_hDHookKilled = DHook_CreateVirtual(hGameData, "CBaseObject::Killed");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
@@ -225,17 +220,7 @@ void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 		DHookEntity(g_hDHookGetEffectBarAmmo, true, iEntity, _, DHook_GetEffectBarAmmoPost);
 	}
 	
-	if (StrContains(sClassname, "item_healthkit") == 0)
-	{
-		DHookEntity(g_hDHookMyTouch, false, iEntity, _, DHook_MyTouchPre);
-		DHookEntity(g_hDHookMyTouch, true, iEntity, _, DHook_MyTouchPost);
-	}
-	else if (StrEqual(sClassname, "tf_projectile_stun_ball") || StrEqual(sClassname, "tf_projectile_ball_ornament"))
-	{
-		DHookEntity(g_hDHookPipebombTouch, false, iEntity, _, DHook_PipebombTouchPre);
-		DHookEntity(g_hDHookPipebombTouch, true, iEntity, _, DHook_PipebombTouchPost);
-	}
-	else if (StrEqual(sClassname, "tf_weapon_sword"))
+	if (StrEqual(sClassname, "tf_weapon_sword"))
 	{
 		DHookEntity(g_hDHookOnDecapitation, false, iEntity, _, DHook_OnDecapitationPre);
 		DHookEntity(g_hDHookOnDecapitation, true, iEntity, _, DHook_OnDecapitationPost);
@@ -785,98 +770,6 @@ public MRESReturn DHook_GetEffectBarAmmoPost(int iWeapon, Handle hReturn)
 {
 	//This function is only called for GetAmmoCount, GetMaxAmmo and GiveAmmo
 	Properties_SetForceWeaponAmmo(iWeapon);
-}
-
-public MRESReturn DHook_MyTouchPre(int iHealthKit, Handle hReturn, Handle hParams)
-{
-	//Has heavy class check for lunchbox
-	int iClient = DHookGetParam(hParams, 1);
-	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
-	{
-		Patch_EnableIsPlayerClass();
-		
-		//Find sandvich to use to refill
-		g_iMyTouchLunchbox = INVALID_ENT_REFERENCE;
-		float flTargetMeter = 100.0;
-		
-		int iWeapon, iPos;
-		while (TF2_GetItemFromClassname(iClient, "tf_weapon_lunchbox", iWeapon, iPos))
-		{
-			float flChargeMeter = Properties_GetWeaponPropFloat(iWeapon, "m_flItemChargeMeter");
-			if (flChargeMeter < flTargetMeter)
-			{
-				g_iMyTouchLunchbox = iWeapon;
-				flTargetMeter = flChargeMeter;
-			}
-		}
-		
-		if (g_iMyTouchLunchbox != INVALID_ENT_REFERENCE)
-		{
-			Properties_SetForceWeaponAmmo(g_iMyTouchLunchbox);
-			
-			int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-			if (iActiveWeapon != INVALID_ENT_REFERENCE)
-				Properties_SaveWeaponPropFloat(iClient, iActiveWeapon, "m_flItemChargeMeter", TF2_GetSlot(iActiveWeapon));
-			
-			Properties_LoadWeaponPropFloat(iClient, g_iMyTouchLunchbox, "m_flItemChargeMeter", TF2_GetSlot(g_iMyTouchLunchbox));
-		}
-	}
-}
-
-public MRESReturn DHook_MyTouchPost(int iHealthKit, Handle hReturn, Handle hParams)
-{
-	int iClient = DHookGetParam(hParams, 1);
-	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
-	{
-		Patch_DisableIsPlayerClass();
-		
-		Properties_ResetForceWeaponAmmo();
-		
-		if (g_iMyTouchLunchbox != INVALID_ENT_REFERENCE)
-			Properties_SaveWeaponPropFloat(iClient, g_iMyTouchLunchbox, "m_flItemChargeMeter", TF2_GetSlot(g_iMyTouchLunchbox));
-		
-		g_iMyTouchLunchbox = INVALID_ENT_REFERENCE;
-	}
-}
-
-public MRESReturn DHook_PipebombTouchPre(int iStunBall, Handle hParams)
-{
-	int iClient = GetEntPropEnt(iStunBall, Prop_Send, "m_hOwnerEntity");
-	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
-	{
-		Patch_EnableIsPlayerClass();	//Has scout class check
-		
-		if (IsClassname(iStunBall, "tf_projectile_stun_ball"))
-		{
-			//Find sandman that could pick up this ball
-			int iTargetWeapon = INVALID_ENT_REFERENCE;
-			float flTargetTime;
-			
-			int iWeapon, iPos;
-			while (TF2_GetItemFromClassname(iClient, "tf_weapon_bat_wood", iWeapon, iPos))
-			{
-				float flTime = GetEntPropFloat(iWeapon, Prop_Send, "m_flEffectBarRegenTime");
-				if (flTime > flTargetTime)
-				{
-					iTargetWeapon = iWeapon;
-					flTargetTime = flTime;
-				}
-			}
-			
-			if (iTargetWeapon != INVALID_ENT_REFERENCE)
-				Properties_SetForceWeaponAmmo(iTargetWeapon, 1);	//Set priority to 1 so other hooks dont reset it
-		}
-	}
-}
-
-public MRESReturn DHook_PipebombTouchPost(int iStunBall, Handle hParams)
-{
-	int iClient = GetEntPropEnt(iStunBall, Prop_Send, "m_hOwnerEntity");
-	if (0 < iClient <= MaxClients && IsClientInGame(iClient))
-	{
-		Patch_DisableIsPlayerClass();
-		Properties_ResetForceWeaponAmmo(1);
-	}
 }
 
 public MRESReturn DHook_OnDecapitationPre(int iSword, Handle hParams)

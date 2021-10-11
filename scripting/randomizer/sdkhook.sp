@@ -1,4 +1,5 @@
 static int g_iMedigunBeamRef[TF_MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
+static int g_iTouchLunchbox = INVALID_ENT_REFERENCE;
 
 void SDKHook_HookClient(int iClient)
 {
@@ -38,6 +39,12 @@ void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 		SDKHook(iEntity, SDKHook_Reload, Weapon_Reload);
 	else if (StrEqual(sClassname, "item_healthkit_small"))
 		SDKHook(iEntity, SDKHook_SpawnPost, HealthKit_SpawnPost);
+	
+	if (StrContains(sClassname, "item_healthkit") == 0 || StrEqual(sClassname, "tf_projectile_stun_ball") || StrEqual(sClassname, "tf_projectile_ball_ornament"))
+	{
+		SDKHook(iEntity, SDKHook_Touch, Item_Touch);
+		SDKHook(iEntity, SDKHook_TouchPost, Item_TouchPost);
+	}
 }
 
 public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &flDamage, int &iDamageType, int &iWeapon, float vecDamageForce[3], float vecDamagePosition[3], int iDamageCustom)
@@ -309,4 +316,82 @@ public void HealthKit_SpawnPost(int iHealthKit)
 	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients && g_bFeignDeath[iClient])
 		RemoveEntity(iHealthKit);
+}
+
+public Action Item_Touch(int iItem, int iToucher)
+{
+	if (iToucher <= 0 || iToucher > MaxClients)
+		return;
+	
+	//All items using this hook has class check on picking up
+	Patch_EnableIsPlayerClass();
+	g_iTouchItem = iItem;
+	g_iTouchToucher = iToucher;
+	g_iTouchLunchbox = INVALID_ENT_REFERENCE;
+	
+	char sClassname[256];
+	GetEntityClassname(iItem, sClassname, sizeof(sClassname));
+	if (StrContains(sClassname, "item_healthkit") == 0)
+	{
+		//Find sandvich to use to refill
+		float flTargetMeter = 100.0;
+		
+		int iWeapon, iPos;
+		while (TF2_GetItemFromClassname(iToucher, "tf_weapon_lunchbox", iWeapon, iPos))
+		{
+			float flChargeMeter = Properties_GetWeaponPropFloat(iWeapon, "m_flItemChargeMeter");
+			if (flChargeMeter < flTargetMeter)
+			{
+				g_iTouchLunchbox = iWeapon;
+				flTargetMeter = flChargeMeter;
+			}
+		}
+		
+		if (g_iTouchLunchbox != INVALID_ENT_REFERENCE)
+		{
+			Properties_SetForceWeaponAmmo(g_iTouchLunchbox);
+			
+			int iActiveWeapon = GetEntPropEnt(iToucher, Prop_Send, "m_hActiveWeapon");
+			if (iActiveWeapon != INVALID_ENT_REFERENCE)
+				Properties_SaveWeaponPropFloat(iToucher, iActiveWeapon, "m_flItemChargeMeter", TF2_GetSlot(iActiveWeapon));
+			
+			Properties_LoadWeaponPropFloat(iToucher, g_iTouchLunchbox, "m_flItemChargeMeter", TF2_GetSlot(g_iTouchLunchbox));
+		}
+	}
+	else if (StrEqual(sClassname, "tf_projectile_stun_ball"))
+	{
+		//Find sandman that could pick up this ball
+		int iTargetWeapon = INVALID_ENT_REFERENCE;
+		float flTargetTime;
+		
+		int iWeapon, iPos;
+		while (TF2_GetItemFromClassname(iToucher, "tf_weapon_bat_wood", iWeapon, iPos))
+		{
+			float flTime = GetEntPropFloat(iWeapon, Prop_Send, "m_flEffectBarRegenTime");
+			if (flTime > flTargetTime)
+			{
+				iTargetWeapon = iWeapon;
+				flTargetTime = flTime;
+			}
+		}
+		
+		if (iTargetWeapon != INVALID_ENT_REFERENCE)
+			Properties_SetForceWeaponAmmo(iTargetWeapon, 1);	//Set priority to 1 so other hooks dont reset it
+	}
+}
+
+public void Item_TouchPost(int iItem, int iToucher)
+{
+	if (iToucher <= 0 || iToucher > MaxClients)
+		return;
+	
+	Patch_DisableIsPlayerClass();
+	Properties_ResetForceWeaponAmmo(1);
+	
+	if (g_iTouchLunchbox != INVALID_ENT_REFERENCE)
+		Properties_SaveWeaponPropFloat(iToucher, g_iTouchLunchbox, "m_flItemChargeMeter", TF2_GetSlot(g_iTouchLunchbox));
+	
+	g_iTouchItem = INVALID_ENT_REFERENCE;
+	g_iTouchToucher = INVALID_ENT_REFERENCE;
+	g_iTouchLunchbox = INVALID_ENT_REFERENCE;
 }
