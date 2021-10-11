@@ -341,11 +341,6 @@
 				"linux"		"287"
 				"windows"	"281"
 			}
-			"CBaseCombatWeapon::GetSlot"
-			{
-				"linux"		"333"
-				"windows"	"327"
-			}
 			"CTFWeaponBase::GetEffectBarAmmo"
 			{
 				"linux"		"462"

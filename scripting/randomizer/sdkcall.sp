@@ -8,7 +8,6 @@ static Handle g_hSDKUpdateRageBuffsAndRage;
 static Handle g_hSDKModifyRage;
 static Handle g_hSDKHandleRageGain;
 static Handle g_hSDKWeaponCanSwitchTo;
-static Handle g_hSDKGetSlot;
 static Handle g_hSDKEquipWearable;
 static Handle g_hSDKGiveNamedItem;
 
@@ -90,13 +89,6 @@ public void SDKCall_Init(GameData hGameData)
 	if (!g_hSDKWeaponCanSwitchTo)
 		LogError("Failed to create call: CBaseCombatCharacter::Weapon_CanSwitchTo");
 	
-	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseCombatWeapon::GetSlot");
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
-	g_hSDKGetSlot = EndPrepSDKCall();
-	if (!g_hSDKGetSlot)
-		LogError("Failed to create call: CBaseCombatWeapon::GetSlot");
-	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
@@ -164,11 +156,6 @@ void SDKCall_HandleRageGain(int iClient, int iRequiredBuffFlags, float flDamage,
 bool SDKCall_WeaponCanSwitchTo(int iClient, int iWeapon)
 {
 	return SDKCall(g_hSDKWeaponCanSwitchTo, iClient, iWeapon);
-}
-
-int SDKCall_GetSlot(int iWeapon)
-{
-	return SDKCall(g_hSDKGetSlot, iWeapon);
 }
 
 void SDKCall_EquipWearable(int iClient, int iWearable)

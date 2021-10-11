@@ -321,28 +321,19 @@ stock bool TF2_GetItemFromAttribute(int iClient, char[] sAttrib, int &iWeapon, i
 
 stock int TF2_GetSlot(int iWeapon)
 {
-	if (TF2_IsWearable(iWeapon))
-	{
-		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-		{
-			int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-			if (0 <= iSlot <= WeaponSlot_Building)
-				return iSlot;
-		}
-	}
-	else
-	{
-		return SDKCall_GetSlot(iWeapon);
-	}
-	
-	return -1;
+	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+	TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
+	return TF2_GetSlotFromIndex(iIndex, nClass);
 }
 
 stock int TF2_GetSlotFromIndex(int iIndex, TFClassType nClass = TFClass_Unknown)
 {
 	int iSlot = TF2Econ_GetItemLoadoutSlot(iIndex, nClass);
-	if (iSlot >= 0)
+	if (iSlot == LoadoutSlot_Action)
+	{
+		iSlot = WeaponSlot_Building;
+	}
+	else
 	{
 		// Econ reports wrong slots for Engineer and Spy
 		switch (nClass)
@@ -379,6 +370,22 @@ stock TFClassType TF2_GetDefaultClassFromItem(int iWeapon)
 	char sWeaponClassname[256], sIndexClassname[256];
 	GetEntityClassname(iWeapon, sWeaponClassname, sizeof(sWeaponClassname));
 	TF2Econ_GetItemClassName(iIndex, sIndexClassname, sizeof(sIndexClassname));
+	
+	//Try client class first
+	int iClient = GetEntProp(iWeapon, Prop_Send, "m_hOwnerEntity");
+	if (0 < iClient <= MaxClients)
+	{
+		TFClassType nClass = TF2_GetPlayerClass(iClient);
+		if (TF2_GetSlotFromIndex(iIndex, nClass) != -1)
+		{
+			char sClassClassname[256];
+			sClassClassname = sIndexClassname;
+			TF2Econ_TranslateWeaponEntForClass(sClassClassname, sizeof(sClassClassname), nClass);
+			
+			if (StrEqual(sWeaponClassname, sClassClassname))
+				return nClass;
+		}
+	}
 	
 	for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 	{

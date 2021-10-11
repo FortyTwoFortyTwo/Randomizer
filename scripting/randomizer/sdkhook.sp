@@ -221,6 +221,7 @@ public Action Client_WeaponEquip(int iClient, int iWeapon)
 {
 	//Change class before equipping the weapon, otherwise reload times are odd
 	//This also somehow fixes sniper with a banner
+	SetEntProp(iWeapon, Prop_Send, "m_hOwnerEntity", iClient);	//So client's class can be attempted first for TF2_GetDefaultClassFromItem
 	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
 }
 
