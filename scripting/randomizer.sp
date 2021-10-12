@@ -584,13 +584,13 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 
 public void OnEntityDestroyed(int iEntity)
 {
-	if (iEntity == INVALID_ENT_REFERENCE)
-		return;
-	
-	Properties_RemoveWeapon(iEntity);
-	
-	if (g_iTouchItem == iEntity) //SDKHook doesn't call hook while pending deletion, call it now
-		Item_TouchPost(g_iTouchItem, g_iTouchToucher);
+	if (0 <= iEntity < 2048)
+	{
+		Properties_RemoveWeapon(iEntity);
+		
+		if (g_iTouchItem == iEntity) //SDKHook doesn't call hook while pending deletion, call it now
+			Item_TouchPost(g_iTouchItem, g_iTouchToucher);
+	}
 }
 
 public void ConVar_EnableChanged(ConVar convar, const char[] oldValue, const char[] newValue)
