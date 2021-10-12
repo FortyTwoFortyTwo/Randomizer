@@ -48,7 +48,6 @@ void ConVar_Refresh()
 	{
 		char sBuffer[1024];
 		g_cvRandomize[nType].GetString(sBuffer, sizeof(sBuffer));
-		PrintToServer(sBuffer);
 		ConVar_RandomizeChanged(g_cvRandomize[nType], "", sBuffer);
 	}
 }
