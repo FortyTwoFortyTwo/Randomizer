@@ -819,7 +819,7 @@ void Loadout_ApplyClientRune(int iClient)
 
 public Action Loadout_TimerApplyClientRune(Handle hTimer, int iClient)
 {
-	if (0 < iClient <= MaxClients)
+	if (IsClientInGame(iClient))
 		Loadout_ApplyClientRune(iClient);
 }
 
