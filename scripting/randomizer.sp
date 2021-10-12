@@ -336,6 +336,8 @@ bool g_bWeaponDecap[TF_MAXPLAYERS];
 Handle g_hTimerClientHud[TF_MAXPLAYERS];
 
 int g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
+int g_iTouchItem = INVALID_ENT_REFERENCE;
+int g_iTouchToucher = INVALID_ENT_REFERENCE;
 int g_iClientEurekaTeleporting;
 
 #include "randomizer/controls.sp"
@@ -379,10 +381,12 @@ public void OnPluginStart()
 	Patch_Init(hGameData);
 	DHook_Init(hGameData);
 	SDKCall_Init(hGameData);
-	g_iOffsetItemDefinitionIndex = hGameData.GetOffset("CEconItemView::m_iItemDefinitionIndex");
-	g_iOffsetPlayerShared = FindSendPropInfo("CTFPlayer", "m_Shared");
 	
 	delete hGameData;
+	
+	//Any weapons using m_Item would work to get offset
+	g_iOffsetItemDefinitionIndex = FindSendPropInfo("CTFWearable", "m_iItemDefinitionIndex") - FindSendPropInfo("CTFWearable", "m_Item");
+	g_iOffsetPlayerShared = FindSendPropInfo("CTFPlayer", "m_Shared");
 	
 	Commands_Init();
 	ConVar_Init();
@@ -584,7 +588,12 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 public void OnEntityDestroyed(int iEntity)
 {
 	if (0 <= iEntity < 2048)
+	{
 		Properties_RemoveWeapon(iEntity);
+		
+		if (g_iTouchItem == iEntity) //SDKHook doesn't call hook while pending deletion, call it now
+			Item_TouchPost(g_iTouchItem, g_iTouchToucher);
+	}
 }
 
 void EnableRandomizer()
