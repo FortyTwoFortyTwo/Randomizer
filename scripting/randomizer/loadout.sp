@@ -567,6 +567,23 @@ void Loadout_ApplyClientWeapons(int iClient)
 		
 		aWeapons.Set(i, EntIndexToEntRef(iWeapon), RandomizedWeapon::iRef);
 	}
+	
+	//Set active weapon if dont have one
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+		return;
+	
+	for (int iSlot = LoadoutSlot_Primary; iSlot <= LoadoutSlot_PDA2; iSlot++)
+	{
+		while (TF2_GetItemFromLoadoutSlot(iClient, iSlot, iWeapon, iPos))
+		{
+			if (TF2_CanSwitchTo(iClient, iWeapon))
+			{
+				TF2_SwitchToWeapon(iClient, iWeapon);
+				return;
+			}
+		}
+	}
 }
 
 void Loadout_AddWeapon(RandomizedLoadout eLoadout, RandomizedWeapon eList[MAX_WEAPONS], int iListCount)
