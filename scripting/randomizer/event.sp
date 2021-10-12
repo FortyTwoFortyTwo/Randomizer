@@ -5,6 +5,7 @@ void Event_Init()
 	HookEvent("teamplay_flag_event", Event_FlagCaptured);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
 	HookEvent("player_spawn", Event_PlayerSpawn);
+	HookEvent("player_regenerate", Event_PlayerRegenerate);
 	HookEvent("player_hurt", Event_PlayerHurt);
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("pass_score", Event_PassScore);
@@ -73,6 +74,17 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 	
 	//Between post_inventory_application and player_spawn all conds were removed, so have to refresh here
 	Loadout_RefreshClient(iClient);
+}
+
+public Action Event_PlayerRegenerate(Event event, const char[] sName, bool bDontBroadcast)
+{
+	if (!g_bEnabled)
+		return;
+	
+	//This event dont have any params, not even userid
+	//Regenerate screws up max ammo after InitClass, give it back
+	for (int iAmmoType = 0; iAmmoType < TF_AMMO_COUNT; iAmmoType++)
+		GivePlayerAmmo(g_iClientInitClass, SDKCall_GetMaxAmmo(g_iClientInitClass, iAmmoType), iAmmoType, true);
 }
 
 public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcast)

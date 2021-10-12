@@ -252,7 +252,7 @@ stock bool TF2_GetItemFromLoadoutSlot(int iClient, int iSlot, int &iWeapon, int 
 	return false;
 }
 
-stock bool TF2_GetItemFromAttribute(int iClient, char[] sAttrib, int &iWeapon, int &iPos)
+stock bool TF2_GetItemFromAttribute(int iClient, const char[] sAttrib, int &iWeapon, int &iPos)
 {
 	while (TF2_GetItem(iClient, iWeapon, iPos, true))
 		if (SDKCall_AttribHookValueFloat(0.0, sAttrib, iWeapon))
@@ -437,28 +437,14 @@ stock int TF2_GiveAmmo(int iClient, int iWeapon, int iCurrent, int iAdd, int iAm
 
 stock int TF2_GetMaxAmmo(int iClient, int iWeapon, int iAmmoType)
 {
-	//Same as CTFPlayer::GetMaxAmmo, this is made because of multiple weapons conflicts eachother on attributes
-	//TODO this function is so horrible with lots of hardcode, is there a better way to do this?
+	//CTFPlayer::GetMaxAmmo gets attribute by whole from client, which we dont want all weapons.
+	//We only want to scale attrib with weapon itself and all other weapons not using same ammotype
 	
-	int iClassMaxAmmo[CLASS_MAX+1][TF_AMMO_COUNT] = {
-		{0, 0, 0, 0, 0, 0, 0},		//Undefined
-		{0, 32, 36, 200, 1, 1, 1},	//Scout	
-		{0, 25, 75, 200, 1, 1, 1},	//Sniper
-		{0, 20, 32, 200, 1, 1, 1},	//Soldier
-		{0, 16, 24, 200, 1, 1, 1},	//Demoman
-		{0, 150, 0, 200, 1, 1, 1},	//Medic
-		{0, 200, 32, 200, 1, 1, 1},	//Heavy
-		{0, 200, 32, 200, 1, 1, 1},	//Pyro
-		{0, 0, 24, 200, 1, 1, 1},	//Spy
-		{0, 32, 200, 200, 1, 1, 1},	//Engineer
-	};
+	int iMaxAmmo = SDKCall_GetMaxAmmo(iClient, iAmmoType, TF2_GetDefaultClassFromItem(iWeapon));
+	float flMultiClient = TF2_GetMultiMaxAmmo(1.0, iAmmoType, iClient);
+	float flMultiWeapon = 1.0;
 	
-	int iMaxAmmo = iClassMaxAmmo[TF2_GetDefaultClassFromItem(iWeapon)][iAmmoType];
-	
-	//Getting attrib value from client is bad because weapons using same ammo index could interfere with max ammo attributes,
-	// but allow weapons with different ammo index to interfere with max ammo attributes
 	int iMaxWeapons = GetMaxWeapons();
-	float flVal = 1.0;
 	for (int i = 0; i < iMaxWeapons; i++)
 	{
 		int iTempWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
@@ -468,19 +454,22 @@ stock int TF2_GetMaxAmmo(int iClient, int iWeapon, int iAmmoType)
 		if (iTempWeapon != iWeapon && GetEntProp(iTempWeapon, Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
 			continue;
 		
-		switch (iAmmoType)
-		{
-			case TF_AMMO_PRIMARY: flVal = SDKCall_AttribHookValueFloat(flVal, "mult_maxammo_primary", iTempWeapon);
-			case TF_AMMO_SECONDARY: flVal = SDKCall_AttribHookValueFloat(flVal, "mult_maxammo_secondary", iTempWeapon);
-			case TF_AMMO_METAL: flVal = SDKCall_AttribHookValueFloat(flVal, "mult_maxammo_metal", iTempWeapon);
-			case TF_AMMO_GRENADES1: flVal = SDKCall_AttribHookValueFloat(flVal, "mult_maxammo_grenades1", iTempWeapon);
-		}
+		flMultiWeapon = TF2_GetMultiMaxAmmo(flMultiWeapon, iAmmoType, iTempWeapon);
 	}
 	
-	if (TF2_IsPlayerInCondition(iClient, TFCond_RuneHaste))
-		flVal *= 2.0;
-	
-	return RoundToFloor(float(iMaxAmmo) * flVal);
+	return RoundToFloor(float(iMaxAmmo) / flMultiClient * flMultiWeapon);
+}
+
+stock float TF2_GetMultiMaxAmmo(float flInitial, int iAmmoType, int iEntity)
+{
+	switch (iAmmoType)
+	{
+		case TF_AMMO_PRIMARY: return SDKCall_AttribHookValueFloat(flInitial, "mult_maxammo_primary", iEntity);
+		case TF_AMMO_SECONDARY: return SDKCall_AttribHookValueFloat(flInitial, "mult_maxammo_secondary", iEntity);
+		case TF_AMMO_METAL: return SDKCall_AttribHookValueFloat(flInitial, "mult_maxammo_metal", iEntity);
+		case TF_AMMO_GRENADES1: return SDKCall_AttribHookValueFloat(flInitial, "mult_maxammo_grenades1", iEntity);
+		default: return flInitial;
+	}
 }
 
 stock void TF2_RemoveItem(int iClient, int iWeapon)

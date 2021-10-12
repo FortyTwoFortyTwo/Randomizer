@@ -339,6 +339,7 @@ int g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 int g_iTouchItem = INVALID_ENT_REFERENCE;
 int g_iTouchToucher = INVALID_ENT_REFERENCE;
 int g_iClientEurekaTeleporting;
+int g_iClientInitClass;
 
 #include "randomizer/controls.sp"
 #include "randomizer/huds.sp"

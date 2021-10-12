@@ -854,6 +854,7 @@ public MRESReturn DHook_ClientCommandPost(int iClient, Handle hReturn, Handle hP
 public MRESReturn DHook_InitClassPre(int iClient)
 {
 	g_bInitClass = true;
+	g_iClientInitClass = iClient;
 	
 	//Give rune so health and ammo can be calculated correctly, but TF2 will remove it after validate
 	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
@@ -957,10 +958,6 @@ public MRESReturn DHook_InitClassPost(int iClient)
 		
 		delete g_aAllowWearables;
 	}
-	
-	//Give ammo back after screwing up stuff by changing m_hMyWeapons
-	for (int iAmmoType = 0; iAmmoType < TF_AMMO_COUNT; iAmmoType++)
-		GivePlayerAmmo(iClient, 9999, iAmmoType, true);
 	
 	//Also messed up huds because of m_hMyWeapons
 	Huds_RefreshClient(iClient);
