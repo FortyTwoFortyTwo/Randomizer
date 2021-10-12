@@ -151,24 +151,6 @@ stock bool TF2_IsWearable(int iWeapon)
 	return StrContains(sClassname, "tf_wearable") == 0 || StrEqual(sClassname, "tf_powerup_bottle");
 }
 
-stock bool TF2_WeaponFindAttribute(int iWeapon, char[] sAttrib, float &flVal)
-{
-	Address pAttrib = TF2Attrib_GetByName(iWeapon, sAttrib);
-	if (pAttrib != Address_Null)
-	{
-		flVal = TF2Attrib_GetValue(pAttrib);
-		return true;
-	}
-	
-	if (!GetEntProp(iWeapon, Prop_Send, "m_bOnlyIterateItemViewAttributes")) //Weapon is still using it's default attributes
-	{
-		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-		return TF2_IndexFindAttribute(iIndex, sAttrib, flVal);
-	}
-	
-	return false;
-}
-
 stock bool TF2_IndexFindAttribute(int iIndex, const char[] sAttrib, float &flVal)
 {
 	ArrayList aAttribs = TF2Econ_GetItemStaticAttributes(iIndex);
@@ -184,44 +166,6 @@ stock bool TF2_IndexFindAttribute(int iIndex, const char[] sAttrib, float &flVal
 	
 	delete aAttribs;
 	return false;
-}
-
-float TF2_GetAttributePercentage(int iClient, char[] sAttrib)
-{
-	float flTotal = 1.0;
-	
-	Address pAttrib = TF2Attrib_GetByName(iClient, sAttrib);
-	if (pAttrib != Address_Null)
-		flTotal *= TF2Attrib_GetValue(pAttrib);
-	
-	int iWeapon, iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		float flVal;
-		if (TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal))
-			flTotal *= flVal;
-	}
-	
-	return flTotal;
-}
-
-float TF2_GetAttributeAdditive(int iClient, char[] sAttrib)
-{
-	float flTotal;
-	
-	Address pAttrib = TF2Attrib_GetByName(iClient, sAttrib);
-	if (pAttrib != Address_Null)
-		flTotal += TF2Attrib_GetValue(pAttrib);
-	
-	int iWeapon, iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		float flVal;
-		if (TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal))
-			flTotal += flVal;
-	}
-	
-	return flTotal;
 }
 
 stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos, bool bCosmetic = false)
@@ -310,10 +254,8 @@ stock bool TF2_GetItemFromLoadoutSlot(int iClient, int iSlot, int &iWeapon, int 
 
 stock bool TF2_GetItemFromAttribute(int iClient, char[] sAttrib, int &iWeapon, int &iPos)
 {
-	float flVal;
-	
 	while (TF2_GetItem(iClient, iWeapon, iPos, true))
-		if (TF2_WeaponFindAttribute(iWeapon, sAttrib, flVal))
+		if (SDKCall_AttribHookValueFloat(0.0, sAttrib, iWeapon))
 			return true;
 	
 	return false;
@@ -448,30 +390,28 @@ stock int TF2_GiveAmmo(int iClient, int iWeapon, int iCurrent, int iAdd, int iAm
 	
 	if (eAmmoSource == kAmmoSource_Resupply)
 	{
-		float flVal;
-		
 		switch (iAmmoType)
 		{
 			case TF_AMMO_GRENADES1:
 			{
-				if (TF2_WeaponFindAttribute(iWeapon, "grenades1_resupply_denied", flVal) && flVal > 0.0)
+				if (SDKCall_AttribHookValueFloat(0.0, "grenades1_resupply_denied", iWeapon))
 					return 0;
 			}
 			case TF_AMMO_GRENADES2:
 			{
-				if (TF2_WeaponFindAttribute(iWeapon, "grenades2_resupply_denied", flVal) && flVal > 0.0)
+				if (SDKCall_AttribHookValueFloat(0.0, "grenades2_resupply_denied", iWeapon))
 					return 0;
 			}
 			case TF_AMMO_GRENADES3:
 			{
-				if (TF2_WeaponFindAttribute(iWeapon, "grenades3_resupply_denied", flVal) && flVal > 0.0)
+				if (SDKCall_AttribHookValueFloat(0.0, "grenades3_resupply_denied", iWeapon))
 					return 0;
 			}
 		}
 	}
 	else if (iAmmoType == TF_AMMO_METAL)	//Must not be from kAmmoSource_Resupply
 	{
-		float flVal = TF2_GetAttributePercentage(iClient, "metal_pickup_decreased");
+		float flVal = SDKCall_AttribHookValueFloat(1.0, "mult_metal_pickup", iClient);
 		iAdd = RoundToFloor(flVal * float(iAdd));
 	}
 	
@@ -508,52 +448,30 @@ stock int TF2_GetMaxAmmo(int iClient, int iWeapon, int iAmmoType)
 	
 	int iMaxAmmo = iClassMaxAmmo[TF2_GetDefaultClassFromItem(iWeapon)][iAmmoType];
 	
-	//Remove all weapons using same ammo index so they don't interfere with max ammo attributes
-	//Don't remove weapons with different ammo index so they could interfere with max ammo attributes
+	//Getting attrib value from client is bad because weapons using same ammo index could interfere with max ammo attributes,
+	// but allow weapons with different ammo index to interfere with max ammo attributes
 	int iMaxWeapons = GetMaxWeapons();
-	int[] iWeapons = new int[iMaxWeapons];
-	
+	float flVal = 1.0;
 	for (int i = 0; i < iMaxWeapons; i++)
 	{
-		iWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
-		if (iWeapons[i] != INVALID_ENT_REFERENCE && iWeapons[i] != iWeapon && GetEntProp(iWeapons[i], Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
-			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", -1, i);
-	}
-	
-	float flVal = 1.0;
-	switch (iAmmoType)
-	{
-		case TF_AMMO_PRIMARY:
+		int iTempWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		if (iTempWeapon == INVALID_ENT_REFERENCE)
+			continue;
+		
+		if (iTempWeapon != iWeapon && GetEntProp(iTempWeapon, Prop_Send, "m_iPrimaryAmmoType") == iAmmoType)
+			continue;
+		
+		switch (iAmmoType)
 		{
-			flVal *= TF2_GetAttributePercentage(iClient, "hidden primary max ammo bonus");
-			flVal *= TF2_GetAttributePercentage(iClient, "maxammo primary increased");
-			flVal *= TF2_GetAttributePercentage(iClient, "maxammo primary reduced");
-			
-		}
-		case TF_AMMO_SECONDARY:
-		{
-			flVal *= TF2_GetAttributePercentage(iClient, "hidden secondary max ammo penalty");
-			flVal *= TF2_GetAttributePercentage(iClient, "maxammo secondary increased");
-			flVal *= TF2_GetAttributePercentage(iClient, "maxammo secondary reduced");
-			
-		}
-		case TF_AMMO_METAL:
-		{
-			flVal *= TF2_GetAttributePercentage(iClient, "maxammo metal increased");
-			flVal *= TF2_GetAttributePercentage(iClient, "maxammo metal reduced");
-		}
-		case TF_AMMO_GRENADES1:
-		{
-			flVal *= TF2_GetAttributePercentage(iClient, "maxammo grenades1 increased");
+			case TF_AMMO_PRIMARY: flVal = SDKCall_AttribHookValueFloat(flVal, "mult_maxammo_primary", iTempWeapon);
+			case TF_AMMO_SECONDARY: flVal = SDKCall_AttribHookValueFloat(flVal, "mult_maxammo_secondary", iTempWeapon);
+			case TF_AMMO_METAL: flVal = SDKCall_AttribHookValueFloat(flVal, "mult_maxammo_metal", iTempWeapon);
+			case TF_AMMO_GRENADES1: flVal = SDKCall_AttribHookValueFloat(flVal, "mult_maxammo_grenades1", iTempWeapon);
 		}
 	}
 	
 	if (TF2_IsPlayerInCondition(iClient, TFCond_RuneHaste))
 		flVal *= 2.0;
-	
-	//Set it back
-	for (int i = 0; i < iMaxWeapons; i++)
-		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
 	
 	return RoundToFloor(float(iMaxAmmo) * flVal);
 }

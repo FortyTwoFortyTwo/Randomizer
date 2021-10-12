@@ -27,7 +27,6 @@
 #define TEAM_MIN	2	//First valid TFTeam, TFTeam_Red
 #define TEAM_MAX	3	//Last valid TFTeam, TFTeam_Blue
 
-#define DEFAULT_MAX_AMMO	1000	//Used for cases when 2 weapons use same ammotype, number only matters when diving for ammo pickups
 #define MAX_WEAPONS		40			//Max 48 m_hMyWeapons, give 8 as a space for other weapons (PDA, action etc)
 #define MAX_GROUPS		64
 

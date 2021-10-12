@@ -57,8 +57,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	int iWeapon, iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
-		float flVal;
-		if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_resupply_denied", flVal) || flVal == 0.0)
+		if (!SDKCall_AttribHookValueFloat(0.0, "item_meter_resupply_denied", iWeapon))
 			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
 	}
 }
@@ -93,8 +92,8 @@ public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadc
 		{
 			//Could add check whenever if item_meter_charge_type value is 3, meh
 			
-			float flRate;
-			if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_damage_for_full_charge", flRate))
+			float flRate = SDKCall_AttribHookValueFloat(0.0, "item_meter_damage_for_full_charge", iWeapon);
+			if (!flRate)
 				continue;
 			
 			flRate = float(iDamage) / flRate * 100.0;

@@ -545,8 +545,7 @@ void Loadout_ApplyClientWeapons(int iClient)
 		TF2_EquipWeapon(iClient, iWeapon);
 		
 		//Fill charge meter
-		float flVal;
-		if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_resupply_denied", flVal) || flVal == 0.0)
+		if (!SDKCall_AttribHookValueFloat(0.0, "item_meter_resupply_denied", iWeapon))
 			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
 		
 		//Fill ammo

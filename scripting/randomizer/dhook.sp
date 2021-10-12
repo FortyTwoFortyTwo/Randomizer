@@ -287,6 +287,7 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 	g_bSkipGetMaxAmmo = true;
 	
 	int iTotalAdded;
+	int iMaxAmmoTF2 = SDKCall_GetMaxAmmo(iClient, iAmmoType);	//TF2 calculation for max ammo, which is usually incorrect
 	
 	//Give the ammo to each weapons by ammotype
 	int iMaxWeapons = GetMaxWeapons();
@@ -306,7 +307,7 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 			
 			int iAdd = iCount;
 			if (iForceWeapon == INVALID_ENT_REFERENCE)
-				iAdd = RoundToFloor(float(iCount) / float(DEFAULT_MAX_AMMO) * float(iMaxAmmo));	//based from DEFAULT_MAX_AMMO at GetMaxAmmo
+				iAdd = RoundToFloor(float(iCount) * float(iMaxAmmo) / float(iMaxAmmoTF2));
 			
 			int iCurrent = Properties_GetWeaponPropInt(iWeapon, "m_iAmmo");
 			iAdd = TF2_GiveAmmo(iClient, iWeapon, iCurrent, iAdd, iAmmoType, bSuppressSound, eAmmoSource);
@@ -348,8 +349,7 @@ public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParam
 		return MRES_ChangedHandled;
 	}
 	
-	DHookSetReturn(hReturn, DEFAULT_MAX_AMMO);
-	return MRES_Supercede;
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_TauntPre(int iClient, Handle hParams)
@@ -392,9 +392,11 @@ public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
 		return MRES_Supercede;
 	}
 	
-	float flVal;
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iWeapon > MaxClients && TF2_WeaponFindAttribute(iWeapon, "air dash count", flVal) && iAirDash < RoundToNearest(flVal))
+	if (iWeapon == INVALID_ENT_REFERENCE)
+		return MRES_Ignored;
+	
+	if (iAirDash < RoundToNearest(SDKCall_AttribHookValueFloat(0.0, "air_dash_count", iWeapon)))
 	{
 		SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
 		DHookSetReturn(hReturn, true);
@@ -532,9 +534,7 @@ public MRESReturn DHook_ApplyBiteEffectsPre(int iWeapon, Handle hParams)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");	
 	
-	float flGivesHealth;
-	TF2_WeaponFindAttribute(iWeapon, "lunchbox adds maxhealth bonus", flGivesHealth);
-	if (flGivesHealth > 0)
+	if (SDKCall_AttribHookValueFloat(0.0, "set_weapon_mode", iWeapon))
 		g_bApplyBiteEffectsChocolate[iClient] = true;
 }
 
@@ -562,9 +562,8 @@ public MRESReturn DHook_UpdateRageBuffsAndRagePre(Address pPlayerShared)
 	if (g_iGainingRageWeapon != INVALID_ENT_REFERENCE || iClient <= 0 || iClient > MaxClients)
 		return MRES_Ignored;
 	
-	float flRageType = TF2_GetAttributeAdditive(iClient, "mod soldier buff type");
-	if (!flRageType) //We don't have any rage items, don't need to do anything
-		return MRES_Ignored;
+	if (!SDKCall_AttribHookValueFloat(0.0, "set_buff_type", iClient))
+		return MRES_Ignored;	//We don't have any rage items, don't need to do anything
 	
 	RequestFrame(Properties_UpdateRageBuffsAndRage, iClient);
 	return MRES_Supercede;
@@ -599,7 +598,7 @@ public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParam
 		return MRES_Ignored;
 	
 	int iBuffType = DHookGetParam(hParams, 2);
-	float flClientRageType = TF2_GetAttributeAdditive(iClient, "mod soldier buff type");
+	float flClientRageType = SDKCall_AttribHookValueFloat(0.0, "set_buff_type", iClient);
 	TF2Attrib_SetByName(iClient, "mod soldier buff type", float(iBuffType) - flClientRageType);
 	
 	Properties_LoadRageProps(iClient, iWeapon);
@@ -808,7 +807,7 @@ public MRESReturn DHook_KilledPost(int iObject)
 		if (iCount > 0)
 		{
 			int iTempWeapon, iPos;
-			while (TF2_GetItemFromAttribute(iClient, "mod sentry killed revenge", iTempWeapon, iPos))
+			while (TF2_GetItemFromAttribute(iClient, "sentry_killed_revenge", iTempWeapon, iPos))
 				Properties_AddWeaponPropInt(iTempWeapon, "m_iRevengeCrits", iCount);
 		}
 		
@@ -831,7 +830,7 @@ public MRESReturn DHook_KilledPost(int iObject)
 			if (iCount > 0)
 			{
 				int iTempWeapon, iPos;
-				while (TF2_GetItemFromAttribute(iAttacker, "sapper kills collect crits", iTempWeapon, iPos))
+				while (TF2_GetItemFromAttribute(iAttacker, "sapper_kills_collect_crits", iTempWeapon, iPos))
 					Properties_AddWeaponPropInt(iTempWeapon, "m_iRevengeCrits", iCount);
 			}
 			
@@ -1093,7 +1092,7 @@ public MRESReturn DHook_CheckBlockBackstabPre(int iClient, Handle hReturn, Handl
 	
 	//Check each razorback and only break one if available
 	int iWeapon, iPos;
-	while (TF2_GetItemFromAttribute(iClient, "backstab shield", iWeapon, iPos))
+	while (TF2_GetItemFromAttribute(iClient, "set_blockbackstab_once", iWeapon, iPos))
 	{
 		if (Properties_GetWeaponPropFloat(iWeapon, "m_flItemChargeMeter") < 100.0)
 			continue;

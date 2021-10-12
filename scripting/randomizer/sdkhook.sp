@@ -88,7 +88,7 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 		{
 			//Add revenge crit to all diamondbacks
 			int iTempWeapon, iPos;
-			while (TF2_GetItemFromAttribute(iAttacker, "sapper kills collect crits", iTempWeapon, iPos))	//This is not a sapper kill...
+			while (TF2_GetItemFromAttribute(iAttacker, "sapper_kills_collect_crits", iTempWeapon, iPos))	//This is not a sapper kill...
 				Properties_AddWeaponPropInt(iTempWeapon, "m_iRevengeCrits", iRevengeCrits);
 		}
 		
@@ -193,8 +193,8 @@ public void Client_PostThink(int iClient)
 	int iWeapon, iPos;
 	while (TF2_GetItemFromAttribute(iClient, "item_meter_charge_type", iWeapon, iPos))
 	{
-		float flRate;
-		if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_charge_rate", flRate))
+		float flRate = SDKCall_AttribHookValueFloat(0.0, "item_meter_charge_rate", iWeapon);
+		if (!flRate)
 			continue;
 		
 		flRate = GetGameFrameTime() / flRate * 100.0;

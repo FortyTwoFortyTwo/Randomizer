@@ -1,3 +1,4 @@
+static Handle g_hSDKGetMaxAmmo;
 static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
@@ -7,6 +8,7 @@ static Handle g_hSDKRollNewSpell;
 static Handle g_hSDKUpdateRageBuffsAndRage;
 static Handle g_hSDKModifyRage;
 static Handle g_hSDKSetCarryingRuneType;
+static Handle g_hSDKAttribHookValueFloat;
 static Handle g_hSDKHandleRageGain;
 static Handle g_hSDKGetBaseEntity;
 static Handle g_hSDKGetMaxHealth;
@@ -17,6 +19,15 @@ static Handle g_hSDKGiveNamedItem;
 
 public void SDKCall_Init(GameData hGameData)
 {
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+	g_hSDKGetMaxAmmo = EndPrepSDKCall();
+	if (!g_hSDKGetMaxAmmo)
+		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo");
+	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::AddObject");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
@@ -84,6 +95,18 @@ public void SDKCall_Init(GameData hGameData)
 		LogError("Failed to create call: CTFPlayerShared::SetCarryingRuneType");
 	
 	StartPrepSDKCall(SDKCall_Static);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CAttributeManager::AttribHookValue<float>");
+	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
+	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
+	g_hSDKAttribHookValueFloat = EndPrepSDKCall();
+	if (!g_hSDKAttribHookValueFloat)
+		LogError("Failed to create call: CAttributeManager::AttribHookValue<float>");
+	
+	StartPrepSDKCall(SDKCall_Static);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "HandleRageGain");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);	// unsigned int
@@ -141,6 +164,11 @@ public void SDKCall_Init(GameData hGameData)
 		LogError("Failed to create call: CTFPlayer::GiveNamedItem");
 }
 
+int SDKCall_GetMaxAmmo(int iClient, int iAmmoType, TFClassType nClass = view_as<TFClassType>(-1))
+{
+	return SDKCall(g_hSDKGetMaxAmmo, iClient, iAmmoType, nClass);
+}
+
 void SDKCall_AddObject(int iClient, int iObject)
 {
 	SDKCall(g_hSDKAddObject, iClient, iObject);
@@ -184,6 +212,11 @@ void SDKCall_ModifyRage(Address pPlayerShared, float flAdd)
 void SDKCall_SetCarryingRuneType(Address pPlayerShared, int iRuneType)
 {
 	SDKCall(g_hSDKSetCarryingRuneType, pPlayerShared, iRuneType);
+}
+
+float SDKCall_AttribHookValueFloat(float flInitial, const char[] sAttribClass, int iEntity, Address pItemList = Address_Null, bool bString = false)
+{
+	return SDKCall(g_hSDKAttribHookValueFloat, flInitial, sAttribClass, iEntity, pItemList, bString);
 }
 
 void SDKCall_HandleRageGain(int iClient, int iRequiredBuffFlags, float flDamage, float fInverseRageGainScale)
