@@ -800,6 +800,12 @@ void Loadout_ApplyClientRune(int iClient)
 	g_eLoadoutClient[iClient].iCurrentRuneType = g_eLoadoutClient[iClient].iNextRuneType;
 }
 
+public Action Loadout_TimerApplyClientRune(Handle hTimer, int iClient)
+{
+	if (0 < iClient <= MaxClients)
+		Loadout_ApplyClientRune(iClient);
+}
+
 void Loadout_ResetClientRune(int iClient)
 {
 	if (g_eLoadoutClient[iClient].iCurrentRuneType != -1)

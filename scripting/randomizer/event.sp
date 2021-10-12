@@ -72,8 +72,12 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
 	
-	//Between post_inventory_application and player_spawn all conds were removed, so have to refresh here
 	Loadout_RefreshClient(iClient);
+	
+	//Because client caught sourcemod changes faster than its own prediction (somehow),
+	// remove rune and add a delay to give it back so icon above head appears properly
+	SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), -1);
+	CreateTimer(0.2, Loadout_TimerApplyClientRune, iClient);
 }
 
 public Action Event_PlayerRegenerate(Event event, const char[] sName, bool bDontBroadcast)
