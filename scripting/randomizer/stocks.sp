@@ -265,7 +265,15 @@ stock int TF2_GetSlot(int iWeapon)
 {
 	int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
 	TFClassType nClass = TF2_GetDefaultClassFromItem(iWeapon);
-	return TF2_GetSlotFromIndex(iIndex, nClass);
+	int iSlot = TF2_GetSlotFromIndex(iIndex, nClass);
+	if (iSlot == -1)
+	{
+		char sClassname[256];
+		GetEntityClassname(iIndex, sClassname, sizeof(sClassname));
+		ThrowError("Could not find slot from item def index '%d' and classname '%s'", iIndex, sClassname);
+	}
+	
+	return iSlot;
 }
 
 stock int TF2_GetSlotFromIndex(int iIndex, TFClassType nClass = TFClass_Unknown)
