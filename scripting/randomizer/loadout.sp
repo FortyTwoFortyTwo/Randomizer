@@ -394,7 +394,7 @@ void Loadout_RandomizeWeapon(RandomizedLoadout eLoadout)
 	
 	if (iMinCount > iSlotMinCount)
 		iMinCount -= iSlotMinCount;
-	else if (iMinCount < iSlotMinCount)
+	else if (iMinCount <= iSlotMinCount)
 		iMinCount = 0;
 	
 	if (eInfo.bDefaultClass)
