@@ -993,7 +993,7 @@ void RandomizeWeapon(RandomizedWeapon eRandomized[CLASS_MAX+1])
 	
 	if (iMinCount > iSlotMinCount)
 		iMinCount -= iSlotMinCount;
-	else if (iMinCount < iSlotMinCount)
+	else if (iMinCount <= iSlotMinCount)
 		iMinCount = 0;
 	
 	if (bWeaponsFromClass)
