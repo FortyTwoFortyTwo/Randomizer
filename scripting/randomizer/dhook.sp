@@ -888,8 +888,6 @@ public MRESReturn DHook_InitClassPre(int iClient)
 		g_iInitClassWeapons[i] = INVALID_ENT_REFERENCE;
 	}
 	
-	int iOffset = FindSendPropInfo("CTFWearable", "m_bValidatedAttachedEntity") + 16;	//m_bAlwaysAllow
-	
 	//ValidateWearables validates both wearable weapons and cosmetics, avoid having it destroyed by disguising as disguise weapon
 	int iWearable;
 	while ((iWearable = FindEntityByClassname(iWearable, "tf_wearable*")) > MaxClients)
@@ -897,7 +895,7 @@ public MRESReturn DHook_InitClassPre(int iClient)
 		if (GetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity") == iClient)
 		{
 			int iIndex = GetEntProp(iWearable, Prop_Send, "m_iItemDefinitionIndex");
-			if (GetEntData(iWearable, iOffset, 1))	//TF2 already planning not to delete this
+			if (GetEntData(iWearable, g_iOffsetAlwaysAllow, 1))	//TF2 already planning not to delete this
 				continue;
 			
 			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
@@ -912,7 +910,7 @@ public MRESReturn DHook_InitClassPre(int iClient)
 				
 				if (bAllow)
 				{
-					SetEntData(iWearable, iOffset, true, 1);
+					SetEntData(iWearable, g_iOffsetAlwaysAllow, true, 1);
 					
 					if (!g_aAllowWearables)
 						g_aAllowWearables = new ArrayList();
@@ -950,11 +948,9 @@ public MRESReturn DHook_InitClassPost(int iClient)
 	
 	if (g_aAllowWearables)
 	{
-		int iOffset = FindSendPropInfo("CTFWearable", "m_bValidatedAttachedEntity") + 16;	//m_bAlwaysAllow
-		
 		int iLength = g_aAllowWearables.Length;
 		for (int i = 0; i < iLength; i++)
-			SetEntData(g_aAllowWearables.Get(i), iOffset, false, 1);
+			SetEntData(g_aAllowWearables.Get(i), g_iOffsetAlwaysAllow, false, 1);
 		
 		delete g_aAllowWearables;
 	}

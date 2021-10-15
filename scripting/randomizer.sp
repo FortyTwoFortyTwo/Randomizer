@@ -320,8 +320,9 @@ bool g_bEnabled;
 bool g_bTF2Items;
 bool g_bAllowGiveNamedItem;
 int g_iRuneCount;
-int g_iOffsetItemDefinitionIndex = -1;
+int g_iOffsetItemDefinitionIndex;
 int g_iOffsetPlayerShared;
+int g_iOffsetAlwaysAllow;
 
 ConVar g_cvEnabled;
 ConVar g_cvDroppedWeapons;
@@ -388,6 +389,29 @@ public void OnPluginStart()
 	//Any weapons using m_Item would work to get offset
 	g_iOffsetItemDefinitionIndex = FindSendPropInfo("CTFWearable", "m_iItemDefinitionIndex") - FindSendPropInfo("CTFWearable", "m_Item");
 	g_iOffsetPlayerShared = FindSendPropInfo("CTFPlayer", "m_Shared");
+	
+	/* This is an ugly way to get offset, but atleast it should almost never break from tf2 updates,
+	 * tf2 updating offset before all of this wouldn't break, and reports error if tf2 ever somehow broke it.
+	 *
+	 * There are properties and netclass between m_bValidatedAttachedEntity and m_bDisguiseWearable:
+	 * - CEconEntity::m_bValidatedAttachedEntity
+	 * - CEconEntity::m_bHasParticleSystems
+	 * - CEconEntity::m_hOldProvidee
+	 * - CEconEntity::m_iOldOwnerClass
+	 * - CEconWearable::m_bAlwaysAllow
+	 * - CTFWearable::m_bDisguiseWearable
+	 *
+	 * Windows has an extra +4 offset, while Linux does not have any extra offset between each netclass,
+	 * figure out by gap between properties on whenever were in windows or linux
+	 */
+	int iOffsetValidatedAttachedEntity = FindSendPropInfo("CTFWearable", "m_bValidatedAttachedEntity");
+	int iOffsetDisguiseWearable = FindSendPropInfo("CTFWearable", "m_bDisguiseWearable");
+	if (iOffsetDisguiseWearable - iOffsetValidatedAttachedEntity == 0x14)
+		g_iOffsetAlwaysAllow = iOffsetDisguiseWearable - 0x08;	//Linux
+	else if (iOffsetDisguiseWearable - iOffsetValidatedAttachedEntity == 0x14 + 0x08)
+		g_iOffsetAlwaysAllow = iOffsetDisguiseWearable - 0x08 - 0x04;	//Windows
+	else
+		LogError("Could not figure out offset for CEconWearable::m_bAlwaysAllow");
 	
 	Commands_Init();
 	ConVar_Init();
