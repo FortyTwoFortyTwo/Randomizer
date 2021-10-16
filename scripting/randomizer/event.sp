@@ -1,30 +1,65 @@
 void Event_Init()
 {
 	HookEvent("teamplay_round_start", Event_RoundStart);
-	HookEvent("player_spawn", Event_PlayerSpawn);
+	HookEvent("teamplay_point_captured", Event_PointCaptured);
+	HookEvent("teamplay_flag_event", Event_FlagCaptured);
 	HookEvent("post_inventory_application", Event_PlayerInventoryUpdate);
+	HookEvent("player_spawn", Event_PlayerSpawn);
+	HookEvent("player_regenerate", Event_PlayerRegenerate);
 	HookEvent("player_hurt", Event_PlayerHurt);
 	HookEvent("player_death", Event_PlayerDeath);
+	HookEvent("pass_score", Event_PassScore);
 }
-
 
 public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!g_bEnabled)
 		return;
 	
-	RandomizeTeamWeapon();
+	Group_TriggerRandomizeAll(RandomizedAction_Round);
 	
-	//Update client weapons
-	for (int iClient = 1; iClient <= MaxClients; iClient++)
+	if (event.GetBool("full_reset"))
+		Group_TriggerRandomizeAll(RandomizedAction_RoundFull);
+}
+
+public Action Event_PointCaptured(Event hEvent, const char[] sName, bool bDontBroadcast)
+{
+	char[] sCappers = new char[MaxClients];
+	
+	hEvent.GetString("cappers", sCappers, MaxClients+1);
+	
+	for (int i = 0; i < MaxClients; i++)
+		if (sCappers[i])
+			Group_TriggerRandomizeClient(view_as<int>(sCappers[i]), RandomizedAction_CPCapture);
+}
+
+public Action Event_FlagCaptured(Event hEvent, const char[] sName, bool bDontBroadcast)
+{
+	if (hEvent.GetInt("eventtype") != 2)	//Check if it actually capture and not other events
+		return;
+	
+	int iClient = hEvent.GetInt("player");
+	if (iClient <= 0 || iClient > MaxClients)
+		return;
+	
+	Group_TriggerRandomizeClient(iClient, RandomizedAction_FlagCapture);
+}
+
+public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
+{
+	if (!g_bEnabled)
+		return;
+	
+	int iClient = GetClientOfUserId(event.GetInt("userid"));
+	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
+		return;
+	
+	//Refill charge meters
+	int iWeapon, iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
-		if (IsClientInGame(iClient))
-		{
-			RandomizeClientWeapon(iClient);
-			
-			if (IsClassRandomized(iClient) || IsWeaponRandomized(iClient))
-				RefreshPlayer(iClient);
-		}
+		if (!SDKCall_AttribHookValueFloat(0.0, "item_meter_resupply_denied", iWeapon))
+			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
 	}
 }
 
@@ -37,128 +72,23 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
 		return;
 	
-	g_bClientRefreshCosmetics[iClient] = false;	//Client respawned, dont need force refresh demand
+	Loadout_RefreshClient(iClient);
 	
-	if (IsCosmeticRandomized(iClient))
-		RefreshCosmetics(iClient);
+	//Because client caught sourcemod changes faster than its own prediction (somehow),
+	// remove rune and add a delay to give it back so icon above head appears properly
+	SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), -1);
+	CreateTimer(0.2, Loadout_TimerApplyClientRune, iClient);
 }
 
-public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
+public Action Event_PlayerRegenerate(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!g_bEnabled)
 		return;
 	
-	int iClient = GetClientOfUserId(event.GetInt("userid"));
-	if (TF2_GetClientTeam(iClient) <= TFTeam_Spectator)
-		return;
-	
-	g_bClientRefreshWeapons[iClient] = false;	//Client respawned, dont need force refresh demand
-	
-	TFClassType nClass = TF2_GetPlayerClass(iClient);
-	
-	//Because of blocking ValidateWeapons and ValidateWearables, make sure action weapon is correct
-	Address pActionItem = SDKCall_GetLoadoutItem(iClient, nClass, LoadoutSlot_Action);
-	bool bFound;
-	
-	int iWeapon, iPos;
-	while (TF2_GetItemFromLoadoutSlot(iClient, LoadoutSlot_Action, iWeapon, iPos))
-	{
-		if (!TF2_IsValidEconItemView(pActionItem) || GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex") != LoadFromAddress(pActionItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16))
-			TF2_RemoveItem(iClient, iWeapon);
-		else
-			bFound = true;
-	}
-	
-	if (!bFound && TF2_IsValidEconItemView(pActionItem))
-		TF2_EquipWeapon(iClient, TF2_GiveNamedItem(iClient, pActionItem));
-	
-	//Refill charge meters
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		float flVal;
-		if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_resupply_denied", flVal) || flVal == 0.0)
-			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
-	}
-	
-	if (!IsWeaponRandomized(iClient))
-		return;
-	
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		char sClassname[256];
-		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-		
-		if (CanKeepWeapon(iClient, sClassname, iIndex))
-			continue;
-		
-		if (!g_eClientWeapon[iClient][nClass].HasWeapon(iWeapon))
-			TF2_RemoveItem(iClient, iWeapon);
-	}
-	
-	
-	for (iPos = 0; iPos < MAX_WEAPONS; iPos++)
-	{
-		if (g_eClientWeapon[iClient][nClass].iRef[iPos] != INVALID_ENT_REFERENCE && !IsValidEntity(g_eClientWeapon[iClient][nClass].iRef[iPos]))
-			g_eClientWeapon[iClient][nClass].iRef[iPos] = INVALID_ENT_REFERENCE;
-		
-		if (g_eClientWeapon[iClient][nClass].iRef[iPos] != INVALID_ENT_REFERENCE)
-			continue;
-		
-		int iIndex = g_eClientWeapon[iClient][nClass].iIndex[iPos];
-		if (iIndex == -1 || !ItemIsAllowed(iIndex))
-			continue;
-		
-		int iSlot = g_eClientWeapon[iClient][nClass].iSlot[iPos];
-		
-		Address pItem = TF2_FindReskinItem(iClient, iIndex);
-		if (pItem)
-			iWeapon = TF2_GiveNamedItem(iClient, pItem, iSlot);
-		else
-			iWeapon = TF2_CreateWeapon(iClient, iIndex, iSlot);
-		
-		if (iWeapon == INVALID_ENT_REFERENCE)
-		{
-			PrintToChat(iClient, "Unable to create weapon! index '%d'", iIndex);
-			LogError("Unable to create weapon! index '%d'", iIndex);
-			continue;
-		}
-		
-		//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
-		if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
-			SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
-		
-		//Fill charge meter
-		float flVal;
-		if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_resupply_denied", flVal) || flVal == 0.0)
-			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
-		
-		TF2_EquipWeapon(iClient, iWeapon);
-		
-		if (ViewModels_ShouldBeInvisible(iWeapon, nClass))
-			ViewModels_EnableInvisible(iWeapon);
-		
-		g_eClientWeapon[iClient][nClass].iRef[iPos] = EntIndexToEntRef(iWeapon);
-	}
-	
-	//Set ammo to 0, CTFPlayer::GetMaxAmmo detour will correct this, adding ammo by current
+	//This event dont have any params, not even userid
+	//Regenerate screws up max ammo after InitClass, give it back
 	for (int iAmmoType = 0; iAmmoType < TF_AMMO_COUNT; iAmmoType++)
-		SetEntProp(iClient, Prop_Send, "m_iAmmo", 0, _, iAmmoType);
-	
-	//Set active weapon if dont have one
-	//TODO update this
-	if (GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") == INVALID_ENT_REFERENCE)
-	{
-		for (int iSlot = 0; iSlot <= WeaponSlot_Melee; iSlot++)
-		{
-			iWeapon = GetPlayerWeaponSlot(iClient, iSlot);	//Dont want wearable
-			if (iWeapon > MaxClients)
-			{
-				SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
-				break;
-			}
-		}
-	}
+		GivePlayerAmmo(g_iClientInitClass, SDKCall_GetMaxAmmo(g_iClientInitClass, iAmmoType), iAmmoType, true);
 }
 
 public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcast)
@@ -178,8 +108,8 @@ public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadc
 		{
 			//Could add check whenever if item_meter_charge_type value is 3, meh
 			
-			float flRate;
-			if (!TF2_WeaponFindAttribute(iWeapon, "item_meter_damage_for_full_charge", flRate))
+			float flRate = SDKCall_AttribHookValueFloat(0.0, "item_meter_damage_for_full_charge", iWeapon);
+			if (!flRate)
 				continue;
 			
 			flRate = float(iDamage) / flRate * 100.0;
@@ -193,14 +123,39 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 	if (!g_bEnabled)
 		return;
 	
-	int iClient = GetClientOfUserId(event.GetInt("userid"));
+	int iVictim = GetClientOfUserId(event.GetInt("userid"));
 	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
+	int iAssister = GetClientOfUserId(event.GetInt("assister"));
 	bool bDeadRinger = (event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER) != 0;
+	int iCustomKill = event.GetInt("customkill");
 	
 	if (bDeadRinger)
-		g_bFeignDeath[iClient] = true;
+	{
+		g_bFeignDeath[iVictim] = true;
+	}
+	else
+	{
+		Group_TriggerRandomizeClient(iVictim, RandomizedAction_Death);
+		
+		if (0 < iAttacker <= MaxClients && iVictim != iAttacker)
+			Group_TriggerRandomizeClient(iVictim, RandomizedAction_DeathKill);
+		else if (iCustomKill == TF_CUSTOM_SUICIDE)
+			Group_TriggerRandomizeClient(iVictim, RandomizedAction_DeathSuicide);
+		else
+			Group_TriggerRandomizeClient(iVictim, RandomizedAction_DeathEnv);
+	}
 	
-	//Only generate new weapons if killed from attacker, and it's a normal round
-	if (0 < iAttacker <= MaxClients && IsClientInGame(iAttacker) && iClient != iAttacker && !bDeadRinger && g_cvRandomWeapons.IntValue == Mode_Normal)
-		RandomizeClientWeapon(iClient);
+	if (0 < iAttacker <= MaxClients && iVictim != iAttacker)
+		Group_TriggerRandomizeClient(iAttacker, RandomizedAction_Kill);
+	if (0 < iAssister <= MaxClients && iVictim != iAssister)
+		Group_TriggerRandomizeClient(iAssister, RandomizedAction_Assist);
+}
+
+public Action Event_PassScore(Event event, const char[] sName, bool bDontBroadcast)
+{
+	if (!g_bEnabled)
+		return;
+	
+	int iClient = event.GetInt("scorer");
+	Group_TriggerRandomizeClient(iClient, RandomizedAction_PassScore);
 }

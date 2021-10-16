@@ -329,7 +329,7 @@ void Properies_CallRageMeter(int iClient, Function fCall, any nParam1 = 0, any n
 	int[] iWeapons = new int[iMaxWeapons];
 	
 	//Get overall buff type from multiple weapons to subtract down for each ones
-	float flClientRageType = TF2_GetAttributeAdditive(iClient, "mod soldier buff type");
+	float flClientRageType = SDKCall_AttribHookValueFloat(0.0, "set_buff_type", iClient);
 	
 	//Remove all weapons so they don't interfere with its rage stats
 	for (int i = 0; i < iMaxWeapons; i++)
@@ -350,7 +350,8 @@ void Properies_CallRageMeter(int iClient, Function fCall, any nParam1 = 0, any n
 		
 		//Prevent calling same class twice, but only if it not for rage meter
 		//Soldier, Pyro and Sniper(?) use rage meter, while Heavy, Engineer, Medic and Sniper use whatever else there
-		if (!TF2_WeaponFindAttribute(iWeapons[i], "mod soldier buff type", flVal) && bCalledClass[nClass])	//Must call TF2_WeaponFindAttribute for flVal
+		flVal = SDKCall_AttribHookValueFloat(0.0, "set_buff_type", iClient);
+		if (!flVal && bCalledClass[nClass])
 			continue;
 		
 		//ModifyRage is expected to only be called for Hitman Heatmaker, only increase meter to it

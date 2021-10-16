@@ -8,6 +8,7 @@ enum struct Detour
 
 static ArrayList g_aDHookDetours;
 
+static Handle g_hDHookEventKilled;
 static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookGetEffectBarAmmo;
 static Handle g_hDHookSwing;
@@ -17,23 +18,27 @@ static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookForceRespawn;
 static Handle g_hDHookEquipWearable;
 static Handle g_hDHookGetAmmoCount;
-static Handle g_hDHookGiveNamedItem;
 static Handle g_hDHookClientCommand;
+static Handle g_hDHookGiveNamedItem;
+static Handle g_hDHookInitClass;
 static Handle g_hDHookFrameUpdatePostEntityThink;
 
 static bool g_bSkipGetMaxAmmo;
-static int g_iWeaponGetLoadoutItem = INVALID_ENT_REFERENCE;
-static bool g_bManageBuilderWeapons;
-static ArrayList g_aValidateWearables;
-static bool g_bValidateWearablesDisguised;
+static ArrayList g_aAllowWearables;
+static bool g_bInitClass;
+static int g_iInitClassWeapons[48] = {INVALID_ENT_REFERENCE, ...};
 static int g_iBuildingKilledSapper = INVALID_ENT_REFERENCE;
 
-static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS];
-static int g_iHookIdClientCommand[TF_MAXPLAYERS];
+static int g_iHookIdEventKilledPre[TF_MAXPLAYERS];
 static int g_iHookIdForceRespawnPre[TF_MAXPLAYERS];
 static int g_iHookIdForceRespawnPost[TF_MAXPLAYERS];
 static int g_iHookIdEquipWearable[TF_MAXPLAYERS];
 static int g_iHookIdGetAmmoCount[TF_MAXPLAYERS];
+static int g_iHookIdClientCommand[TF_MAXPLAYERS];
+static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS];
+static int g_iHookIdInitClassPre[TF_MAXPLAYERS];
+static int g_iHookIdInitClassPost[TF_MAXPLAYERS];
+
 static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS];
 static bool g_bApplyBiteEffectsChocolate[TF_MAXPLAYERS];
 
@@ -48,18 +53,16 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", DHook_CanAirDashPre, _);
-	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWeapons", DHook_ValidateWeaponsPre, DHook_ValidateWeaponsPost);
-	DHook_CreateDetour(hGameData, "CTFPlayer::ValidateWearables", DHook_ValidateWearablesPre, DHook_ValidateWearablesPost);
-	DHook_CreateDetour(hGameData, "CTFPlayer::ManageBuilderWeapons", DHook_ManageBuilderWeaponsPre, DHook_ManageBuilderWeaponsPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::Weapon_GetWeaponByType", _, DHook_GetWeaponByTypePost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::EndClassSpecialSkill", DHook_EndClassSpecialSkillPre, DHook_EndClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
-	DHook_CreateDetour(hGameData, "CTFPlayer::GetLoadoutItem", DHook_GetLoadoutItemPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxHealthForBuffing", DHook_GetMaxHealthForBuffingPre, DHook_GetMaxHealthForBuffingPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::TeamFortress_CalculateMaxSpeed", DHook_CalculateMaxSpeedPre, DHook_CalculateMaxSpeedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::TakeHealth", DHook_TakeHealthPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CheckBlockBackstab", DHook_CheckBlockBackstabPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanPickupBuilding", _, DHook_CanPickupBuildingPost);
+	DHook_CreateDetour(hGameData, "CTFPlayer::DropRune", DHook_DropRunePre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
 	DHook_CreateDetour(hGameData, "CTFKnife::DisguiseOnKill", DHook_DisguiseOnKillPre, DHook_DisguiseOnKillPost);
 	DHook_CreateDetour(hGameData, "CTFLunchBox::ApplyBiteEffects", DHook_ApplyBiteEffectsPre, DHook_ApplyBiteEffectsPost);
@@ -69,6 +72,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::ActivateRageBuff", DHook_ActivateRageBuffPre, DHook_ActivateRageBuffPost);
 	DHook_CreateDetour(hGameData, "HandleRageGain", DHook_HandleRageGainPre, _);
 	
+	g_hDHookEventKilled = DHook_CreateVirtual(hGameData, "CBaseEntity::Event_Killed");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookGetEffectBarAmmo = DHook_CreateVirtual(hGameData, "CTFWeaponBase::GetEffectBarAmmo");
 	g_hDHookSwing = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Swing");
@@ -78,8 +82,9 @@ public void DHook_Init(GameData hGameData)
 	g_hDHookForceRespawn = DHook_CreateVirtual(hGameData, "CBasePlayer::ForceRespawn");
 	g_hDHookEquipWearable = DHook_CreateVirtual(hGameData, "CBasePlayer::EquipWearable");
 	g_hDHookGetAmmoCount = DHook_CreateVirtual(hGameData, "CBaseCombatCharacter::GetAmmoCount");
-	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
 	g_hDHookClientCommand = DHook_CreateVirtual(hGameData, "CTFPlayer::ClientCommand");
+	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
+	g_hDHookInitClass = DHook_CreateVirtual(hGameData, "CTFPlayer::InitClass");
 	g_hDHookFrameUpdatePostEntityThink = DHook_CreateVirtual(hGameData, "CGameRules::FrameUpdatePostEntityThink");
 }
 
@@ -171,43 +176,34 @@ bool DHook_IsGiveNamedItemActive()
 
 void DHook_HookClient(int iClient)
 {
+	g_iHookIdEventKilledPre[iClient] = DHookEntity(g_hDHookEventKilled, false, iClient, _, DHook_EventKilledPre);
 	g_iHookIdForceRespawnPre[iClient] = DHookEntity(g_hDHookForceRespawn, false, iClient, _, DHook_ForceRespawnPre);
 	g_iHookIdForceRespawnPost[iClient] = DHookEntity(g_hDHookForceRespawn, true, iClient, _, DHook_ForceRespawnPost);
 	g_iHookIdEquipWearable[iClient] = DHookEntity(g_hDHookEquipWearable, true, iClient, _, DHook_EquipWearablePost);
 	g_iHookIdGetAmmoCount[iClient] = DHookEntity(g_hDHookGetAmmoCount, false, iClient, _, DHook_GetAmmoCountPre);
 	g_iHookIdClientCommand[iClient] = DHookEntity(g_hDHookClientCommand, true, iClient, _, DHook_ClientCommandPost);
+	g_iHookIdInitClassPre[iClient] = DHookEntity(g_hDHookInitClass, false, iClient, _, DHook_InitClassPre);
+	g_iHookIdInitClassPost[iClient] = DHookEntity(g_hDHookInitClass, true, iClient, _, DHook_InitClassPost);
 }
 
 void DHook_UnhookClient(int iClient)
 {
-	if (g_iHookIdForceRespawnPre[iClient])
+	DHook_UnhookId(g_iHookIdEventKilledPre[iClient]);
+	DHook_UnhookId(g_iHookIdForceRespawnPre[iClient]);
+	DHook_UnhookId(g_iHookIdForceRespawnPost[iClient]);
+	DHook_UnhookId(g_iHookIdEquipWearable[iClient]);
+	DHook_UnhookId(g_iHookIdGetAmmoCount[iClient]);
+	DHook_UnhookId(g_iHookIdClientCommand[iClient]);
+	DHook_UnhookId(g_iHookIdInitClassPre[iClient]);
+	DHook_UnhookId(g_iHookIdInitClassPost[iClient]);
+}
+
+static void DHook_UnhookId(int &iId)
+{
+	if (iId)
 	{
-		DHookRemoveHookID(g_iHookIdForceRespawnPre[iClient]);
-		g_iHookIdForceRespawnPre[iClient] = 0;	
-	}
-	
-	if (g_iHookIdForceRespawnPost[iClient])
-	{
-		DHookRemoveHookID(g_iHookIdForceRespawnPost[iClient]);
-		g_iHookIdForceRespawnPost[iClient] = 0;	
-	}
-	
-	if (g_iHookIdEquipWearable[iClient])
-	{
-		DHookRemoveHookID(g_iHookIdEquipWearable[iClient]);
-		g_iHookIdEquipWearable[iClient] = 0;	
-	}
-	
-	if (g_iHookIdGetAmmoCount[iClient])
-	{
-		DHookRemoveHookID(g_iHookIdGetAmmoCount[iClient]);
-		g_iHookIdGetAmmoCount[iClient] = 0;	
-	}
-	
-	if (g_iHookIdClientCommand[iClient])
-	{
-		DHookRemoveHookID(g_iHookIdClientCommand[iClient]);
-		g_iHookIdClientCommand[iClient] = 0;
+		DHookRemoveHookID(iId);
+		iId = 0;
 	}
 }
 
@@ -277,6 +273,7 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 	g_bSkipGetMaxAmmo = true;
 	
 	int iTotalAdded;
+	int iMaxAmmoTF2 = SDKCall_GetMaxAmmo(iClient, iAmmoType);	//TF2 calculation for max ammo, which is usually incorrect
 	
 	//Give the ammo to each weapons by ammotype
 	int iMaxWeapons = GetMaxWeapons();
@@ -296,7 +293,7 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 			
 			int iAdd = iCount;
 			if (iForceWeapon == INVALID_ENT_REFERENCE)
-				iAdd = RoundToFloor(float(iCount) / float(DEFAULT_MAX_AMMO) * float(iMaxAmmo));	//based from DEFAULT_MAX_AMMO at GetMaxAmmo
+				iAdd = RoundToFloor(float(iCount) * float(iMaxAmmo) / float(iMaxAmmoTF2));
 			
 			int iCurrent = Properties_GetWeaponPropInt(iWeapon, "m_iAmmo");
 			iAdd = TF2_GiveAmmo(iClient, iWeapon, iCurrent, iAdd, iAmmoType, bSuppressSound, eAmmoSource);
@@ -338,8 +335,7 @@ public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParam
 		return MRES_ChangedHandled;
 	}
 	
-	DHookSetReturn(hReturn, DEFAULT_MAX_AMMO);
-	return MRES_Supercede;
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_TauntPre(int iClient, Handle hParams)
@@ -382,9 +378,11 @@ public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
 		return MRES_Supercede;
 	}
 	
-	float flVal;
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iWeapon > MaxClients && TF2_WeaponFindAttribute(iWeapon, "air dash count", flVal) && iAirDash < RoundToNearest(flVal))
+	if (iWeapon == INVALID_ENT_REFERENCE)
+		return MRES_Ignored;
+	
+	if (iAirDash < RoundToNearest(SDKCall_AttribHookValueFloat(0.0, "air_dash_count", iWeapon)))
 	{
 		SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
 		DHookSetReturn(hReturn, true);
@@ -394,95 +392,29 @@ public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_ValidateWeaponsPre(int iClient, Handle hParams)
+public MRESReturn DHook_GetWeaponByTypePost(int iClient, Handle hReturn, Handle hParams)
 {
-	g_iWeaponGetLoadoutItem = 0;
-}
-
-public MRESReturn DHook_ValidateWeaponsPost(int iClient, Handle hParams)
-{
-	g_iWeaponGetLoadoutItem = -1;
-	RevertClientClass(iClient);	//Reset from GetLoadoutItem hook
-}
-
-public MRESReturn DHook_ValidateWearablesPre(int iClient, Handle hParams)
-{
-	//This function validates both wearable weapons and cosmetics, avoid having it destroyed by disguising as disguise weapon
-	int iWearable;
-	while ((iWearable = FindEntityByClassname(iWearable, "tf_wearable*")) > MaxClients)
+	//This detour is to fix crash from engineer using sapper,
+	// prioritize which weapon to return by active weapon.
+	// "type" here is a whole load of different slot can't be arsed to list here,
+	// just use returned weapon as loadout slot to find
+	int iReturnWeapon = DHookGetReturn(hReturn);
+	if (iReturnWeapon == INVALID_ENT_REFERENCE)
+		return MRES_Ignored;
+	
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon == INVALID_ENT_REFERENCE || iReturnWeapon == iActiveWeapon)
+		return MRES_Ignored;
+	
+	int iReturnSlot = TF2Econ_GetItemDefaultLoadoutSlot(GetEntProp(iReturnWeapon, Prop_Send, "m_iItemDefinitionIndex"));
+	int iActiveSlot = TF2Econ_GetItemDefaultLoadoutSlot(GetEntProp(iActiveWeapon, Prop_Send, "m_iItemDefinitionIndex"));
+	if (iReturnSlot == iActiveSlot)
 	{
-		if (GetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity") == iClient)
-		{
-			int iIndex = GetEntProp(iWearable, Prop_Send, "m_iItemDefinitionIndex");
-			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-			{
-				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-				
-				bool bDisguise;
-				if (LoadoutSlot_Primary <= iSlot <= LoadoutSlot_PDA2 && IsWeaponRandomized(iClient))
-					bDisguise = true;
-				else if (iSlot == LoadoutSlot_Misc && IsCosmeticRandomized(iClient))
-					bDisguise = true;
-				
-				if (bDisguise && !GetEntProp(iWearable, Prop_Send, "m_bDisguiseWearable"))
-				{
-					SetEntProp(iWearable, Prop_Send, "m_bDisguiseWearable", true);
-					
-					if (!g_aValidateWearables)
-						g_aValidateWearables = new ArrayList();
-					
-					g_aValidateWearables.Push(iWearable);
-				}
-				
-				if (iSlot != -1)
-					break;
-			}
-		}
+		DHookSetReturn(hReturn, iActiveWeapon);
+		return MRES_Supercede;
 	}
 	
-	if (g_aValidateWearables)
-	{
-		SetClientClass(iClient, TFClass_Spy);
-		
-		if (!TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
-		{
-			TF2_AddConditionFake(iClient, TFCond_Disguised);
-			g_bValidateWearablesDisguised = true;
-		}
-	}
-}
-
-public MRESReturn DHook_ValidateWearablesPost(int iClient, Handle hParams)
-{
-	if (!g_aValidateWearables)
-		return;
-	
-	int iLength = g_aValidateWearables.Length;
-	for (int i = 0; i < iLength; i++)
-		SetEntProp(g_aValidateWearables.Get(i), Prop_Send, "m_bDisguiseWearable", false);
-	
-	delete g_aValidateWearables;
-	
-	RevertClientClass(iClient);
-	
-	if (g_bValidateWearablesDisguised)
-		TF2_RemoveConditionFake(iClient, TFCond_Disguised);
-	
-	g_bValidateWearablesDisguised = false;
-}
-
-public MRESReturn DHook_ManageBuilderWeaponsPre(int iClient, Handle hParams)
-{
-	if (IsWeaponRandomized(iClient))
-		return MRES_Supercede;	//Don't do anything, we'll handle it
-	
-	g_bManageBuilderWeapons = true;
 	return MRES_Ignored;
-}
-
-public MRESReturn DHook_ManageBuilderWeaponsPost(int iClient, Handle hParams)
-{
-	g_bManageBuilderWeapons = false;
 }
 
 public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
@@ -548,28 +480,6 @@ public MRESReturn DHook_GetChargeEffectBeingProvidedPost(int iClient, Handle hRe
 		RevertClientClass(iClient);
 }
 
-public MRESReturn DHook_GetLoadoutItemPre(int iClient, Handle hReturn, Handle hParams)
-{
-	if (g_iWeaponGetLoadoutItem == -1 || !IsWeaponRandomized(iClient))	//not inside ValidateWeapons
-		return MRES_Ignored;
-	
-	int iWeapon = -1;
-	
-	//We want to return item the same as whatever client is equipped, so ValidateWeapons dont need to delete any weapons
-	do
-	{
-		iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", g_iWeaponGetLoadoutItem);
-		g_iWeaponGetLoadoutItem++;
-	}
-	while (iWeapon == -1);
-	
-	//There also class type and weapon classname checks if they should have correct classname by class type
-	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
-	
-	DHookSetReturn(hReturn, GetEntityAddress(iWeapon) + view_as<Address>(GetEntSendPropOffs(iWeapon, "m_Item", true)));
-	return MRES_Supercede;
-}
-
 public MRESReturn DHook_GetMaxHealthForBuffingPre(int iClient, Handle hReturn)
 {
 	if (g_bWeaponDecap[iClient])
@@ -612,7 +522,7 @@ public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, Handle hReturn, Handl
 
 public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, Handle hReturn, Handle hParams)
 {
-	if (g_bManageBuilderWeapons)
+	if (g_bInitClass)
 		return MRES_Ignored;	//Do class check if inside CTFPlayer::ManageBuilderWeapons
 	
 	DHookSetReturn(hReturn, true);
@@ -635,9 +545,7 @@ public MRESReturn DHook_ApplyBiteEffectsPre(int iWeapon, Handle hParams)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");	
 	
-	float flGivesHealth;
-	TF2_WeaponFindAttribute(iWeapon, "lunchbox adds maxhealth bonus", flGivesHealth);
-	if (flGivesHealth > 0)
+	if (SDKCall_AttribHookValueFloat(0.0, "set_weapon_mode", iWeapon))
 		g_bApplyBiteEffectsChocolate[iClient] = true;
 }
 
@@ -665,9 +573,8 @@ public MRESReturn DHook_UpdateRageBuffsAndRagePre(Address pPlayerShared)
 	if (g_iGainingRageWeapon != INVALID_ENT_REFERENCE || iClient <= 0 || iClient > MaxClients)
 		return MRES_Ignored;
 	
-	float flRageType = TF2_GetAttributeAdditive(iClient, "mod soldier buff type");
-	if (!flRageType) //We don't have any rage items, don't need to do anything
-		return MRES_Ignored;
+	if (!SDKCall_AttribHookValueFloat(0.0, "set_buff_type", iClient))
+		return MRES_Ignored;	//We don't have any rage items, don't need to do anything
 	
 	RequestFrame(Properties_UpdateRageBuffsAndRage, iClient);
 	return MRES_Supercede;
@@ -702,7 +609,7 @@ public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParam
 		return MRES_Ignored;
 	
 	int iBuffType = DHookGetParam(hParams, 2);
-	float flClientRageType = TF2_GetAttributeAdditive(iClient, "mod soldier buff type");
+	float flClientRageType = SDKCall_AttribHookValueFloat(0.0, "set_buff_type", iClient);
 	TF2Attrib_SetByName(iClient, "mod soldier buff type", float(iBuffType) - flClientRageType);
 	
 	Properties_LoadRageProps(iClient, iWeapon);
@@ -819,7 +726,7 @@ public MRESReturn DHook_KilledPost(int iObject)
 		if (iCount > 0)
 		{
 			int iTempWeapon, iPos;
-			while (TF2_GetItemFromAttribute(iClient, "mod sentry killed revenge", iTempWeapon, iPos))
+			while (TF2_GetItemFromAttribute(iClient, "sentry_killed_revenge", iTempWeapon, iPos))
 				Properties_AddWeaponPropInt(iTempWeapon, "m_iRevengeCrits", iCount);
 		}
 		
@@ -842,7 +749,7 @@ public MRESReturn DHook_KilledPost(int iObject)
 			if (iCount > 0)
 			{
 				int iTempWeapon, iPos;
-				while (TF2_GetItemFromAttribute(iAttacker, "sapper kills collect crits", iTempWeapon, iPos))
+				while (TF2_GetItemFromAttribute(iAttacker, "sapper_kills_collect_crits", iTempWeapon, iPos))
 					Properties_AddWeaponPropInt(iTempWeapon, "m_iRevengeCrits", iCount);
 			}
 			
@@ -867,10 +774,17 @@ public MRESReturn DHook_CanBeUpgradedPost(int iObject, Handle hReturn, Handle hP
 	RevertClientClass(iClient);
 }
 
+public MRESReturn DHook_EventKilledPre(int iClient, Handle hParams)
+{
+	//Remove rune so it won't be dropped as pickupable
+	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
+		Loadout_ResetClientRune(iClient);
+}
+
 public MRESReturn DHook_ForceRespawnPre(int iClient)
 {
-	//Update incase of changes from team randomization
-	UpdateClientWeapon(iClient);
+	//Update incase of changing group
+	Loadout_UpdateClientInfo(iClient);
 	
 	//Reset decap count
 	int iWeapon, iPos;
@@ -886,9 +800,9 @@ public MRESReturn DHook_ForceRespawnPre(int iClient)
 	//Check if robot arm need to be changed before setting class
 	ViewModels_CheckRobotArm(iClient);
 	
-	if (IsClassRandomized(iClient))
+	if (Group_IsClientRandomized(iClient, RandomizedType_Class))
 	{
-		TFClassType nClass = g_iClientClass[iClient];
+		TFClassType nClass = Loadout_GetClientClass(iClient);
 		if (nClass != TFClass_Unknown)
 			SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(nClass));
 	}
@@ -931,11 +845,11 @@ public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hPa
 		return MRES_Supercede;
 	}
 	
-	char sClassname[256];
-	DHookGetParamString(hParams, 1, sClassname, sizeof(sClassname));
-	int iIndex = DHookGetParamObjectPtrVar(hParams, 3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
+	if (g_bAllowGiveNamedItem)
+		return MRES_Ignored;
 	
-	if (CanKeepWeapon(iClient, sClassname, iIndex))
+	int iIndex = DHookGetParamObjectPtrVar(hParams, 3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
+	if (CanEquipIndex(iClient, iIndex))
 		return MRES_Ignored;
 	
 	DHookSetReturn(hReturn, 0);
@@ -963,6 +877,116 @@ public MRESReturn DHook_ClientCommandPost(int iClient, Handle hReturn, Handle hP
 	}
 }
 
+public MRESReturn DHook_InitClassPre(int iClient)
+{
+	g_bInitClass = true;
+	g_iClientInitClass = iClient;
+	
+	//Give rune so health and ammo can be calculated correctly, but TF2 will remove it after validate
+	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
+		Loadout_ApplyClientRune(iClient);
+	
+	//ValidateWeapons validates non-wearable weapons, remove em at m_hMyWeapons so there nothing to validates!
+	for (int i = 0; i < sizeof(g_iInitClassWeapons); i++)
+	{
+		g_iInitClassWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		if (g_iInitClassWeapons[i] == INVALID_ENT_REFERENCE)
+			continue;
+		
+		if (Group_IsClientRandomized(iClient, RandomizedType_Spells))
+		{
+			if (IsClassname(g_iInitClassWeapons[i], "tf_weapon_spellbook") || (FindConVar("tf_grapplinghook_enable").BoolValue && IsClassname(g_iInitClassWeapons[i], "tf_weapon_grapplinghook")))
+			{
+				//Skip CanEquipIndex and allow keep action weapons without deleting it
+				SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", INVALID_ENT_REFERENCE, i);
+				continue;
+			}
+		}
+		
+		//Check if weapon is randomizer-generated
+		if (!CanEquipIndex(iClient, GetEntProp(g_iInitClassWeapons[i], Prop_Send, "m_iItemDefinitionIndex")))
+		{
+			SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", INVALID_ENT_REFERENCE, i);
+			continue;
+		}
+		
+		//If we reached here, TF2 can manage this weapon, forget weapon in the list when readding later
+		g_iInitClassWeapons[i] = INVALID_ENT_REFERENCE;
+	}
+	
+	//ValidateWearables validates both wearable weapons and cosmetics, avoid having it destroyed by disguising as disguise weapon
+	int iWearable;
+	while ((iWearable = FindEntityByClassname(iWearable, "tf_wearable*")) > MaxClients)
+	{
+		if (GetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity") == iClient)
+		{
+			int iIndex = GetEntProp(iWearable, Prop_Send, "m_iItemDefinitionIndex");
+			if (GetEntData(iWearable, g_iOffsetAlwaysAllow, 1))	//TF2 already planning not to delete this
+				continue;
+			
+			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			{
+				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+				
+				bool bAllow;
+				if (LoadoutSlot_Primary <= iSlot <= LoadoutSlot_PDA2 && Group_IsClientRandomized(iClient, RandomizedType_Weapons))
+					bAllow = true;
+				else if (iSlot == LoadoutSlot_Misc && Group_IsClientRandomized(iClient, RandomizedType_Cosmetics))
+					bAllow = true;
+				
+				if (bAllow)
+				{
+					SetEntData(iWearable, g_iOffsetAlwaysAllow, true, 1);
+					
+					if (!g_aAllowWearables)
+						g_aAllowWearables = new ArrayList();
+					
+					g_aAllowWearables.Push(iWearable);
+				}
+				
+				if (iSlot != -1)
+					break;
+			}
+		}
+	}
+}
+
+public MRESReturn DHook_InitClassPost(int iClient)
+{
+	for (int i = 0; i < sizeof(g_iInitClassWeapons); i++)
+	{
+		int iMaxWeapons = GetMaxWeapons();
+		for (int j = 0; j < iMaxWeapons; j++)
+		{
+			//Check if TF2 didn't generated a new weapon in this position
+			if (GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", j) == INVALID_ENT_REFERENCE)
+			{
+				SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", g_iInitClassWeapons[i], j);
+				break;
+			}
+		}
+		
+		g_iInitClassWeapons[i] = INVALID_ENT_REFERENCE;
+		
+		if (g_iInitClassWeapons[i] != INVALID_ENT_REFERENCE)
+			Properties_SetWeaponPropInt(g_iInitClassWeapons[i], "m_iAmmo", 0);
+	}
+	
+	if (g_aAllowWearables)
+	{
+		int iLength = g_aAllowWearables.Length;
+		for (int i = 0; i < iLength; i++)
+			SetEntData(g_aAllowWearables.Get(i), g_iOffsetAlwaysAllow, false, 1);
+		
+		delete g_aAllowWearables;
+	}
+	
+	//Also messed up huds because of m_hMyWeapons
+	Huds_RefreshClient(iClient);
+	
+	g_bInitClass = false;
+}
+
 public MRESReturn DHook_TakeHealthPre(int iClient, Handle hReturn, Handle hParams)
 {
 	if (g_bApplyBiteEffectsChocolate[iClient]) 
@@ -980,7 +1004,7 @@ public MRESReturn DHook_CheckBlockBackstabPre(int iClient, Handle hReturn, Handl
 	
 	//Check each razorback and only break one if available
 	int iWeapon, iPos;
-	while (TF2_GetItemFromAttribute(iClient, "backstab shield", iWeapon, iPos))
+	while (TF2_GetItemFromAttribute(iClient, "set_blockbackstab_once", iWeapon, iPos))
 	{
 		if (Properties_GetWeaponPropFloat(iWeapon, "m_flItemChargeMeter") < 100.0)
 			continue;
@@ -1032,6 +1056,12 @@ public MRESReturn DHook_CanPickupBuildingPost(int iClient, Handle hReturn, Handl
 	}
 	
 	return MRES_Ignored;
+}
+
+public MRESReturn DHook_DropRunePre(int iClient, Handle hParams)
+{
+	//TODO check if client is in randomize mode
+	return MRES_Supercede;
 }
 
 public MRESReturn DHook_FrameUpdatePostEntityThinkPre()
