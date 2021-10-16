@@ -29,15 +29,6 @@ stock int TF2_CreateWeapon(int iClient, int iIndex, int iSlot)
 		}
 	}
 	
-	bool bSapper;
-	if (StrEqual(sClassname, "tf_weapon_builder") || StrEqual(sClassname, "tf_weapon_sapper"))
-	{
-		bSapper = true;
-		
-		//tf_weapon_sapper is bad and give client crashes
-		sClassname = "tf_weapon_builder";
-	}
-	
 	int iWeapon = CreateEntityByName(sClassname);
 	if (IsValidEntity(iWeapon))
 	{
@@ -47,7 +38,7 @@ stock int TF2_CreateWeapon(int iClient, int iIndex, int iSlot)
 		SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
 		SetEntProp(iWeapon, Prop_Send, "m_iEntityLevel", 1);
 		
-		if (bSapper)
+		if (TF2Econ_GetItemLoadoutSlot(iIndex, TFClass_Spy) == LoadoutSlot_Building)
 		{
 			SetEntProp(iWeapon, Prop_Send, "m_iObjectType", TFObject_Sapper);
 			SetEntProp(iWeapon, Prop_Data, "m_iSubType", TFObject_Sapper);
@@ -67,7 +58,6 @@ stock int TF2_CreateWeapon(int iClient, int iIndex, int iSlot)
 stock int TF2_GiveNamedItem(int iClient, Address pItem, int iSlot = -1)
 {
 	int iIndex = LoadFromAddress(pItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
-	int iSubType = 0;
 	
 	//We want to translate classname to correct classname AND slot wanted
 	//First, try current class client playing
@@ -88,18 +78,15 @@ stock int TF2_GiveNamedItem(int iClient, Address pItem, int iSlot = -1)
 	TF2Econ_GetItemClassName(iIndex, sClassname, sizeof(sClassname));
 	TF2Econ_TranslateWeaponEntForClass(sClassname, sizeof(sClassname), nClass);
 	
-	TFClassType nClassBuilder = TFClass_Unknown;
-	if (StrEqual(sClassname, "tf_weapon_builder") || StrEqual(sClassname, "tf_weapon_sapper"))
-		nClassBuilder = nClass;
-	
-	if (nClassBuilder == TFClass_Spy)
+	int iSubType = 0;
+	if (TF2Econ_GetItemLoadoutSlot(iIndex, TFClass_Spy) == LoadoutSlot_Building)
 		iSubType = view_as<int>(TFObject_Sapper);
 	
 	g_bAllowGiveNamedItem = true;
 	int iWeapon = SDKCall_GiveNamedItem(iClient, sClassname, iSubType, pItem, true);
 	g_bAllowGiveNamedItem = false;
 	
-	if (nClassBuilder == TFClass_Engineer)
+	if (TF2Econ_GetItemLoadoutSlot(iIndex, TFClass_Engineer) == LoadoutSlot_Building)
 	{
 		SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Dispenser));
 		SetEntProp(iWeapon, Prop_Send, "m_aBuildableObjectTypes", true, _, view_as<int>(TFObject_Teleporter));
@@ -269,7 +256,7 @@ stock int TF2_GetSlot(int iWeapon)
 	if (iSlot == -1)
 	{
 		char sClassname[256];
-		GetEntityClassname(iIndex, sClassname, sizeof(sClassname));
+		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
 		ThrowError("Could not find slot from item def index '%d' and classname '%s'", iIndex, sClassname);
 	}
 	

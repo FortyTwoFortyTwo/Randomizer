@@ -53,6 +53,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", DHook_CanAirDashPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::Weapon_GetWeaponByType", _, DHook_GetWeaponByTypePost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::EndClassSpecialSkill", DHook_EndClassSpecialSkillPre, DHook_EndClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
@@ -385,6 +386,31 @@ public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
 	{
 		SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
 		DHookSetReturn(hReturn, true);
+		return MRES_Supercede;
+	}
+	
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_GetWeaponByTypePost(int iClient, Handle hReturn, Handle hParams)
+{
+	//This detour is to fix crash from engineer using sapper,
+	// prioritize which weapon to return by active weapon.
+	// "type" here is a whole load of different slot can't be arsed to list here,
+	// just use returned weapon as loadout slot to find
+	int iReturnWeapon = DHookGetReturn(hReturn);
+	if (iReturnWeapon == INVALID_ENT_REFERENCE)
+		return MRES_Ignored;
+	
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon == INVALID_ENT_REFERENCE || iReturnWeapon == iActiveWeapon)
+		return MRES_Ignored;
+	
+	int iReturnSlot = TF2Econ_GetItemDefaultLoadoutSlot(GetEntProp(iReturnWeapon, Prop_Send, "m_iItemDefinitionIndex"));
+	int iActiveSlot = TF2Econ_GetItemDefaultLoadoutSlot(GetEntProp(iActiveWeapon, Prop_Send, "m_iItemDefinitionIndex"));
+	if (iReturnSlot == iActiveSlot)
+	{
+		DHookSetReturn(hReturn, iActiveWeapon);
 		return MRES_Supercede;
 	}
 	
@@ -866,7 +892,7 @@ public MRESReturn DHook_InitClassPre(int iClient)
 		g_iInitClassWeapons[i] = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
 		if (g_iInitClassWeapons[i] == INVALID_ENT_REFERENCE)
 			continue;
-			
+		
 		if (Group_IsClientRandomized(iClient, RandomizedType_Spells))
 		{
 			if (IsClassname(g_iInitClassWeapons[i], "tf_weapon_spellbook") || (FindConVar("tf_grapplinghook_enable").BoolValue && IsClassname(g_iInitClassWeapons[i], "tf_weapon_grapplinghook")))
