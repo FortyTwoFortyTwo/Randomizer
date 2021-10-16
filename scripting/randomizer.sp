@@ -538,16 +538,24 @@ public void TF2_OnConditionAdded(int iClient, TFCond nCond)
 	if (!g_bEnabled)
 		return;
 	
-	if (nCond == TFCond_RuneKnockout)
-	{
-		//Just giving knockout rune isnt enough, TF2 gave both knockout and melee only cond
+	if (nCond == TFCond_RuneKnockout)	//Just giving knockout rune isnt enough, TF2 gave both knockout and melee only cond
 		TF2_AddCondition(iClient, TFCond_RestrictToMelee, TFCondDuration_Infinite);
+	
+	if (nCond == TFCond_RestrictToMelee || nCond == TFCond_MeleeOnly)
+	{
+		//TFCond_RestrictToMelee is for heavy steak and knockout powerup,
+		// TFCond_MeleeOnly is for halloween spells
 		
+		//Make sure client is actually switched to melee
 		bool bSwitched;
 		
 		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 		if (iActiveWeapon != INVALID_ENT_REFERENCE && (TF2_GetSlot(iActiveWeapon) == WeaponSlot_Melee || IsClassname(iActiveWeapon, "tf_weapon_grapplinghook")))
 			bSwitched = true;	//Active weapon is already good, dont need to switch
+		
+		//Tempoary remove attribute TF2 applied so we can actually switch to it
+		if (nCond == TFCond_MeleeOnly)
+			TF2Attrib_RemoveByName(iClient, "disable weapon switch");
 		
 		int iWeapon, iPos;
 		while (TF2_GetItemFromLoadoutSlot(iClient, LoadoutSlot_Melee, iWeapon, iPos))
@@ -562,6 +570,9 @@ public void TF2_OnConditionAdded(int iClient, TFCond nCond)
 			}
 			else
 			{
+				if (nCond == TFCond_MeleeOnly)
+					TF2Attrib_SetByName(iClient, "disable weapon switch", 1.0);
+				
 				SetEntPropEnt(iClient, Prop_Send, "m_hLastWeapon", iWeapon);
 				return;
 			}
@@ -579,12 +590,17 @@ public void TF2_OnConditionAdded(int iClient, TFCond nCond)
 			}
 			else
 			{
+				if (nCond == TFCond_MeleeOnly)
+					TF2Attrib_SetByName(iClient, "disable weapon switch", 1.0);
+				
 				SetEntPropEnt(iClient, Prop_Send, "m_hLastWeapon", iWeapon);
 				return;
 			}
 		}
 		
 		SetEntPropEnt(iClient, Prop_Send, "m_hLastWeapon", INVALID_ENT_REFERENCE);
+		if (nCond == TFCond_MeleeOnly)
+			TF2Attrib_SetByName(iClient, "disable weapon switch", 1.0);
 	}
 }
 
