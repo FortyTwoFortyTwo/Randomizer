@@ -373,11 +373,6 @@
 				"linux"		"479"
 				"windows"	"472"
 			}
-			"CTFDecapitationMeleeWeaponBase::OnDecapitation"
-			{
-				"linux"		"483"
-				"windows"	"476"
-			}
 			"CBaseObject::Killed"
 			{
 				"linux"		"350"
@@ -769,20 +764,6 @@
 			"CTFWeaponBaseMelee::Swing"
 			{
 				"offset"	"CTFWeaponBaseMelee::Swing"
-				"hooktype"	"entity"
-				"return"	"void"
-				"this"		"entity"
-				"arguments"
-				{
-					"pPlayer"
-					{
-						"type"	"cbaseentity"
-					}
-				}
-			}
-			"CTFDecapitationMeleeWeaponBase::OnDecapitation"
-			{
-				"offset"	"CTFDecapitationMeleeWeaponBase::OnDecapitation"
 				"hooktype"	"entity"
 				"return"	"void"
 				"this"		"entity"

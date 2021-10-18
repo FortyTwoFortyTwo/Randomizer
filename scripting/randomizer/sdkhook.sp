@@ -56,6 +56,11 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 	{
 		if (iWeapon != INVALID_ENT_REFERENCE)
 		{
+			//Set attacker class to whatever default class from weapon,
+			// IsPlayerClass not always called on linux,
+			// and some class checks don't even use IsPlayerClass.
+			SetClientClass(iAttacker, TF2_GetDefaultClassFromItem(iWeapon));
+			
 			Properties_LoadWeaponPropInt(iAttacker, iWeapon, "m_iDecapitations");
 			g_bWeaponDecap[iAttacker] = true;
 		}
@@ -76,6 +81,8 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 	{
 		if (iWeapon != INVALID_ENT_REFERENCE)
 		{
+			RevertClientClass(iAttacker);
+			
 			Properties_SaveWeaponPropInt(iAttacker, iWeapon, "m_iDecapitations");
 			g_bWeaponDecap[iAttacker] = false;
 			

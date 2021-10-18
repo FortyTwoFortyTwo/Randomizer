@@ -12,7 +12,6 @@ static Handle g_hDHookEventKilled;
 static Handle g_hDHookSecondaryAttack;
 static Handle g_hDHookGetEffectBarAmmo;
 static Handle g_hDHookSwing;
-static Handle g_hDHookOnDecapitation;
 static Handle g_hDHookKilled;
 static Handle g_hDHookCanBeUpgraded;
 static Handle g_hDHookForceRespawn;
@@ -76,7 +75,6 @@ public void DHook_Init(GameData hGameData)
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookGetEffectBarAmmo = DHook_CreateVirtual(hGameData, "CTFWeaponBase::GetEffectBarAmmo");
 	g_hDHookSwing = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Swing");
-	g_hDHookOnDecapitation = DHook_CreateVirtual(hGameData, "CTFDecapitationMeleeWeaponBase::OnDecapitation");
 	g_hDHookKilled = DHook_CreateVirtual(hGameData, "CBaseObject::Killed");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
 	g_hDHookForceRespawn = DHook_CreateVirtual(hGameData, "CBasePlayer::ForceRespawn");
@@ -216,12 +214,7 @@ void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 		DHookEntity(g_hDHookGetEffectBarAmmo, true, iEntity, _, DHook_GetEffectBarAmmoPost);
 	}
 	
-	if (StrEqual(sClassname, "tf_weapon_sword"))
-	{
-		DHookEntity(g_hDHookOnDecapitation, false, iEntity, _, DHook_OnDecapitationPre);
-		DHookEntity(g_hDHookOnDecapitation, true, iEntity, _, DHook_OnDecapitationPost);
-	}
-	else if (StrContains(sClassname, "obj_") == 0 && !StrEqual(sClassname, "obj_attachment_sapper"))
+	if (StrContains(sClassname, "obj_") == 0 && !StrEqual(sClassname, "obj_attachment_sapper"))
 	{
 		DHookEntity(g_hDHookKilled, false, iEntity, _, DHook_KilledPre);
 		DHookEntity(g_hDHookKilled, true, iEntity, _, DHook_KilledPost);
@@ -677,19 +670,6 @@ public MRESReturn DHook_GetEffectBarAmmoPost(int iWeapon, Handle hReturn)
 {
 	//This function is only called for GetAmmoCount, GetMaxAmmo and GiveAmmo
 	Properties_SetForceWeaponAmmo(iWeapon);
-}
-
-public MRESReturn DHook_OnDecapitationPre(int iSword, Handle hParams)
-{
-	//Has class check
-	int iClient = GetEntPropEnt(iSword, Prop_Send, "m_hOwnerEntity");
-	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iSword));
-}
-
-public MRESReturn DHook_OnDecapitationPost(int iSword, Handle hParams)
-{
-	int iClient = GetEntPropEnt(iSword, Prop_Send, "m_hOwnerEntity");
-	RevertClientClass(iClient);
 }
 
 public MRESReturn DHook_KilledPre(int iObject)
