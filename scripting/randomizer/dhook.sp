@@ -1,26 +1,26 @@
 enum struct Detour
 {
 	char sName[64];
-	Handle hDetour;
+	DynamicDetour hDetour;
 	DHookCallback callbackPre;
 	DHookCallback callbackPost;
 }
 
 static ArrayList g_aDHookDetours;
 
-static Handle g_hDHookEventKilled;
-static Handle g_hDHookSecondaryAttack;
-static Handle g_hDHookGetEffectBarAmmo;
-static Handle g_hDHookSwing;
-static Handle g_hDHookKilled;
-static Handle g_hDHookCanBeUpgraded;
-static Handle g_hDHookForceRespawn;
-static Handle g_hDHookEquipWearable;
-static Handle g_hDHookGetAmmoCount;
-static Handle g_hDHookClientCommand;
-static Handle g_hDHookGiveNamedItem;
-static Handle g_hDHookInitClass;
-static Handle g_hDHookFrameUpdatePostEntityThink;
+static DynamicHook g_hDHookEventKilled;
+static DynamicHook g_hDHookSecondaryAttack;
+static DynamicHook g_hDHookGetEffectBarAmmo;
+static DynamicHook g_hDHookSwing;
+static DynamicHook g_hDHookKilled;
+static DynamicHook g_hDHookCanBeUpgraded;
+static DynamicHook g_hDHookForceRespawn;
+static DynamicHook g_hDHookEquipWearable;
+static DynamicHook g_hDHookGetAmmoCount;
+static DynamicHook g_hDHookClientCommand;
+static DynamicHook g_hDHookGiveNamedItem;
+static DynamicHook g_hDHookInitClass;
+static DynamicHook g_hDHookFrameUpdatePostEntityThink;
 
 static bool g_bSkipGetMaxAmmo;
 static ArrayList g_aAllowWearables;
@@ -38,11 +38,11 @@ static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS];
 static int g_iHookIdInitClassPre[TF_MAXPLAYERS];
 static int g_iHookIdInitClassPost[TF_MAXPLAYERS];
 
-static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS];
-static bool g_bApplyBiteEffectsChocolate[TF_MAXPLAYERS];
-
 static int g_iDHookGamerulesPre;
 static int g_iDHookGamerulesPost;
+
+static bool g_bDoClassSpecialSkill[TF_MAXPLAYERS];
+static bool g_bApplyBiteEffectsChocolate[TF_MAXPLAYERS];
 
 public void DHook_Init(GameData hGameData)
 {
@@ -90,7 +90,7 @@ public void DHook_Init(GameData hGameData)
 static void DHook_CreateDetour(GameData hGameData, const char[] sName, DHookCallback callbackPre = INVALID_FUNCTION, DHookCallback callbackPost = INVALID_FUNCTION)
 {
 	Detour detour;
-	detour.hDetour = DHookCreateFromConf(hGameData, sName);
+	detour.hDetour = DynamicDetour.FromConf(hGameData, sName);
 	if (!detour.hDetour)
 	{
 		LogError("Failed to create detour: %s", sName);
@@ -104,9 +104,9 @@ static void DHook_CreateDetour(GameData hGameData, const char[] sName, DHookCall
 	}
 }
 
-static Handle DHook_CreateVirtual(GameData hGameData, const char[] sName)
+static DynamicHook DHook_CreateVirtual(GameData hGameData, const char[] sName)
 {
-	Handle hHook = DHookCreateFromConf(hGameData, sName);
+	DynamicHook hHook = DynamicHook.FromConf(hGameData, sName);
 	if (!hHook)
 		LogError("Failed to create hook: %s", sName);
 	
@@ -122,11 +122,11 @@ void DHook_EnableDetour()
 		g_aDHookDetours.GetArray(i, detour);
 		
 		if (detour.callbackPre != INVALID_FUNCTION)
-			if (!DHookEnableDetour(detour.hDetour, false, detour.callbackPre))
+			if (!detour.hDetour.Enable(Hook_Pre, detour.callbackPre))
 				LogError("Failed to enable pre detour: %s", detour.sName);
 		
 		if (detour.callbackPost != INVALID_FUNCTION)
-			if (!DHookEnableDetour(detour.hDetour, true, detour.callbackPost))
+			if (!detour.hDetour.Enable(Hook_Post, detour.callbackPost))
 				LogError("Failed to enable post detour: %s", detour.sName);
 	}
 }
@@ -140,11 +140,11 @@ void DHook_DisableDetour()
 		g_aDHookDetours.GetArray(i, detour);
 		
 		if (detour.callbackPre != INVALID_FUNCTION)
-			if (!DHookDisableDetour(detour.hDetour, false, detour.callbackPre))
+			if (!detour.hDetour.Disable(Hook_Pre, detour.callbackPre))
 				LogError("Failed to disable pre detour: %s", detour.sName);
 		
 		if (detour.callbackPost != INVALID_FUNCTION)
-			if (!DHookDisableDetour(detour.hDetour, true, detour.callbackPost))
+			if (!detour.hDetour.Disable(Hook_Pre, detour.callbackPost))
 				LogError("Failed to disable post detour: %s", detour.sName);
 	}
 }
@@ -152,7 +152,7 @@ void DHook_DisableDetour()
 void DHook_HookGiveNamedItem(int iClient)
 {
 	if (g_hDHookGiveNamedItem && !g_bTF2Items)
-		g_iHookIdGiveNamedItem[iClient] = DHookEntity(g_hDHookGiveNamedItem, false, iClient, DHook_GiveNamedItemRemoved, DHook_GiveNamedItemPre);
+		g_iHookIdGiveNamedItem[iClient] = g_hDHookGiveNamedItem.HookEntity(Hook_Pre, iClient, DHook_GiveNamedItemPre, DHook_GiveNamedItemRemoved);
 }
 
 void DHook_UnhookGiveNamedItem(int iClient)
@@ -175,14 +175,14 @@ bool DHook_IsGiveNamedItemActive()
 
 void DHook_HookClient(int iClient)
 {
-	g_iHookIdEventKilledPre[iClient] = DHookEntity(g_hDHookEventKilled, false, iClient, _, DHook_EventKilledPre);
-	g_iHookIdForceRespawnPre[iClient] = DHookEntity(g_hDHookForceRespawn, false, iClient, _, DHook_ForceRespawnPre);
-	g_iHookIdForceRespawnPost[iClient] = DHookEntity(g_hDHookForceRespawn, true, iClient, _, DHook_ForceRespawnPost);
-	g_iHookIdEquipWearable[iClient] = DHookEntity(g_hDHookEquipWearable, true, iClient, _, DHook_EquipWearablePost);
-	g_iHookIdGetAmmoCount[iClient] = DHookEntity(g_hDHookGetAmmoCount, false, iClient, _, DHook_GetAmmoCountPre);
-	g_iHookIdClientCommand[iClient] = DHookEntity(g_hDHookClientCommand, true, iClient, _, DHook_ClientCommandPost);
-	g_iHookIdInitClassPre[iClient] = DHookEntity(g_hDHookInitClass, false, iClient, _, DHook_InitClassPre);
-	g_iHookIdInitClassPost[iClient] = DHookEntity(g_hDHookInitClass, true, iClient, _, DHook_InitClassPost);
+	g_iHookIdEventKilledPre[iClient] = g_hDHookEventKilled.HookEntity(Hook_Pre, iClient, DHook_EventKilledPre);
+	g_iHookIdForceRespawnPre[iClient] = g_hDHookForceRespawn.HookEntity(Hook_Pre, iClient, DHook_ForceRespawnPre);
+	g_iHookIdForceRespawnPost[iClient] = g_hDHookForceRespawn.HookEntity(Hook_Post, iClient, DHook_ForceRespawnPost);
+	g_iHookIdEquipWearable[iClient] = g_hDHookEquipWearable.HookEntity(Hook_Post, iClient, DHook_EquipWearablePost);
+	g_iHookIdGetAmmoCount[iClient] = g_hDHookGetAmmoCount.HookEntity(Hook_Pre, iClient, DHook_GetAmmoCountPre);
+	g_iHookIdClientCommand[iClient] = g_hDHookClientCommand.HookEntity(Hook_Post, iClient, DHook_ClientCommandPost);
+	g_iHookIdInitClassPre[iClient] = g_hDHookInitClass.HookEntity(Hook_Pre, iClient, DHook_InitClassPre);
+	g_iHookIdInitClassPost[iClient] = g_hDHookInitClass.HookEntity(Hook_Post, iClient, DHook_InitClassPost);
 }
 
 void DHook_UnhookClient(int iClient)
@@ -211,23 +211,23 @@ void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 	if (StrContains(sClassname, "tf_weapon_") == 0)
 	{
 		SDKHook(iEntity, SDKHook_SpawnPost, DHook_SpawnPost);
-		DHookEntity(g_hDHookSecondaryAttack, true, iEntity, _, DHook_SecondaryWeaponPost);
-		DHookEntity(g_hDHookGetEffectBarAmmo, true, iEntity, _, DHook_GetEffectBarAmmoPost);
+		g_hDHookSecondaryAttack.HookEntity(Hook_Post, iEntity, DHook_SecondaryWeaponPost);
+		g_hDHookGetEffectBarAmmo.HookEntity(Hook_Post, iEntity, DHook_GetEffectBarAmmoPost);
 	}
 	
 	if (StrContains(sClassname, "obj_") == 0 && !StrEqual(sClassname, "obj_attachment_sapper"))
 	{
-		DHookEntity(g_hDHookKilled, false, iEntity, _, DHook_KilledPre);
-		DHookEntity(g_hDHookKilled, true, iEntity, _, DHook_KilledPost);
-		DHookEntity(g_hDHookCanBeUpgraded, false, iEntity, _, DHook_CanBeUpgradedPre);
-		DHookEntity(g_hDHookCanBeUpgraded, true, iEntity, _, DHook_CanBeUpgradedPost);
+		g_hDHookKilled.HookEntity(Hook_Pre, iEntity, DHook_KilledPre);
+		g_hDHookKilled.HookEntity(Hook_Post, iEntity, DHook_KilledPost);
+		g_hDHookCanBeUpgraded.HookEntity(Hook_Pre, iEntity, DHook_CanBeUpgradedPre);
+		g_hDHookCanBeUpgraded.HookEntity(Hook_Post, iEntity, DHook_CanBeUpgradedPost);
 	}
 }
 
 void DHook_HookGamerules()
 {
-	g_iDHookGamerulesPre = DHookGamerules(g_hDHookFrameUpdatePostEntityThink, false, _, DHook_FrameUpdatePostEntityThinkPre);
-	g_iDHookGamerulesPost = DHookGamerules(g_hDHookFrameUpdatePostEntityThink, true, _, DHook_FrameUpdatePostEntityThinkPost);
+	g_iDHookGamerulesPre = g_hDHookFrameUpdatePostEntityThink.HookGamerules(Hook_Pre, DHook_FrameUpdatePostEntityThinkPre);
+	g_iDHookGamerulesPost = g_hDHookFrameUpdatePostEntityThink.HookGamerules(Hook_Post, DHook_FrameUpdatePostEntityThinkPost);
 }
 
 void DHook_UnhookGamerules()
@@ -239,10 +239,10 @@ void DHook_UnhookGamerules()
 public void DHook_SpawnPost(int iWeapon)
 {
 	if (TF2_GetSlot(iWeapon) == WeaponSlot_Melee)
-		DHookEntity(g_hDHookSwing, false, iWeapon, _, DHook_SwingPre);
+		g_hDHookSwing.HookEntity(Hook_Pre, iWeapon, DHook_SwingPre);
 }
 
-public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_GiveAmmoPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	//Detour is used instead of virtual because non-virtual CTFPlayer::GiveAmmo directly calls CBaseCombatCharacter::GiveAmmo in non-virtual way
 	int iForceWeapon = Properties_GetForceWeaponAmmo();
@@ -252,16 +252,16 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 	if (g_bSkipGetMaxAmmo)
 		return MRES_Ignored;
 	
-	int iCount = DHookGetParam(hParams, 1);
+	int iCount = hParams.Get(1);
 	if (iCount <= 0)
 		return MRES_Ignored;
 	
-	int iAmmoType = DHookGetParam(hParams, 2);
+	int iAmmoType = hParams.Get(2);
 	if (iAmmoType == TF_AMMO_METAL)	//Nothing fancy for metal
 		return MRES_Ignored;
 	
-	bool bSuppressSound = DHookGetParam(hParams, 3);
-	EAmmoSource eAmmoSource = DHookGetParam(hParams, 4);
+	bool bSuppressSound = hParams.Get(3);
+	EAmmoSource eAmmoSource = hParams.Get(4);
 	
 	Properties_SaveActiveWeaponAmmo(iClient);
 	g_bSkipGetMaxAmmo = true;
@@ -301,11 +301,11 @@ public MRESReturn DHook_GiveAmmoPre(int iClient, Handle hReturn, Handle hParams)
 	
 	g_bSkipGetMaxAmmo = false;
 	
-	DHookSetReturn(hReturn, iTotalAdded);
+	hReturn.Value = iTotalAdded;
 	return MRES_Supercede;
 }
 
-public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_GetMaxAmmoPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	int iWeapon = Properties_GetForceWeaponAmmo();
 	if (iWeapon != INVALID_ENT_REFERENCE)
@@ -318,21 +318,21 @@ public MRESReturn DHook_GetMaxAmmoPre(int iClient, Handle hReturn, Handle hParam
 	{
 		//Shouldn't need to worry with multiple weapons using same index, only
 		// TF_AMMO_GRENADES1 and TF_AMMO_GRENADES2 is used here
-		DHookSetParam(hParams, 2, TF2_GetDefaultClassFromItem(iWeapon));
+		hParams.Set(2, TF2_GetDefaultClassFromItem(iWeapon));
 		return MRES_ChangedHandled;
 	}
 	
-	if (DHookGetParam(hParams, 1) == TF_AMMO_METAL)
+	if (hParams.Get(1) == TF_AMMO_METAL)
 	{
 		//Engineer have max metal 200 while others have 100
-		DHookSetParam(hParams, 2, TFClass_Engineer);
+		hParams.Set(2, TFClass_Engineer);
 		return MRES_ChangedHandled;
 	}
 	
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_TauntPre(int iClient, Handle hParams)
+public MRESReturn DHook_TauntPre(int iClient, DHookParam hParams)
 {
 	//Dont allow taunting if disguised or cloaked
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguising) || TF2_IsPlayerInCondition(iClient, TFCond_Disguised) || TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
@@ -351,13 +351,13 @@ public MRESReturn DHook_TauntPre(int iClient, Handle hParams)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_TauntPost(int iClient, Handle hParams)
+public MRESReturn DHook_TauntPost(int iClient, DHookParam hParams)
 {
 	//Set class back to what it was
 	RevertClientClass(iClient);
 }
 
-public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
+public MRESReturn DHook_CanAirDashPre(int iClient, DHookReturn hReturn)
 {
 	if (TF2_GetPlayerClass(iClient) == TFClass_Scout)
 		return MRES_Ignored;
@@ -368,7 +368,7 @@ public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
 	if (TF2_IsPlayerInCondition(iClient, TFCond_CritHype) && iAirDash <= 6)
 	{
 		SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
-		DHookSetReturn(hReturn, true);
+		hReturn.Value = true;
 		return MRES_Supercede;
 	}
 	
@@ -379,20 +379,20 @@ public MRESReturn DHook_CanAirDashPre(int iClient, Handle hReturn)
 	if (iAirDash < RoundToNearest(SDKCall_AttribHookValueFloat(0.0, "air_dash_count", iWeapon)))
 	{
 		SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
-		DHookSetReturn(hReturn, true);
+		hReturn.Value = true;
 		return MRES_Supercede;
 	}
 	
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_GetWeaponByTypePost(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_GetWeaponByTypePost(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	//This detour is to fix crash from engineer using sapper,
 	// prioritize which weapon to return by active weapon.
 	// "type" here is a whole load of different slot can't be arsed to list here,
 	// just use returned weapon as loadout slot to find
-	int iReturnWeapon = DHookGetReturn(hReturn);
+	int iReturnWeapon = hReturn.Value;
 	if (iReturnWeapon == INVALID_ENT_REFERENCE)
 		return MRES_Ignored;
 	
@@ -404,14 +404,14 @@ public MRESReturn DHook_GetWeaponByTypePost(int iClient, Handle hReturn, Handle 
 	int iActiveSlot = TF2Econ_GetItemDefaultLoadoutSlot(GetEntProp(iActiveWeapon, Prop_Send, "m_iItemDefinitionIndex"));
 	if (iReturnSlot == iActiveSlot)
 	{
-		DHookSetReturn(hReturn, iActiveWeapon);
+		hReturn.Value = iActiveWeapon;
 		return MRES_Supercede;
 	}
 	
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
+public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, DHookReturn hReturn)
 {
 	//There 4 things going on in this function depending on player class attempting to:
 	//If Grappling Hook active weapon, activate rune
@@ -442,39 +442,39 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, Handle hReturn)
 	}
 	
 	//Cant find any valid passive weapon to use, prevent function called
-	DHookSetReturn(hReturn, false);
+	hReturn.Value = false;
 	return MRES_Supercede;
 }
 
-public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, Handle hReturn)
+public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, DHookReturn hReturn)
 {
 	RevertClientClass(iClient);
 }
 
-public MRESReturn DHook_EndClassSpecialSkillPre(int iClient, Handle hReturn)
+public MRESReturn DHook_EndClassSpecialSkillPre(int iClient, DHookReturn hReturn)
 {
 	//Only have demoman check to end charge
 	SetClientClass(iClient, TFClass_DemoMan);
 }
 
-public MRESReturn DHook_EndClassSpecialSkillPost(int iClient, Handle hReturn)
+public MRESReturn DHook_EndClassSpecialSkillPost(int iClient, DHookReturn hReturn)
 {
 	RevertClientClass(iClient);
 }
 
-public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, Handle hReturn)
+public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, DHookReturn hReturn)
 {
 	if (IsClientInGame(iClient))
 		SetClientClass(iClient, TFClass_Medic);	//Has medic class check for getting uber types
 }
 
-public MRESReturn DHook_GetChargeEffectBeingProvidedPost(int iClient, Handle hReturn)
+public MRESReturn DHook_GetChargeEffectBeingProvidedPost(int iClient, DHookReturn hReturn)
 {
 	if (IsClientInGame(iClient))
 		RevertClientClass(iClient);
 }
 
-public MRESReturn DHook_GetMaxHealthForBuffingPre(int iClient, Handle hReturn)
+public MRESReturn DHook_GetMaxHealthForBuffingPre(int iClient, DHookReturn hReturn)
 {
 	if (g_bWeaponDecap[iClient])
 		return;
@@ -485,7 +485,7 @@ public MRESReturn DHook_GetMaxHealthForBuffingPre(int iClient, Handle hReturn)
 		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iDecapitations");
 }
 
-public MRESReturn DHook_GetMaxHealthForBuffingPost(int iClient, Handle hReturn)
+public MRESReturn DHook_GetMaxHealthForBuffingPost(int iClient, DHookReturn hReturn)
 {
 	if (g_bWeaponDecap[iClient])
 		return;
@@ -494,7 +494,7 @@ public MRESReturn DHook_GetMaxHealthForBuffingPost(int iClient, Handle hReturn)
 	Properties_LoadActiveWeaponPropInt(iClient, "m_iDecapitations");
 }
 
-public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	if (!IsClientInGame(iClient) || g_bWeaponDecap[iClient])	//IsClientInGame check is needed, weird game
 		return;
@@ -505,7 +505,7 @@ public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, Handle hReturn, Handle
 		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iDecapitations");
 }
 
-public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	if (!IsClientInGame(iClient) || g_bWeaponDecap[iClient])
 		return;
@@ -514,12 +514,12 @@ public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, Handle hReturn, Handl
 	Properties_LoadActiveWeaponPropInt(iClient, "m_iDecapitations");
 }
 
-public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, Handle hReturn, Handle hParams)
+public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, DHookReturn hReturn, DHookParam hParams)
 {
 	if (g_bInitClass)
 		return MRES_Ignored;	//Do class check if inside CTFPlayer::ManageBuilderWeapons
 	
-	DHookSetReturn(hReturn, true);
+	hReturn.Value = true;
 	return MRES_Supercede;
 }
 
@@ -535,7 +535,7 @@ public MRESReturn DHook_DisguiseOnKillPost(int iWeapon)
 	RevertClientClass(iClient);
 }
 
-public MRESReturn DHook_ApplyBiteEffectsPre(int iWeapon, Handle hParams)
+public MRESReturn DHook_ApplyBiteEffectsPre(int iWeapon, DHookParam hParams)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");	
 	
@@ -543,16 +543,16 @@ public MRESReturn DHook_ApplyBiteEffectsPre(int iWeapon, Handle hParams)
 		g_bApplyBiteEffectsChocolate[iClient] = true;
 }
 
-public MRESReturn DHook_ApplyBiteEffectsPost(int iWeapon, Handle hParams)
+public MRESReturn DHook_ApplyBiteEffectsPost(int iWeapon, DHookParam hParams)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");	
 	g_bApplyBiteEffectsChocolate[iClient] = false;
 }
 
-public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, Handle hParams)
+public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, DHookParam hParams)
 {
 	//Not all weapons remove disguise
-	int iClient = DHookGetParam(hParams, 1);
+	int iClient = hParams.Get(1);
 	
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguising))
 		TF2_RemoveCondition(iClient, TFCond_Disguising);
@@ -574,14 +574,14 @@ public MRESReturn DHook_UpdateRageBuffsAndRagePre(Address pPlayerShared)
 	return MRES_Supercede;
 }
 
-public MRESReturn DHook_ModifyRagePre(Address pPlayerShared, Handle hParams)
+public MRESReturn DHook_ModifyRagePre(Address pPlayerShared, DHookParam hParams)
 {
 	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
 	if (iClient && g_iGainingRageWeapon == INVALID_ENT_REFERENCE)
 	{
 		DataPack hPack = new DataPack();
 		hPack.WriteCell(GetClientSerial(iClient));
-		hPack.WriteFloat(DHookGetParam(hParams, 1));
+		hPack.WriteFloat(hParams.Get(1));
 		
 		RequestFrame(Properties_ModifyRage, hPack);
 		return MRES_Supercede;
@@ -590,7 +590,7 @@ public MRESReturn DHook_ModifyRagePre(Address pPlayerShared, Handle hParams)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParams)
+public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, DHookParam hParams)
 {
 	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
 	if (!iClient)
@@ -602,7 +602,7 @@ public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParam
 	if (iWeapon == INVALID_ENT_REFERENCE)
 		return MRES_Ignored;
 	
-	int iBuffType = DHookGetParam(hParams, 2);
+	int iBuffType = hParams.Get(2);
 	float flClientRageType = SDKCall_AttribHookValueFloat(0.0, "set_buff_type", iClient);
 	TF2Attrib_SetByName(iClient, "mod soldier buff type", float(iBuffType) - flClientRageType);
 	
@@ -610,7 +610,7 @@ public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, Handle hParam
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_ActivateRageBuffPost(Address pPlayerShared, Handle hParams)
+public MRESReturn DHook_ActivateRageBuffPost(Address pPlayerShared, DHookParam hParams)
 {
 	int iClient = SDKCall_GetBaseEntity(pPlayerShared - view_as<Address>(g_iOffsetPlayerShared));
 	if (!iClient)
@@ -625,7 +625,7 @@ public MRESReturn DHook_ActivateRageBuffPost(Address pPlayerShared, Handle hPara
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_ApplyOnDamageModifyRulesPre(Address pGamerules, Handle hReturn, Handle hParams)
+public MRESReturn DHook_ApplyOnDamageModifyRulesPre(Address pGamerules, DHookReturn hReturn, DHookParam hParams)
 {
 	if (g_bOnTakeDamage)
 	{
@@ -634,24 +634,24 @@ public MRESReturn DHook_ApplyOnDamageModifyRulesPre(Address pGamerules, Handle h
 	}
 }
 
-public MRESReturn DHook_HandleRageGainPre(Handle hParams)
+public MRESReturn DHook_HandleRageGainPre(DHookParam hParams)
 {
 	//Banners, Phlogistinator and Hitman Heatmaker use m_flRageMeter with class check, call this function to each weapons
 	//Must be called a frame, will crash if detour is called while inside a detour
-	if (g_iGainingRageWeapon != INVALID_ENT_REFERENCE || DHookIsNullParam(hParams, 1))
+	if (g_iGainingRageWeapon != INVALID_ENT_REFERENCE || hParams.IsNull(1))
 		return MRES_Ignored;
 	
 	DataPack hPack = new DataPack();
-	hPack.WriteCell(GetClientSerial(DHookGetParam(hParams, 1)));
-	hPack.WriteCell(DHookGetParam(hParams, 2));
-	hPack.WriteFloat(DHookGetParam(hParams, 3));
-	hPack.WriteFloat(DHookGetParam(hParams, 4));
+	hPack.WriteCell(GetClientSerial(hParams.Get(1)));
+	hPack.WriteCell(hParams.Get(2));
+	hPack.WriteFloat(hParams.Get(3));
+	hPack.WriteFloat(hParams.Get(4));
 	
 	RequestFrame(Properties_HandleRageGain, hPack);
 	return MRES_Supercede;
 }
 
-public MRESReturn DHook_SwingPre(int iWeapon, Handle hReturn)
+public MRESReturn DHook_SwingPre(int iWeapon, DHookReturn hReturn)
 {
 	//Not all melee weapons call to end demo charge
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
@@ -676,7 +676,7 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 	Properties_SaveWeaponPropFloat(iClient, iWeapon, "m_flItemChargeMeter", TF2_GetSlot(iWeapon));
 }
 
-public MRESReturn DHook_GetEffectBarAmmoPost(int iWeapon, Handle hReturn)
+public MRESReturn DHook_GetEffectBarAmmoPost(int iWeapon, DHookReturn hReturn)
 {
 	//This function is only called for GetAmmoCount, GetMaxAmmo and GiveAmmo
 	Properties_SetForceWeaponAmmo(iWeapon);
@@ -751,20 +751,20 @@ public MRESReturn DHook_KilledPost(int iObject)
 	g_iBuildingKilledSapper = INVALID_ENT_REFERENCE;
 }
 
-public MRESReturn DHook_CanBeUpgradedPre(int iObject, Handle hReturn, Handle hParams)
+public MRESReturn DHook_CanBeUpgradedPre(int iObject, DHookReturn hReturn, DHookParam hParams)
 {
 	//This function have engineer class check
-	int iClient = DHookGetParam(hParams, 1);
+	int iClient = hParams.Get(1);
 	SetClientClass(iClient, TFClass_Engineer);
 }
 
-public MRESReturn DHook_CanBeUpgradedPost(int iObject, Handle hReturn, Handle hParams)
+public MRESReturn DHook_CanBeUpgradedPost(int iObject, DHookReturn hReturn, DHookParam hParams)
 {
-	int iClient = DHookGetParam(hParams, 1);
+	int iClient = hParams.Get(1);
 	RevertClientClass(iClient);
 }
 
-public MRESReturn DHook_EventKilledPre(int iClient, Handle hParams)
+public MRESReturn DHook_EventKilledPre(int iClient, DHookParam hParams)
 {
 	//Remove rune so it won't be dropped as pickupable
 	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
@@ -807,42 +807,42 @@ public MRESReturn DHook_ForceRespawnPost(int iClient)
 			SDKCall_AddObject(iClient, iBuilding);
 }
 
-public MRESReturn DHook_EquipWearablePost(int iClient, Handle hParams)
+public MRESReturn DHook_EquipWearablePost(int iClient, DHookParam hParams)
 {
 	//New wearable is given from somewhere, refresh controls and huds
 	Controls_RefreshClient(iClient);
 	Huds_RefreshClient(iClient);
 }
 
-public MRESReturn DHook_GetAmmoCountPre(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_GetAmmoCountPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	int iWeapon = Properties_GetForceWeaponAmmo();
 	if (iWeapon != INVALID_ENT_REFERENCE)
 	{
 		Properties_ResetForceWeaponAmmo();
-		DHookSetReturn(hReturn, Properties_GetWeaponPropInt(iWeapon, "m_iAmmo"));
+		hReturn.Value = Properties_GetWeaponPropInt(iWeapon, "m_iAmmo");
 		return MRES_Supercede;
 	}
 	
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_GiveNamedItemPre(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_GiveNamedItemPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
-	if (DHookIsNullParam(hParams, 1) || DHookIsNullParam(hParams, 3))
+	if (hParams.IsNull(1) || hParams.IsNull(3))
 	{
-		DHookSetReturn(hReturn, 0);
+		hReturn.Value = 0;
 		return MRES_Supercede;
 	}
 	
 	if (g_bAllowGiveNamedItem)
 		return MRES_Ignored;
 	
-	int iIndex = DHookGetParamObjectPtrVar(hParams, 3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
+	int iIndex = hParams.GetObjectVar(3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
 	if (CanEquipIndex(iClient, iIndex))
 		return MRES_Ignored;
 	
-	DHookSetReturn(hReturn, 0);
+	hReturn.Value = 0;
 	return MRES_Supercede;
 }
 
@@ -858,7 +858,7 @@ public void DHook_GiveNamedItemRemoved(int iHookId)
 	}
 }
 
-public MRESReturn DHook_ClientCommandPost(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_ClientCommandPost(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	if (g_iClientEurekaTeleporting)
 	{
@@ -977,17 +977,17 @@ public MRESReturn DHook_InitClassPost(int iClient)
 	g_bInitClass = false;
 }
 
-public MRESReturn DHook_TakeHealthPre(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_TakeHealthPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	if (g_bApplyBiteEffectsChocolate[iClient]) 
 	{
-		DHookSetParam(hParams, 2, DMG_GENERIC);
+		hParams.Set(2, DMG_GENERIC);
 		return MRES_ChangedHandled;
 	}
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_CheckBlockBackstabPre(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_CheckBlockBackstabPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	if (TF2_IsPlayerInCondition(iClient, TFCond_RuneResist))
 		return MRES_Ignored;	//Let TF2 handle it, even though there nothing here
@@ -1017,17 +1017,17 @@ public MRESReturn DHook_CheckBlockBackstabPre(int iClient, Handle hReturn, Handl
 		
 		SetEntProp(iWeapon, Prop_Send, "m_fEffects", GetEntProp(iWeapon, Prop_Send, "m_fEffects")|EF_NODRAW);
 		
-		DHookSetReturn(hReturn, true);
+		hReturn.Value = true;
 		return MRES_Supercede;
 	}
 	
-	DHookSetReturn(hReturn, false);
+	hReturn.Value = false;
 	return MRES_Supercede;
 }
 
-public MRESReturn DHook_CanPickupBuildingPost(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn DHook_CanPickupBuildingPost(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
-	if (DHookGetReturn(hReturn))
+	if (hReturn.Value)
 	{
 		//Can client actually switch away from active weapon?
 		// spinning Minigun and charging Cow Mangler doesn't want to get switched away
@@ -1041,14 +1041,14 @@ public MRESReturn DHook_CanPickupBuildingPost(int iClient, Handle hReturn, Handl
 		}
 		
 		//No we cant
-		DHookSetReturn(hReturn, false);
+		hReturn.Value = false;
 		return MRES_Supercede;
 	}
 	
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_DropRunePre(int iClient, Handle hParams)
+public MRESReturn DHook_DropRunePre(int iClient, DHookParam hParams)
 {
 	//TODO check if client is in randomize mode
 	return MRES_Supercede;
