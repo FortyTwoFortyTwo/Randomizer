@@ -9,6 +9,8 @@ void Event_Init()
 	HookEvent("player_hurt", Event_PlayerHurt);
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("pass_score", Event_PassScore);
+	HookEvent("rocket_jump", Event_WeaponJump);
+	HookEvent("sticky_jump", Event_WeaponJump);
 }
 
 public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
@@ -158,4 +160,11 @@ public Action Event_PassScore(Event event, const char[] sName, bool bDontBroadca
 	
 	int iClient = event.GetInt("scorer");
 	Group_TriggerRandomizeClient(iClient, RandomizedAction_PassScore);
+}
+
+public Action Event_WeaponJump(Event event, const char[] sName, bool bDontBroadcast)
+{
+	//Class check should be done by this point, revert class so pain sound can be played as actual class
+	if (g_bOnTakeDamage)
+		RevertClientClass(GetClientOfUserId(event.GetInt("userid")));
 }

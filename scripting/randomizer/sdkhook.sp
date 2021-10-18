@@ -49,8 +49,10 @@ void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 
 public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &flDamage, int &iDamageType, int &iWeapon, float vecDamageForce[3], float vecDamagePosition[3], int iDamageCustom)
 {
-	//Allow IsPlayerClass for everyone, we want assister too which would be tough to get without gamedata
-	Patch_EnableIsPlayerClass();
+	//Enable IsPlayerClass patch at ApplyOnDamageModifyRules detour,
+	// so proper soldier/demoman class check can be done for rocket jumping,
+	// before ApplyOnDamageModifyRules detour is called
+	g_bOnTakeDamage = true;
 	
 	if (0 < iAttacker <= MaxClients)
 	{
@@ -73,8 +75,10 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 
 public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, float flDamage, int iDamageType, int iWeapon, const float vecDamageForce[3], const float vecDamagePosition[3], int iDamageCustom)
 {
-	Patch_DisableIsPlayerClass();
+	if (!g_bOnTakeDamage)
+		Patch_DisableIsPlayerClass();
 	
+	g_bOnTakeDamage = false;
 	g_bFeignDeath[iVictim] = false;
 	
 	if (0 < iAttacker <= MaxClients)

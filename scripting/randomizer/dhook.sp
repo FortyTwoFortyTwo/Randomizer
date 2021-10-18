@@ -69,6 +69,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::UpdateRageBuffsAndRage", DHook_UpdateRageBuffsAndRagePre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::ModifyRage", DHook_ModifyRagePre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerShared::ActivateRageBuff", DHook_ActivateRageBuffPre, DHook_ActivateRageBuffPost);
+	DHook_CreateDetour(hGameData, "CTFGameRules::ApplyOnDamageModifyRules", DHook_ApplyOnDamageModifyRulesPre, _);
 	DHook_CreateDetour(hGameData, "HandleRageGain", DHook_HandleRageGainPre, _);
 	
 	g_hDHookEventKilled = DHook_CreateVirtual(hGameData, "CBaseEntity::Event_Killed");
@@ -622,6 +623,15 @@ public MRESReturn DHook_ActivateRageBuffPost(Address pPlayerShared, Handle hPara
 	TF2Attrib_RemoveByName(iClient, "mod soldier buff type");
 	Properties_SaveRageProps(iClient, iWeapon);
 	return MRES_Ignored;
+}
+
+public MRESReturn DHook_ApplyOnDamageModifyRulesPre(Address pGamerules, Handle hReturn, Handle hParams)
+{
+	if (g_bOnTakeDamage)
+	{
+		g_bOnTakeDamage = false;
+		Patch_EnableIsPlayerClass();
+	}
 }
 
 public MRESReturn DHook_HandleRageGainPre(Handle hParams)

@@ -336,6 +336,7 @@ bool g_bFeignDeath[TF_MAXPLAYERS];
 bool g_bWeaponDecap[TF_MAXPLAYERS];
 Handle g_hTimerClientHud[TF_MAXPLAYERS];
 
+bool g_bOnTakeDamage;
 int g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 int g_iTouchItem = INVALID_ENT_REFERENCE;
 int g_iTouchToucher = INVALID_ENT_REFERENCE;
@@ -423,8 +424,8 @@ public void OnPluginStart()
 	ViewModels_Init();
 	Weapons_Init();
 	
-	AddCommandListener(Event_EurekaTeleport, "eureka_teleport");
-	AddCommandListener(Event_DropItem, "dropitem");
+	AddCommandListener(Console_EurekaTeleport, "eureka_teleport");
+	AddCommandListener(Console_DropItem, "dropitem");
 }
 
 public void OnPluginEnd()
@@ -741,13 +742,13 @@ bool CanEquipIndex(int iClient, int iIndex)
 	return true;
 }
 
-public Action Event_EurekaTeleport(int iClient, const char[] sCommand, int iArgs)
+public Action Console_EurekaTeleport(int iClient, const char[] sCommand, int iArgs)
 {
 	g_iClientEurekaTeleporting = iClient;
 	SetClientClass(iClient, TFClass_Engineer);
 }
 
-public Action Event_DropItem(int iClient, const char[] sCommand, int iArgs)
+public Action Console_DropItem(int iClient, const char[] sCommand, int iArgs)
 {
 	static bool bSkip;
 	if (bSkip)
