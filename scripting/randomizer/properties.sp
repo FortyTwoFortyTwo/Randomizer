@@ -53,6 +53,13 @@ void Properties_LoadWeaponPropFloat(int iClient, int iWeapon, const char[] sProp
 	SetEntPropFloat(iClient, Prop_Send, sProp, flValue, iElement);
 }
 
+void Properties_LoadActiveWeaponPropFloat(int iClient, const char[] sProp)
+{
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iWeapon != INVALID_ENT_REFERENCE)
+		Properties_LoadWeaponPropFloat(iClient, iWeapon, sProp);
+}
+
 void Properties_SaveWeaponPropFloat(int iClient, int iWeapon, const char[] sProp, int iElement = 0)
 {
 	if (!g_mPropertiesWeaponSend[iWeapon])

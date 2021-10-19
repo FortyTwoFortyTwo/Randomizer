@@ -529,6 +529,39 @@ stock int TF2_SpawnParticle(const char[] sParticle, int iEntity)
 	return EntIndexToEntRef(iParticle);
 }
 
+stock float min(float a, float b)
+{
+	return a < b ? a : b;
+}
+
+stock float max(float a, float b)
+{
+	return a > b ? a : b;
+}
+
+stock float clamp(float val, float minVal, float maxVal)
+{
+	if (maxVal < minVal)
+		return maxVal;
+	else if (val < minVal)
+		return minVal;
+	else if (val > maxVal)
+		return maxVal;
+	else
+		return val;
+}
+
+stock float RemapValClamped(float val, float A, float B, float C, float D)
+{
+	if ( A == B )
+		return val >= B ? D : C;
+	
+	float cVal = (val - A) / (B - A);
+	cVal = clamp(cVal, 0.0, 1.0);
+	
+	return C + (D - C) * cVal;
+}
+
 stock bool IsClassname(int iEntity, const char[] sClassname)
 {
 	char sBuffer[256];

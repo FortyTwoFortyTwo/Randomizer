@@ -333,6 +333,7 @@ bool g_bClientRefresh[TF_MAXPLAYERS];
 
 TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
 bool g_bFeignDeath[TF_MAXPLAYERS];
+int g_iHypeMeterLoaded[TF_MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
 bool g_bWeaponDecap[TF_MAXPLAYERS];
 Handle g_hTimerClientHud[TF_MAXPLAYERS];
 

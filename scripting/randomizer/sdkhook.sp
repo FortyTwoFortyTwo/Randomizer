@@ -140,6 +140,13 @@ public void Client_PreThink(int iClient)
 	//PreThink have way too many IsPlayerClass check, always return true during it
 	Patch_EnableIsPlayerClass();
 	
+	int iWeapon, iPos;
+	if (TF2_GetItemFromClassname(iClient, "tf_weapon_soda_popper", iWeapon, iPos))
+	{
+		Properties_LoadWeaponPropFloat(iClient, iWeapon, "m_flHypeMeter");
+		g_iHypeMeterLoaded[iClient] = iWeapon;
+	}
+	
 	// Medigun beams doesnt show if player is not medic, and we can't fix that in SDK because it all in clientside
 	if (TF2_GetPlayerClass(iClient) == TFClass_Medic)
 		return;
@@ -151,24 +158,24 @@ public void Client_PreThink(int iClient)
 		PARTICLE_BEAM_BLU,
 	};
 	
-	int iMedigun, iPos;
-	while (TF2_GetItemFromClassname(iClient, "tf_weapon_medigun", iMedigun, iPos))
+	iWeapon = INVALID_ENT_REFERENCE, iPos = 0;
+	while (TF2_GetItemFromClassname(iClient, "tf_weapon_medigun", iWeapon, iPos))
 	{
 		if (!IsValidEntity(g_iMedigunBeamRef[iClient]))
-			g_iMedigunBeamRef[iClient] = TF2_SpawnParticle(sParticle[TF2_GetClientTeam(iClient)], iMedigun);
+			g_iMedigunBeamRef[iClient] = TF2_SpawnParticle(sParticle[TF2_GetClientTeam(iClient)], iWeapon);
 		
-		int iPatient = GetEntPropEnt(iMedigun, Prop_Send, "m_hHealingTarget");
+		int iPatient = GetEntPropEnt(iWeapon, Prop_Send, "m_hHealingTarget");
 		int iControlPoint = GetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", 0);
 		
 		if (0 < iPatient <= MaxClients)
 		{
 			//Using active weapon so beam connects to nice spot
-			int iWeapon = GetEntPropEnt(iPatient, Prop_Send, "m_hActiveWeapon");
-			if (iWeapon != iControlPoint)
+			int iActiveWeapon = GetEntPropEnt(iPatient, Prop_Send, "m_hActiveWeapon");
+			if (iActiveWeapon != iControlPoint)
 			{
 				//We just started healing someone
-				SetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", iWeapon, 0);
-				SetEntProp(g_iMedigunBeamRef[iClient], Prop_Send, "m_iControlPointParents", iWeapon, _, 0);
+				SetEntPropEnt(g_iMedigunBeamRef[iClient], Prop_Send, "m_hControlPointEnts", iActiveWeapon, 0);
+				SetEntProp(g_iMedigunBeamRef[iClient], Prop_Send, "m_iControlPointParents", iActiveWeapon, _, 0);
 				
 				ActivateEntity(g_iMedigunBeamRef[iClient]);
 				AcceptEntityInput(g_iMedigunBeamRef[iClient], "Start");
@@ -201,6 +208,15 @@ public void Client_PreThinkPost(int iClient)
 	
 	//Save revenge crits from weapons fired or manmelter crit collected
 	Properties_SaveActiveWeaponPropInt(iClient, "m_iRevengeCrits");
+	
+	//Save hype meter drainage to all soda popper
+	g_iHypeMeterLoaded[iClient] = INVALID_ENT_REFERENCE;
+	float flHypeMeter = GetEntPropFloat(iClient, Prop_Send, "m_flHypeMeter");
+	int iWeapon, iPos;
+	while (TF2_GetItemFromClassname(iClient, "tf_weapon_soda_popper", iWeapon, iPos))
+		Properties_SetWeaponPropFloat(iWeapon, "m_flHypeMeter", flHypeMeter);
+	
+	Properties_LoadActiveWeaponPropFloat(iClient, "m_flHypeMeter");
 }
 
 public void Client_PostThink(int iClient)
@@ -285,6 +301,7 @@ public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 		Properties_LoadRageProps(iClient, iActiveWeapon);
 		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iDecapitations");
 		Properties_LoadWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
+		Properties_LoadWeaponPropFloat(iClient, iActiveWeapon, "m_flHypeMeter");
 		Properties_LoadWeaponPropFloat(iClient, iActiveWeapon, "m_flItemChargeMeter", TF2_GetSlot(iActiveWeapon));
 	}
 }

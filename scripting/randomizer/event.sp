@@ -100,22 +100,48 @@ public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadc
 	
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
 	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
-	int iDamage = event.GetInt("damageamount");
+	float flDamage = float(event.GetInt("damageamount"));
 	
 	if (0 < iAttacker <= MaxClients && iAttacker != iClient)
 	{
-		//Increase meter for Gas Passer
 		int iWeapon, iPos;
-		while (TF2_GetItemFromAttribute(iAttacker, "item_meter_charge_type", iWeapon, iPos))
+		while (TF2_GetItem(iAttacker, iWeapon, iPos))
 		{
-			//Could add check whenever if item_meter_charge_type value is 3, meh
-			
 			float flRate = SDKCall_AttribHookValueFloat(0.0, "item_meter_damage_for_full_charge", iWeapon);
-			if (!flRate)
-				continue;
+			if (flRate)
+			{
+				//Increase meter for Gas Passer,
+				// could add check whenever if item_meter_charge_type value is 3, meh
+				flRate = flDamage / flRate * 100.0;
+				Properties_AddWeaponChargeMeter(iAttacker, iWeapon, flRate);
+			}
 			
-			flRate = float(iDamage) / flRate * 100.0;
-			Properties_AddWeaponChargeMeter(iAttacker, iWeapon, flRate);
+			if (SDKCall_AttribHookValueFloat(0.0, "hype_on_damage", iWeapon) && !TF2_IsPlayerInCondition(iAttacker, TFCond_CritHype))
+			{
+				//Soda popper
+				float flHype = RemapValClamped(flDamage, 1.0, 200.0, 1.0, 50.0);	//This really is valve's method for hype meter, weird
+				flHype = min(Properties_GetWeaponPropFloat(iWeapon, "m_flHypeMeter") + flHype, 100.0);
+				Properties_SetWeaponPropFloat(iWeapon, "m_flHypeMeter", flHype);
+			}
+			
+			if (SDKCall_AttribHookValueFloat(0.0, "boost_on_damage", iWeapon))
+			{
+				//Baby Face Blaster
+				float flHype = Properties_GetWeaponPropFloat(iWeapon, "m_flHypeMeter");
+				flHype = min(FindConVar("tf_scout_hype_pep_max").FloatValue, flHype + (max(FindConVar("tf_scout_hype_pep_min_damage").FloatValue, flDamage) / FindConVar("tf_scout_hype_pep_mod").FloatValue));
+				Properties_SetWeaponPropFloat(iWeapon, "m_flHypeMeter", flHype);
+			}
+		}
+	}
+	
+	int iWeapon, iPos;
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		float flVal = SDKCall_AttribHookValueFloat(0.0, "lose_hype_on_take_damage", iWeapon);
+		if (flVal)
+		{
+			float flHype = Properties_GetWeaponPropFloat(iWeapon, "m_flHypeMeter");
+			Properties_SetWeaponPropFloat(iWeapon, "m_flHypeMeter", max(0.0, flHype - (flVal * flDamage)));
 		}
 	}
 }

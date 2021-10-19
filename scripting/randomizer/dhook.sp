@@ -51,7 +51,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::GiveAmmo", DHook_GiveAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Taunt", DHook_TauntPre, DHook_TauntPost);
-	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", DHook_CanAirDashPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::CanAirDash", DHook_CanAirDashPre, DHook_CanAirDashPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::Weapon_GetWeaponByType", _, DHook_GetWeaponByTypePost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DoClassSpecialSkill", DHook_DoClassSpecialSkillPre, DHook_DoClassSpecialSkillPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::EndClassSpecialSkill", DHook_EndClassSpecialSkillPre, DHook_EndClassSpecialSkillPost);
@@ -386,6 +386,25 @@ public MRESReturn DHook_CanAirDashPre(int iClient, DHookReturn hReturn)
 	return MRES_Ignored;
 }
 
+public MRESReturn DHook_CanAirDashPost(int iClient, DHookReturn hReturn)
+{
+	//Client should always air dash if this returns true
+	if (hReturn.Value)
+	{
+		//Lose hype meter
+		int iWeapon, iPos;
+		while (TF2_GetItem(iClient, iWeapon, iPos))
+		{
+			float flVal = SDKCall_AttribHookValueFloat(0.0, "hype_resets_on_jump", iWeapon);	//Despite what name says, it doesn't fully reset
+			if (flVal)
+			{
+				float flHypeMeter = Properties_GetWeaponPropFloat(iWeapon, "m_flHypeMeter");
+				Properties_SetWeaponPropFloat(iWeapon, "m_flHypeMeter", max(0.0, flHypeMeter - flVal));
+			}
+		}
+	}
+}
+
 public MRESReturn DHook_GetWeaponByTypePost(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	//This detour is to fix crash from engineer using sapper,
@@ -496,22 +515,34 @@ public MRESReturn DHook_GetMaxHealthForBuffingPost(int iClient, DHookReturn hRet
 
 public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
-	if (!IsClientInGame(iClient) || g_bWeaponDecap[iClient])	//IsClientInGame check is needed, weird game
+	if (!IsClientInGame(iClient))	//IsClientInGame check is needed, weird game
 		return;
 	
-	//Set decap to any eyelanders, all should have same value
 	int iWeapon, iPos;
-	if (TF2_GetItemFromClassname(iClient, "tf_weapon_sword", iWeapon, iPos))
+	
+	//Set hype to any baby face blaster, all should have same value
+	if (TF2_GetItemFromClassname(iClient, "tf_weapon_pep_brawler_blaster", iWeapon, iPos))
+		Properties_LoadWeaponPropFloat(iClient, iWeapon, "m_flHypeMeter");
+	
+	//Set decap to any eyelanders, all should have same value
+	if (!g_bWeaponDecap[iClient] && TF2_GetItemFromClassname(iClient, "tf_weapon_sword", iWeapon, iPos))
 		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iDecapitations");
 }
 
 public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
-	if (!IsClientInGame(iClient) || g_bWeaponDecap[iClient])
+	if (!IsClientInGame(iClient))
 		return;
 	
+	//Set hype meter back to active weapon, unless if were in PreThink hook for meter drainage
+	if (g_iHypeMeterLoaded[iClient] == INVALID_ENT_REFERENCE)
+		Properties_LoadActiveWeaponPropFloat(iClient, "m_flHypeMeter");
+	else
+		Properties_LoadWeaponPropFloat(iClient, g_iHypeMeterLoaded[iClient], "m_flHypeMeter");
+	
 	//Set back to active weapon
-	Properties_LoadActiveWeaponPropInt(iClient, "m_iDecapitations");
+	if (!g_bWeaponDecap[iClient])
+		Properties_LoadActiveWeaponPropInt(iClient, "m_iDecapitations");
 }
 
 public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, DHookReturn hReturn, DHookParam hParams)
