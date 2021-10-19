@@ -144,7 +144,7 @@ void DHook_DisableDetour()
 				LogError("Failed to disable pre detour: %s", detour.sName);
 		
 		if (detour.callbackPost != INVALID_FUNCTION)
-			if (!detour.hDetour.Disable(Hook_Pre, detour.callbackPost))
+			if (!detour.hDetour.Disable(Hook_Post, detour.callbackPost))
 				LogError("Failed to disable post detour: %s", detour.sName);
 	}
 }
