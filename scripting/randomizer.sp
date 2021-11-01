@@ -747,6 +747,7 @@ public Action Console_EurekaTeleport(int iClient, const char[] sCommand, int iAr
 {
 	g_iClientEurekaTeleporting = iClient;
 	SetClientClass(iClient, TFClass_Engineer);
+	return Plugin_Continue;
 }
 
 public Action Console_DropItem(int iClient, const char[] sCommand, int iArgs)

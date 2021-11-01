@@ -376,7 +376,7 @@ public int Huds_SortWeapons(int iPos1, int iPos2, Handle hMap, Handle hHandle)
 public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 {
 	if (g_hTimerClientHud[iClient] != hTimer || !IsClientInGame(iClient))
-		return;
+		return Plugin_Continue;
 	
 	//Remove any deleted weapons
 	int iLength = g_aHudWeapon[iClient].Length;
@@ -393,6 +393,8 @@ public Action Huds_ClientDisplay(Handle hTimer, int iClient)
 		case HudMode_Text: Huds_ClientDisplayText(iClient);
 		case HudMode_Menu: Huds_ClientDisplayMenu(iClient);
 	}
+	
+	return Plugin_Continue;
 }
 
 void Huds_ClientDisplayText(int iClient)
@@ -565,4 +567,6 @@ public int Huds_MenuAction(Menu hMenu, MenuAction action, int iClient, int iChoi
 			Huds_ClientDisplayMenu(iClient);
 		}
 	}
+	
+	return 0;
 }

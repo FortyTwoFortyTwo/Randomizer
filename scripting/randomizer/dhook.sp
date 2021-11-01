@@ -355,6 +355,7 @@ public MRESReturn DHook_TauntPost(int iClient, DHookParam hParams)
 {
 	//Set class back to what it was
 	RevertClientClass(iClient);
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_CanAirDashPre(int iClient, DHookReturn hReturn)
@@ -403,6 +404,8 @@ public MRESReturn DHook_CanAirDashPost(int iClient, DHookReturn hReturn)
 			}
 		}
 	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_GetWeaponByTypePost(int iClient, DHookReturn hReturn, DHookParam hParams)
@@ -468,55 +471,65 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, DHookReturn hReturn)
 public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, DHookReturn hReturn)
 {
 	RevertClientClass(iClient);
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_EndClassSpecialSkillPre(int iClient, DHookReturn hReturn)
 {
 	//Only have demoman check to end charge
 	SetClientClass(iClient, TFClass_DemoMan);
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_EndClassSpecialSkillPost(int iClient, DHookReturn hReturn)
 {
 	RevertClientClass(iClient);
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_GetChargeEffectBeingProvidedPre(int iClient, DHookReturn hReturn)
 {
 	if (IsClientInGame(iClient))
 		SetClientClass(iClient, TFClass_Medic);	//Has medic class check for getting uber types
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_GetChargeEffectBeingProvidedPost(int iClient, DHookReturn hReturn)
 {
 	if (IsClientInGame(iClient))
 		RevertClientClass(iClient);
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_GetMaxHealthForBuffingPre(int iClient, DHookReturn hReturn)
 {
 	if (g_bWeaponDecap[iClient])
-		return;
+		return MRES_Ignored;
 	
 	//Set decap to any eyelanders, all should have same value
 	int iWeapon, iPos;
 	if (TF2_GetItemFromClassname(iClient, "tf_weapon_sword", iWeapon, iPos))
 		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iDecapitations");
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_GetMaxHealthForBuffingPost(int iClient, DHookReturn hReturn)
 {
 	if (g_bWeaponDecap[iClient])
-		return;
+		return MRES_Ignored;
 	
 	//Set back to active weapon
 	Properties_LoadActiveWeaponPropInt(iClient, "m_iDecapitations");
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	if (!IsClientInGame(iClient))	//IsClientInGame check is needed, weird game
-		return;
+		return MRES_Ignored;
 	
 	int iWeapon, iPos;
 	
@@ -527,12 +540,14 @@ public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, DHookReturn hReturn, D
 	//Set decap to any eyelanders, all should have same value
 	if (!g_bWeaponDecap[iClient] && TF2_GetItemFromClassname(iClient, "tf_weapon_sword", iWeapon, iPos))
 		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iDecapitations");
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	if (!IsClientInGame(iClient))
-		return;
+		return MRES_Ignored;
 	
 	//Set hype meter back to active weapon, unless if were in PreThink hook for meter drainage
 	if (g_iHypeMeterLoaded[iClient] == INVALID_ENT_REFERENCE)
@@ -543,6 +558,8 @@ public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, DHookReturn hReturn, 
 	//Set back to active weapon
 	if (!g_bWeaponDecap[iClient])
 		Properties_LoadActiveWeaponPropInt(iClient, "m_iDecapitations");
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, DHookReturn hReturn, DHookParam hParams)
@@ -558,12 +575,14 @@ public MRESReturn DHook_DisguiseOnKillPre(int iWeapon)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
 	SetClientClass(iClient, TFClass_Spy);
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_DisguiseOnKillPost(int iWeapon)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
 	RevertClientClass(iClient);
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_ApplyBiteEffectsPre(int iWeapon, DHookParam hParams)
@@ -572,12 +591,15 @@ public MRESReturn DHook_ApplyBiteEffectsPre(int iWeapon, DHookParam hParams)
 	
 	if (SDKCall_AttribHookValueFloat(0.0, "set_weapon_mode", iWeapon))
 		g_bApplyBiteEffectsChocolate[iClient] = true;
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_ApplyBiteEffectsPost(int iWeapon, DHookParam hParams)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");	
 	g_bApplyBiteEffectsChocolate[iClient] = false;
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, DHookParam hParams)
@@ -590,6 +612,8 @@ public MRESReturn DHook_PlayerFiredWeaponPre(Address pGameStats, DHookParam hPar
 	
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguised))
 		TF2_RemoveCondition(iClient, TFCond_Disguised);
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_UpdateRageBuffsAndRagePre(Address pPlayerShared)
@@ -663,6 +687,8 @@ public MRESReturn DHook_ApplyOnDamageModifyRulesPre(Address pGamerules, DHookRet
 		g_bOnTakeDamage = false;
 		Patch_EnableIsPlayerClass();
 	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_HandleRageGainPre(DHookParam hParams)
@@ -688,6 +714,8 @@ public MRESReturn DHook_SwingPre(int iWeapon, DHookReturn hReturn)
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients)
 		SDKCall_EndClassSpecialSkill(iClient);
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
@@ -705,12 +733,14 @@ public MRESReturn DHook_SecondaryWeaponPost(int iWeapon)
 	
 	//Sandvich might've thrown out and switched weapon while inside SecondaryWeapon call, save charge meter
 	Properties_SaveWeaponPropFloat(iClient, iWeapon, "m_flItemChargeMeter", TF2_GetSlot(iWeapon));
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_GetEffectBarAmmoPost(int iWeapon, DHookReturn hReturn)
 {
 	//This function is only called for GetAmmoCount, GetMaxAmmo and GiveAmmo
 	Properties_SetForceWeaponAmmo(iWeapon);
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_KilledPre(int iObject)
@@ -735,6 +765,8 @@ public MRESReturn DHook_KilledPre(int iObject)
 			SetEntProp(iAttacker, Prop_Send, "m_iRevengeCrits", 0);
 		}
 	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_KilledPost(int iObject)
@@ -780,6 +812,7 @@ public MRESReturn DHook_KilledPost(int iObject)
 	}
 	
 	g_iBuildingKilledSapper = INVALID_ENT_REFERENCE;
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_CanBeUpgradedPre(int iObject, DHookReturn hReturn, DHookParam hParams)
@@ -787,12 +820,14 @@ public MRESReturn DHook_CanBeUpgradedPre(int iObject, DHookReturn hReturn, DHook
 	//This function have engineer class check
 	int iClient = hParams.Get(1);
 	SetClientClass(iClient, TFClass_Engineer);
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_CanBeUpgradedPost(int iObject, DHookReturn hReturn, DHookParam hParams)
 {
 	int iClient = hParams.Get(1);
 	RevertClientClass(iClient);
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_EventKilledPre(int iClient, DHookParam hParams)
@@ -800,6 +835,8 @@ public MRESReturn DHook_EventKilledPre(int iClient, DHookParam hParams)
 	//Remove rune so it won't be dropped as pickupable
 	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
 		Loadout_ResetClientRune(iClient);
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_ForceRespawnPre(int iClient)
@@ -827,6 +864,8 @@ public MRESReturn DHook_ForceRespawnPre(int iClient)
 		if (nClass != TFClass_Unknown)
 			SetEntProp(iClient, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(nClass));
 	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_ForceRespawnPost(int iClient)
@@ -836,6 +875,8 @@ public MRESReturn DHook_ForceRespawnPost(int iClient)
 	while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)
 		if (GetEntPropEnt(iBuilding, Prop_Send, "m_hBuilder") == iClient)
 			SDKCall_AddObject(iClient, iBuilding);
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_EquipWearablePost(int iClient, DHookParam hParams)
@@ -843,6 +884,7 @@ public MRESReturn DHook_EquipWearablePost(int iClient, DHookParam hParams)
 	//New wearable is given from somewhere, refresh controls and huds
 	Controls_RefreshClient(iClient);
 	Huds_RefreshClient(iClient);
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_GetAmmoCountPre(int iClient, DHookReturn hReturn, DHookParam hParams)
@@ -896,6 +938,8 @@ public MRESReturn DHook_ClientCommandPost(int iClient, DHookReturn hReturn, DHoo
 		RevertClientClass(iClient);
 		g_iClientEurekaTeleporting = 0;
 	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_InitClassPre(int iClient)
@@ -970,6 +1014,8 @@ public MRESReturn DHook_InitClassPre(int iClient)
 			}
 		}
 	}
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_InitClassPost(int iClient)
@@ -1006,6 +1052,7 @@ public MRESReturn DHook_InitClassPost(int iClient)
 	Huds_RefreshClient(iClient);
 	
 	g_bInitClass = false;
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_TakeHealthPre(int iClient, DHookReturn hReturn, DHookParam hParams)
@@ -1089,9 +1136,11 @@ public MRESReturn DHook_FrameUpdatePostEntityThinkPre()
 {
 	//This function call all clients to reduce medigun charge from medic class check
 	Patch_EnableIsPlayerClass();
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_FrameUpdatePostEntityThinkPost()
 {
 	Patch_DisableIsPlayerClass();
+	return MRES_Ignored;
 }

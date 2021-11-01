@@ -97,7 +97,7 @@ stock int TF2_GiveNamedItem(int iClient, Address pItem, int iSlot = -1)
 	return iWeapon;
 }
 
-stock int TF2_EquipWeapon(int iClient, int iWeapon)
+stock void TF2_EquipWeapon(int iClient, int iWeapon)
 {
 	SetEntProp(iWeapon, Prop_Send, "m_bValidatedAttachedEntity", true);
 	
@@ -363,7 +363,7 @@ stock bool TF2_CanSwitchTo(int iClient, int iWeapon)
 	return SDKCall_WeaponCanSwitchTo(iClient, iWeapon);
 }
 
-stock bool TF2_SwitchToWeapon(int iClient, int iWeapon)
+stock void TF2_SwitchToWeapon(int iClient, int iWeapon)
 {
 	//Deatch other weapons first as some may have same classname
 	int iMaxWeapons = GetMaxWeapons();
