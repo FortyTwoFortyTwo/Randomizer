@@ -821,6 +821,8 @@ public Action Loadout_TimerApplyClientRune(Handle hTimer, int iClient)
 {
 	if (IsClientInGame(iClient))
 		Loadout_ApplyClientRune(iClient);
+	
+	return Plugin_Continue;
 }
 
 void Loadout_ResetClientRune(int iClient)

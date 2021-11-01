@@ -71,6 +71,8 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 		Properties_SaveActiveWeaponPropInt(iAttacker, "m_iRevengeCrits");
 		SetEntProp(iAttacker, Prop_Send, "m_iRevengeCrits", 0);
 	}
+	
+	return Plugin_Continue;
 }
 
 public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, float flDamage, int iDamageType, int iWeapon, const float vecDamageForce[3], const float vecDamagePosition[3], int iDamageCustom)
@@ -257,6 +259,7 @@ public Action Client_WeaponEquip(int iClient, int iWeapon)
 	//This also somehow fixes sniper with a banner
 	SetEntProp(iWeapon, Prop_Send, "m_hOwnerEntity", iClient);	//So client's class can be attempted first for TF2_GetDefaultClassFromItem
 	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
+	return Plugin_Continue;
 }
 
 public void Client_WeaponEquipPost(int iClient, int iWeapon)
@@ -282,6 +285,8 @@ public Action Client_WeaponSwitch(int iClient, int iWeapon)
 		Properties_SaveWeaponPropInt(iClient, iActiveWeapon, "m_iRevengeCrits");
 		Properties_SaveWeaponPropFloat(iClient, iActiveWeapon, "m_flItemChargeMeter", TF2_GetSlot(iActiveWeapon));
 	}
+	
+	return Plugin_Continue;
 }
 
 public void Client_WeaponSwitchPost(int iClient, int iWeapon)
@@ -309,7 +314,7 @@ public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 public Action Client_WeaponCanSwitchTo(int iClient, int iWeapon)
 {
 	if (iWeapon == INVALID_ENT_REFERENCE)
-		return;
+		return Plugin_Continue;
 	
 	Properties_SaveActiveWeaponAmmo(iClient);
 	
@@ -317,6 +322,8 @@ public Action Client_WeaponCanSwitchTo(int iClient, int iWeapon)
 	int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
 	if (iAmmoType != -1 && iAmmoType != TF_AMMO_METAL)
 		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iAmmo", iAmmoType);
+	
+	return Plugin_Continue;
 }
 
 public void Client_WeaponCanSwitchToPost(int iClient, int iWeapon)
@@ -349,7 +356,7 @@ public void HealthKit_SpawnPost(int iHealthKit)
 public Action Item_Touch(int iItem, int iToucher)
 {
 	if (iToucher <= 0 || iToucher > MaxClients)
-		return;
+		return Plugin_Continue;
 	
 	//All items using this hook has class check on picking up
 	Patch_EnableIsPlayerClass();
@@ -406,6 +413,8 @@ public Action Item_Touch(int iItem, int iToucher)
 		if (iTargetWeapon != INVALID_ENT_REFERENCE)
 			Properties_SetForceWeaponAmmo(iTargetWeapon, 1);	//Set priority to 1 so other hooks dont reset it
 	}
+	
+	return Plugin_Continue;
 }
 
 public void Item_TouchPost(int iItem, int iToucher)

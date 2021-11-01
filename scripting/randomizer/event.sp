@@ -13,7 +13,7 @@ void Event_Init()
 	HookEvent("sticky_jump", Event_WeaponJump);
 }
 
-public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
+public void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!g_bEnabled)
 		return;
@@ -24,7 +24,7 @@ public Action Event_RoundStart(Event event, const char[] sName, bool bDontBroadc
 		Group_TriggerRandomizeAll(RandomizedAction_RoundFull);
 }
 
-public Action Event_PointCaptured(Event hEvent, const char[] sName, bool bDontBroadcast)
+public void Event_PointCaptured(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
 	char[] sCappers = new char[MaxClients];
 	
@@ -35,7 +35,7 @@ public Action Event_PointCaptured(Event hEvent, const char[] sName, bool bDontBr
 			Group_TriggerRandomizeClient(view_as<int>(sCappers[i]), RandomizedAction_CPCapture);
 }
 
-public Action Event_FlagCaptured(Event hEvent, const char[] sName, bool bDontBroadcast)
+public void Event_FlagCaptured(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
 	if (hEvent.GetInt("eventtype") != 2)	//Check if it actually capture and not other events
 		return;
@@ -47,7 +47,7 @@ public Action Event_FlagCaptured(Event hEvent, const char[] sName, bool bDontBro
 	Group_TriggerRandomizeClient(iClient, RandomizedAction_FlagCapture);
 }
 
-public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
+public void Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!g_bEnabled)
 		return;
@@ -65,7 +65,7 @@ public Action Event_PlayerInventoryUpdate(Event event, const char[] sName, bool 
 	}
 }
 
-public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadcast)
+public void Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!g_bEnabled)
 		return;
@@ -82,7 +82,7 @@ public Action Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroad
 	CreateTimer(0.2, Loadout_TimerApplyClientRune, iClient);
 }
 
-public Action Event_PlayerRegenerate(Event event, const char[] sName, bool bDontBroadcast)
+public void Event_PlayerRegenerate(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!g_bEnabled)
 		return;
@@ -93,7 +93,7 @@ public Action Event_PlayerRegenerate(Event event, const char[] sName, bool bDont
 		GivePlayerAmmo(g_iClientInitClass, SDKCall_GetMaxAmmo(g_iClientInitClass, iAmmoType), iAmmoType, true);
 }
 
-public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcast)
+public void Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!g_bEnabled)
 		return;
@@ -146,7 +146,7 @@ public Action Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadc
 	}
 }
 
-public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroadcast)
+public void Event_PlayerDeath(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!g_bEnabled)
 		return;
@@ -179,7 +179,7 @@ public Action Event_PlayerDeath(Event event, const char[] sName, bool bDontBroad
 		Group_TriggerRandomizeClient(iAssister, RandomizedAction_Assist);
 }
 
-public Action Event_PassScore(Event event, const char[] sName, bool bDontBroadcast)
+public void Event_PassScore(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!g_bEnabled)
 		return;
@@ -188,7 +188,7 @@ public Action Event_PassScore(Event event, const char[] sName, bool bDontBroadca
 	Group_TriggerRandomizeClient(iClient, RandomizedAction_PassScore);
 }
 
-public Action Event_WeaponJump(Event event, const char[] sName, bool bDontBroadcast)
+public void Event_WeaponJump(Event event, const char[] sName, bool bDontBroadcast)
 {
 	//Class check should be done by this point, revert class so pain sound can be played as actual class
 	if (g_bOnTakeDamage)
