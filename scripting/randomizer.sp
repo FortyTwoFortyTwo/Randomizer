@@ -9,10 +9,6 @@
 #include <tf_econ_data>
 #include <dhooks>
 
-#undef REQUIRE_EXTENSIONS
-#tryinclude <tf2items>
-#define REQUIRE_EXTENSIONS
-
 #pragma newdecls required
 
 #define PLUGIN_VERSION			"1.9.0"
@@ -317,9 +313,9 @@ enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 }
 
 bool g_bEnabled;
-bool g_bTF2Items;
 bool g_bAllowGiveNamedItem;
 int g_iRuneCount;
+int g_iOffsetItem;
 int g_iOffsetItemDefinitionIndex;
 int g_iOffsetPlayerShared;
 int g_iOffsetAlwaysAllow;
@@ -375,9 +371,6 @@ public void OnPluginStart()
 	LoadTranslations("core.phrases");
 	LoadTranslations("randomizer.phrases");
 	
-	//OnLibraryAdded dont always call TF2Items on plugin start
-	g_bTF2Items = LibraryExists("TF2Items");
-	
 	GameData hGameData = new GameData("randomizer");
 	if (!hGameData)
 		SetFailState("Could not find randomizer gamedata");
@@ -389,7 +382,8 @@ public void OnPluginStart()
 	delete hGameData;
 	
 	//Any weapons using m_Item would work to get offset
-	g_iOffsetItemDefinitionIndex = FindSendPropInfo("CTFWearable", "m_iItemDefinitionIndex") - FindSendPropInfo("CTFWearable", "m_Item");
+	g_iOffsetItem = FindSendPropInfo("CTFWearable", "m_Item");
+	g_iOffsetItemDefinitionIndex = FindSendPropInfo("CTFWearable", "m_iItemDefinitionIndex") - g_iOffsetItem;
 	g_iOffsetPlayerShared = FindSendPropInfo("CTFPlayer", "m_Shared");
 	
 	/* This is an ugly way to get offset, but atleast it should almost never break from tf2 updates,
@@ -461,27 +455,9 @@ public void OnLibraryAdded(const char[] sName)
 {
 	if (StrEqual(sName, "TF2Items"))
 	{
-		g_bTF2Items = true;
-		
 		//We cant allow TF2Items load while GiveNamedItem already hooked due to crash
 		if (DHook_IsGiveNamedItemActive())
 			SetFailState("Do not load TF2Items midgame while Randomizer is already loaded!");
-	}
-}
-
-public void OnLibraryRemoved(const char[] sName)
-{
-	if (StrEqual(sName, "TF2Items"))
-	{
-		g_bTF2Items = false;
-		
-		if (!g_bEnabled)
-			return;
-		
-		//TF2Items unloaded with GiveNamedItem unhooked, we can now safely hook GiveNamedItem ourself
-		for (int iClient = 1; iClient <= MaxClients; iClient++)
-			if (IsClientInGame(iClient))
-				DHook_HookGiveNamedItem(iClient);
 	}
 }
 
@@ -505,7 +481,6 @@ public void OnClientPutInServer(int iClient)
 	
 	g_hTimerClientHud[iClient] = CreateTimer(0.2, Huds_ClientDisplay, iClient);
 	
-	DHook_HookGiveNamedItem(iClient);
 	DHook_HookClient(iClient);
 	SDKHook_HookClient(iClient);
 	
@@ -521,7 +496,6 @@ public void OnClientDisconnect(int iClient)
 	Loadout_ResetClientRune(iClient);
 	
 	g_hTimerClientHud[iClient] = null;
-	DHook_UnhookGiveNamedItem(iClient);
 	DHook_UnhookClient(iClient);
 }
 
@@ -808,15 +782,4 @@ void RevertClientClass(int iClient)
 		TF2_SetPlayerClass(iClient, g_iClientCurrentClass[iClient]);
 		g_iClientCurrentClass[iClient] = TFClass_Unknown;
 	}
-}
-
-public Action TF2Items_OnGiveNamedItem(int iClient, char[] sClassname, int iIndex, Handle &hItem)
-{
-	if (!g_bEnabled || g_bAllowGiveNamedItem)
-		return Plugin_Continue;
-	
-	if (CanEquipIndex(iClient, iIndex))
-		return Plugin_Continue;
-	
-	return Plugin_Handled;
 }
