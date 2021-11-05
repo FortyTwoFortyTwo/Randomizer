@@ -318,6 +318,8 @@ int g_iRuneCount;
 int g_iOffsetItem;
 int g_iOffsetItemDefinitionIndex;
 int g_iOffsetPlayerShared;
+int g_iOffsetDesiredDisguiseTarget;
+int g_iOffsetDisguiseCompleteTime;
 int g_iOffsetAlwaysAllow;
 
 ConVar g_cvEnabled;
@@ -331,6 +333,7 @@ TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
 bool g_bFeignDeath[TF_MAXPLAYERS];
 int g_iHypeMeterLoaded[TF_MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
 bool g_bWeaponDecap[TF_MAXPLAYERS];
+TFClassType g_nClientDesiredDisguiseClass[TF_MAXPLAYERS] = {TFClass_Unknown, ...};
 Handle g_hTimerClientHud[TF_MAXPLAYERS];
 
 bool g_bOnTakeDamage;
@@ -381,10 +384,11 @@ public void OnPluginStart()
 	
 	delete hGameData;
 	
-	//Any weapons using m_Item would work to get offset
 	g_iOffsetItem = FindSendPropInfo("CTFWearable", "m_Item");
-	g_iOffsetItemDefinitionIndex = FindSendPropInfo("CTFWearable", "m_iItemDefinitionIndex") - g_iOffsetItem;
+	g_iOffsetItemDefinitionIndex = FindSendPropInfo("CTFWearable", "m_iItemDefinitionIndex") - g_iOffsetItem;	//Any weapons using m_Item would work to get offset
 	g_iOffsetPlayerShared = FindSendPropInfo("CTFPlayer", "m_Shared");
+	g_iOffsetDesiredDisguiseTarget = FindSendPropInfo("CTFPlayer", "m_nTeamTeleporterUsed") + 4;	// m_hDesiredDisguiseTarget
+	g_iOffsetDisguiseCompleteTime = FindSendPropInfo("CTFPlayer", "m_unTauntSourceItemID_High") + 4;	// m_flDisguiseCompleteTime
 	
 	/* This is an ugly way to get offset, but atleast it should almost never break from tf2 updates,
 	 * tf2 updating offset before all of this wouldn't break, and reports error if tf2 ever somehow broke it.

@@ -889,85 +889,81 @@ public MRESReturn DHook_GetAmmoCountPre(int iClient, DHookReturn hReturn, DHookP
 
 public MRESReturn DHook_GiveNamedItemPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
-	bool bClassname = !hParams.IsNull(1);
-	Address pItem = hParams.Get(3);
-	bool bForce = !!hParams.Get(4);
+	if (g_bAllowGiveNamedItem)
+		return MRES_Ignored;
 	
-	if (bClassname && !pItem && bForce)
-	{
-		//If classname is not null, item is null, and force,
-		// then disguise weapon wanted to be made, but no valid target or weapon to be made.
-		// Create weapon with randomized index.
-		int iTarget = GetEntProp(iClient, Prop_Send, "m_iDisguiseTargetIndex");
-		if (iTarget <= 0 || iTarget > MaxClients || !IsClientInGame(iTarget))
-			return MRES_Ignored;
-		
-		ArrayList aWeapons = Loadout_GetWeaponsFromClient(iTarget, view_as<TFClassType>(GetEntProp(iClient, Prop_Send, "m_nDisguiseClass")));
-		if (!aWeapons)
-			return MRES_Ignored;
-		
-		int iLength = aWeapons.Length;
-		int iSlot = GameRules_GetProp("m_bPlayingMedieval") ? WeaponSlot_Melee : WeaponSlot_Primary;
-		int iWeapon = INVALID_ENT_REFERENCE, iPos = 0;
-		while (iWeapon == INVALID_ENT_REFERENCE)
-		{
-			while (iPos < iLength)
-			{
-				RandomizedWeapon eWeapon;
-				aWeapons.GetArray(iPos, eWeapon);
-				iPos++;
-				
-				if (eWeapon.iSlot != iSlot)
-					continue;
-				
-				iWeapon = TF2_CreateWeapon(iClient, eWeapon.iIndex, eWeapon.iSlot);
-				if (!TF2_CanSwitchTo(iClient, iWeapon))	//BASE Jumper makes this difficult
-				{
-					RemoveEntity(iWeapon);
-					iWeapon = INVALID_ENT_REFERENCE;
-				}
-				else
-				{
-					break;
-				}
-			}
-			
-			//Reset incase weapon not found
-			iPos = 0;
-			iSlot++;
-			
-			if (iSlot > WeaponSlot_Melee)
-				break;
-		}
-		
-		if (iWeapon == INVALID_ENT_REFERENCE)
-			return MRES_Ignored;
-		
-		char sClassname[256];
-		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
-		hParams.SetString(1, sClassname);
-		
-		//Subtype param doesn't matter for disguise weapons
-		
-		pItem = GetEntityAddress(iWeapon) + view_as<Address>(g_iOffsetItem);
-		hParams.Set(3, pItem);
-		
-		RemoveEntity(iWeapon);
-		return MRES_ChangedHandled;
-	}
-	else if (!bClassname || !pItem)
+	Address pItem = hParams.Get(3);
+	if (hParams.IsNull(1) || !pItem)
 	{
 		hReturn.Value = 0;
 		return MRES_Supercede;
 	}
 	
-	if (g_bAllowGiveNamedItem)
-		return MRES_Ignored;
-	
-	if (bForce)	// bForce, enabled from disguise weapon and CTFPlayer::PickupWeaponFromOther
-		return MRES_Ignored;
-	
 	int iIndex = LoadFromAddress(pItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
+	
+	if (g_nClientDesiredDisguiseClass[iClient] != TFClass_Unknown)
+	{
+		//This is a disguise item, set weapon to match with loadout from different class
+		if (GetEntProp(iClient, Prop_Send, "m_iDisguiseHealth") > 0 && LoadoutSlot_Primary <= TF2Econ_GetItemDefaultLoadoutSlot(iIndex) <= LoadoutSlot_PDA2)
+		{
+			int iTarget = GetEntProp(iClient, Prop_Send, "m_iDisguiseTargetIndex");
+			
+			ArrayList aWeapons = Loadout_GetWeaponsFromClient(iTarget, g_nClientDesiredDisguiseClass[iClient]);
+			if (!aWeapons)
+				return MRES_Ignored;
+			
+			int iLength = aWeapons.Length;
+			int iSlot = GameRules_GetProp("m_bPlayingMedieval") ? WeaponSlot_Melee : WeaponSlot_Primary;
+			int iWeapon = INVALID_ENT_REFERENCE, iPos = 0;
+			while (iWeapon == INVALID_ENT_REFERENCE)
+			{
+				while (iPos < iLength)
+				{
+					RandomizedWeapon eWeapon;
+					aWeapons.GetArray(iPos, eWeapon);
+					iPos++;
+					
+					if (eWeapon.iSlot != iSlot)
+						continue;
+					
+					iWeapon = TF2_CreateWeapon(iClient, eWeapon.iIndex, eWeapon.iSlot);
+					if (TF2_CanSwitchTo(iClient, iWeapon))	//BASE Jumper makes this difficult
+						break;	//Good weapon, escape loop
+					
+					RemoveEntity(iWeapon);
+					iWeapon = INVALID_ENT_REFERENCE;
+				}
+				
+				//Reset incase weapon not found
+				iPos = 0;
+				iSlot++;
+				
+				if (iSlot > WeaponSlot_Melee)
+					break;	//No more weapons to find
+			}
+			
+			if (iWeapon == INVALID_ENT_REFERENCE)
+				return MRES_Ignored;
+			
+			char sClassname[256];
+			GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+			hParams.SetString(1, sClassname);
+			
+			//Subtype param doesn't matter for disguise weapons
+			
+			pItem = GetEntityAddress(iWeapon) + view_as<Address>(g_iOffsetItem);
+			hParams.Set(3, pItem);
+			
+			RemoveEntity(iWeapon);
+			return MRES_ChangedHandled;
+		}
+		else
+		{
+			//Disguise wearable, allow
+			return MRES_Ignored;
+		}
+	}
+	
 	if (CanEquipIndex(iClient, iIndex))
 		return MRES_Ignored;
 	

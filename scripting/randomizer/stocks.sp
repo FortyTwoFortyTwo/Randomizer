@@ -345,6 +345,42 @@ stock TFClassType TF2_GetRandomClass()
 	return view_as<TFClassType>(GetRandomInt(CLASS_MIN, CLASS_MAX));
 }
 
+stock int TF2_GetDisguiseTarget(int iClient)
+{
+	int iTarget = GetEntDataEnt2(iClient, g_iOffsetDesiredDisguiseTarget);
+	if (iTarget != INVALID_ENT_REFERENCE)
+		return iTarget;
+	
+	//Below same as CTFPlayer::TeamFortress_GetDisguiseTarget,
+	// only difference is to never disguise as ourself, cause crashes i'm not really sure why
+	int iCurrentTarget = GetEntProp(iClient, Prop_Send, "m_iDisguiseTargetIndex");
+	TFClassType nClass = view_as<TFClassType>(GetEntProp(iClient, Prop_Send, "m_nDesiredDisguiseClass"));
+	TFTeam nTeam = view_as<TFTeam>(GetEntProp(iClient, Prop_Send, "m_nDesiredDisguiseTeam"));
+	
+	ArrayList aPossibleTargets = new ArrayList();
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (i != iClient && i != iCurrentTarget && IsClientInGame(i) && TF2_GetPlayerClass(i) == nClass && TF2_GetClientTeam(i) == nTeam)
+			aPossibleTargets.Push(i);
+	}
+	
+	if (aPossibleTargets.Length == 0)
+	{
+		for (int i = 1; i <= MaxClients; i++)
+		{
+			if (i != iClient && IsClientInGame(i) && TF2_GetClientTeam(i) == nTeam)
+				aPossibleTargets.Push(i);
+		}
+	}
+	
+	int iCount = aPossibleTargets.Length;
+	if (iCount > 0)
+		iTarget = aPossibleTargets.Get(GetRandomInt(0, iCount - 1));
+	
+	delete aPossibleTargets;
+	return iTarget;
+}
+
 stock int TF2_GetSapper(int iObject)
 {
 	if (!GetEntProp(iObject, Prop_Send, "m_bHasSapper"))
