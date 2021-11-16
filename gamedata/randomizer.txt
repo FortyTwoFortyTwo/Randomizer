@@ -361,68 +361,68 @@
 			}
 			"CBaseEntity::GetMaxHealth"
 			{
-				"linux"		"118"
-				"windows"	"117"
+				"linux"		"121"
+				"windows"	"120"
 			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
-				"linux"		"287"
-				"windows"	"281"
+				"linux"		"290"
+				"windows"	"284"
 			}
 			"CTFWeaponBase::GetEffectBarAmmo"
 			{
-				"linux"		"462"
-				"windows"	"455"
+				"linux"		"465"
+				"windows"	"458"
 			}
 			"CTFWeaponBaseMelee::Swing"
 			{
-				"linux"		"479"
-				"windows"	"472"
+				"linux"		"482"
+				"windows"	"475"
 			}
 			"CBaseObject::Killed"
 			{
-				"linux"		"350"
-				"windows"	"349"
+				"linux"		"353"
+				"windows"	"352"
 			}
 			"CBaseObject::CanBeUpgraded"
+			{
+				"linux"		"380"
+				"windows"	"379"
+			}
+			"CBasePlayer::ForceRespawn"
+			{
+				"linux"		"334"
+				"windows"	"333"
+			}
+			"CBasePlayer::EquipWearable"
+			{
+				"linux"		"435"
+				"windows"	"434"
+			}
+			"CBaseCombatCharacter::GetAmmoCount"
+			{
+				"linux"		"263"
+				"windows"	"262"
+			}
+			"CBaseCombatCharacter::Weapon_CanSwitchTo"
+			{
+				"linux"		"274"
+				"windows"	"273"
+			}
+			"CTFPlayer::ClientCommand"
 			{
 				"linux"		"377"
 				"windows"	"376"
 			}
-			"CBasePlayer::ForceRespawn"
-			{
-				"linux"		"331"
-				"windows"	"330"
-			}
-			"CBasePlayer::EquipWearable"
-			{
-				"linux"		"432"
-				"windows"	"431"
-			}
-			"CBaseCombatCharacter::GetAmmoCount"
-			{
-				"linux"		"260"
-				"windows"	"259"
-			}
-			"CBaseCombatCharacter::Weapon_CanSwitchTo"
-			{
-				"linux"		"271"
-				"windows"	"270"
-			}
-			"CTFPlayer::ClientCommand"
-			{
-				"linux"		"374"
-				"windows"	"373"
-			}
 			"CTFPlayer::GiveNamedItem"
 			{
-				"linux"		"485"
-				"windows"	"478"
+				"linux"		"488"
+				"windows"	"481"
 			}
 			"CTFPlayer::InitClass"
 			{
-				"linux"		"487"
-				"windows"	"480"
+				"linux"		"490"
+				"windows"	"483"
 			}
 			"CGameRules::FrameUpdatePostEntityThink"
 			{
