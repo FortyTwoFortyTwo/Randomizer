@@ -379,6 +379,22 @@ void Loadout_ApplyClientClass(int iClient)
 
 // Weapons
 
+ArrayList Loadout_GetWeaponsFromClient(int iClient, TFClassType nClass)
+{
+	if (Group_IsClientRandomized(iClient, RandomizedType_Weapons))
+	{
+		int iPos = Group_GetClientSameInfoPos(iClient, RandomizedType_Weapons);
+		if (iPos != -1)
+			return g_eLoadoutGroup[iPos].aWeapons[nClass];
+		else
+			return g_eLoadoutClient[iClient].aWeapons[nClass];
+	}
+	else
+	{
+		return null;
+	}
+}
+
 void Loadout_RandomizeWeapon(RandomizedLoadout eLoadout)
 {
 	eLoadout.ResetWeapon();

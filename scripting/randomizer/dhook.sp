@@ -31,10 +31,10 @@ static int g_iBuildingKilledSapper = INVALID_ENT_REFERENCE;
 static int g_iHookIdEventKilledPre[TF_MAXPLAYERS];
 static int g_iHookIdForceRespawnPre[TF_MAXPLAYERS];
 static int g_iHookIdForceRespawnPost[TF_MAXPLAYERS];
-static int g_iHookIdEquipWearable[TF_MAXPLAYERS];
-static int g_iHookIdGetAmmoCount[TF_MAXPLAYERS];
-static int g_iHookIdClientCommand[TF_MAXPLAYERS];
-static int g_iHookIdGiveNamedItem[TF_MAXPLAYERS];
+static int g_iHookIdEquipWearablePost[TF_MAXPLAYERS];
+static int g_iHookIdGetAmmoCountPre[TF_MAXPLAYERS];
+static int g_iHookIdClientCommandPost[TF_MAXPLAYERS];
+static int g_iHookIdGiveNamedItemPre[TF_MAXPLAYERS];
 static int g_iHookIdInitClassPre[TF_MAXPLAYERS];
 static int g_iHookIdInitClassPost[TF_MAXPLAYERS];
 
@@ -149,25 +149,10 @@ void DHook_DisableDetour()
 	}
 }
 
-void DHook_HookGiveNamedItem(int iClient)
-{
-	if (g_hDHookGiveNamedItem && !g_bTF2Items)
-		g_iHookIdGiveNamedItem[iClient] = g_hDHookGiveNamedItem.HookEntity(Hook_Pre, iClient, DHook_GiveNamedItemPre, DHook_GiveNamedItemRemoved);
-}
-
-void DHook_UnhookGiveNamedItem(int iClient)
-{
-	if (g_iHookIdGiveNamedItem[iClient])
-	{
-		DHookRemoveHookID(g_iHookIdGiveNamedItem[iClient]);
-		g_iHookIdGiveNamedItem[iClient] = 0;	
-	}
-}
-
 bool DHook_IsGiveNamedItemActive()
 {
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
-		if (g_iHookIdGiveNamedItem[iClient])
+		if (g_iHookIdGiveNamedItemPre[iClient])
 			return true;
 	
 	return false;
@@ -178,9 +163,10 @@ void DHook_HookClient(int iClient)
 	g_iHookIdEventKilledPre[iClient] = g_hDHookEventKilled.HookEntity(Hook_Pre, iClient, DHook_EventKilledPre);
 	g_iHookIdForceRespawnPre[iClient] = g_hDHookForceRespawn.HookEntity(Hook_Pre, iClient, DHook_ForceRespawnPre);
 	g_iHookIdForceRespawnPost[iClient] = g_hDHookForceRespawn.HookEntity(Hook_Post, iClient, DHook_ForceRespawnPost);
-	g_iHookIdEquipWearable[iClient] = g_hDHookEquipWearable.HookEntity(Hook_Post, iClient, DHook_EquipWearablePost);
-	g_iHookIdGetAmmoCount[iClient] = g_hDHookGetAmmoCount.HookEntity(Hook_Pre, iClient, DHook_GetAmmoCountPre);
-	g_iHookIdClientCommand[iClient] = g_hDHookClientCommand.HookEntity(Hook_Post, iClient, DHook_ClientCommandPost);
+	g_iHookIdEquipWearablePost[iClient] = g_hDHookEquipWearable.HookEntity(Hook_Post, iClient, DHook_EquipWearablePost);
+	g_iHookIdGetAmmoCountPre[iClient] = g_hDHookGetAmmoCount.HookEntity(Hook_Pre, iClient, DHook_GetAmmoCountPre);
+	g_iHookIdGiveNamedItemPre[iClient] = g_hDHookGiveNamedItem.HookEntity(Hook_Pre, iClient, DHook_GiveNamedItemPre);
+	g_iHookIdClientCommandPost[iClient] = g_hDHookClientCommand.HookEntity(Hook_Post, iClient, DHook_ClientCommandPost);
 	g_iHookIdInitClassPre[iClient] = g_hDHookInitClass.HookEntity(Hook_Pre, iClient, DHook_InitClassPre);
 	g_iHookIdInitClassPost[iClient] = g_hDHookInitClass.HookEntity(Hook_Post, iClient, DHook_InitClassPost);
 }
@@ -190,9 +176,10 @@ void DHook_UnhookClient(int iClient)
 	DHook_UnhookId(g_iHookIdEventKilledPre[iClient]);
 	DHook_UnhookId(g_iHookIdForceRespawnPre[iClient]);
 	DHook_UnhookId(g_iHookIdForceRespawnPost[iClient]);
-	DHook_UnhookId(g_iHookIdEquipWearable[iClient]);
-	DHook_UnhookId(g_iHookIdGetAmmoCount[iClient]);
-	DHook_UnhookId(g_iHookIdClientCommand[iClient]);
+	DHook_UnhookId(g_iHookIdEquipWearablePost[iClient]);
+	DHook_UnhookId(g_iHookIdGetAmmoCountPre[iClient]);
+	DHook_UnhookId(g_iHookIdGiveNamedItemPre[iClient]);
+	DHook_UnhookId(g_iHookIdClientCommandPost[iClient]);
 	DHook_UnhookId(g_iHookIdInitClassPre[iClient]);
 	DHook_UnhookId(g_iHookIdInitClassPost[iClient]);
 }
@@ -902,33 +889,86 @@ public MRESReturn DHook_GetAmmoCountPre(int iClient, DHookReturn hReturn, DHookP
 
 public MRESReturn DHook_GiveNamedItemPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
-	if (hParams.IsNull(1) || hParams.IsNull(3))
+	if (g_bAllowGiveNamedItem)
+		return MRES_Ignored;
+	
+	Address pItem = hParams.Get(3);
+	if (hParams.IsNull(1) || !pItem)
 	{
 		hReturn.Value = 0;
 		return MRES_Supercede;
 	}
 	
-	if (g_bAllowGiveNamedItem)
-		return MRES_Ignored;
+	int iIndex = LoadFromAddress(pItem + view_as<Address>(g_iOffsetItemDefinitionIndex), NumberType_Int16);
 	
-	int iIndex = hParams.GetObjectVar(3, g_iOffsetItemDefinitionIndex, ObjectValueType_Int) & 0xFFFF;
+	if (g_nClientDesiredDisguiseClass[iClient] != TFClass_Unknown)
+	{
+		//This is a disguise item, set weapon to match with loadout from different class
+		if (GetEntProp(iClient, Prop_Send, "m_iDisguiseHealth") > 0 && LoadoutSlot_Primary <= TF2Econ_GetItemDefaultLoadoutSlot(iIndex) <= LoadoutSlot_PDA2)
+		{
+			int iTarget = GetEntProp(iClient, Prop_Send, "m_iDisguiseTargetIndex");
+			
+			ArrayList aWeapons = Loadout_GetWeaponsFromClient(iTarget, g_nClientDesiredDisguiseClass[iClient]);
+			if (!aWeapons)
+				return MRES_Ignored;
+			
+			int iLength = aWeapons.Length;
+			int iSlot = GameRules_GetProp("m_bPlayingMedieval") ? WeaponSlot_Melee : WeaponSlot_Primary;
+			int iWeapon = INVALID_ENT_REFERENCE, iPos = 0;
+			while (iWeapon == INVALID_ENT_REFERENCE)
+			{
+				while (iPos < iLength)
+				{
+					RandomizedWeapon eWeapon;
+					aWeapons.GetArray(iPos, eWeapon);
+					iPos++;
+					
+					if (eWeapon.iSlot != iSlot)
+						continue;
+					
+					iWeapon = TF2_CreateWeapon(iClient, eWeapon.iIndex, eWeapon.iSlot);
+					if (TF2_CanSwitchTo(iClient, iWeapon))	//BASE Jumper makes this difficult
+						break;	//Good weapon, escape loop
+					
+					RemoveEntity(iWeapon);
+					iWeapon = INVALID_ENT_REFERENCE;
+				}
+				
+				//Reset incase weapon not found
+				iPos = 0;
+				iSlot++;
+				
+				if (iSlot > WeaponSlot_Melee)
+					break;	//No more weapons to find
+			}
+			
+			if (iWeapon == INVALID_ENT_REFERENCE)
+				return MRES_Ignored;
+			
+			char sClassname[256];
+			GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+			hParams.SetString(1, sClassname);
+			
+			//Subtype param doesn't matter for disguise weapons
+			
+			pItem = GetEntityAddress(iWeapon) + view_as<Address>(g_iOffsetItem);
+			hParams.Set(3, pItem);
+			
+			RemoveEntity(iWeapon);
+			return MRES_ChangedHandled;
+		}
+		else
+		{
+			//Disguise wearable, allow
+			return MRES_Ignored;
+		}
+	}
+	
 	if (CanEquipIndex(iClient, iIndex))
 		return MRES_Ignored;
 	
 	hReturn.Value = 0;
 	return MRES_Supercede;
-}
-
-public void DHook_GiveNamedItemRemoved(int iHookId)
-{
-	for (int iClient = 1; iClient <= MaxClients; iClient++)
-	{
-		if (g_iHookIdGiveNamedItem[iClient] == iHookId)
-		{
-			g_iHookIdGiveNamedItem[iClient] = 0;
-			return;
-		}
-	}
 }
 
 public MRESReturn DHook_ClientCommandPost(int iClient, DHookReturn hReturn, DHookParam hParams)

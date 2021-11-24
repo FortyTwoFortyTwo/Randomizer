@@ -891,7 +891,7 @@
 					}
 					"pItem"
 					{
-						"type"	"objectptr"
+						"type"	"int"
 					}
 					"b"
 					{
