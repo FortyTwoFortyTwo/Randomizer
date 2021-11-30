@@ -139,23 +139,6 @@ public void Client_PreThink(int iClient)
 		}
 	}
 	
-	float flDisguiseCompleteTime = GetEntDataFloat(iClient, g_iOffsetDisguiseCompleteTime);
-	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguising) && flDisguiseCompleteTime > 0.0 && GetGameTime() > flDisguiseCompleteTime)
-	{
-		int iTarget = TF2_GetDisguiseTarget(iClient);
-		if (iTarget != INVALID_ENT_REFERENCE)
-		{
-			SetEntDataEnt2(iClient, g_iOffsetDesiredDisguiseTarget, iTarget);
-			g_nClientDesiredDisguiseClass[iClient] = view_as<TFClassType>(GetEntProp(iClient, Prop_Send, "m_nDesiredDisguiseClass"));
-			
-			//Set disguise class to target's actual class, so disguise weapon and cosmetic can be generated for GiveNamedItem hook
-			SetEntProp(iClient, Prop_Send, "m_nDesiredDisguiseClass", TF2_GetPlayerClass(iTarget));
-			
-			//Set m_iDisguiseHealth to 0, so we can see if generated disguise weapon is from CreateDisguiseWeaponList or DetermineDisguiseWeapon
-			SetEntProp(iClient, Prop_Send, "m_iDisguiseHealth", 0);
-		}
-	}
-	
 	//PreThink have way too many IsPlayerClass check, always return true during it
 	Patch_EnableIsPlayerClass();
 	
@@ -214,13 +197,6 @@ public void Client_PreThink(int iClient)
 
 public void Client_PreThinkPost(int iClient)
 {
-	if (g_nClientDesiredDisguiseClass[iClient] != TFClass_Unknown)
-	{
-		SetEntProp(iClient, Prop_Send, "m_nDesiredDisguiseClass", g_nClientDesiredDisguiseClass[iClient]);
-		SetEntProp(iClient, Prop_Send, "m_nDisguiseClass", g_nClientDesiredDisguiseClass[iClient]);
-		g_nClientDesiredDisguiseClass[iClient] = TFClass_Unknown;
-	}
-	
 	Patch_DisableIsPlayerClass();
 	
 	//m_flEnergyDrinkMeter meant to be used for scout drinks, but TFCond_CritCola shared Buffalo Steak and Cleaner's Carbine
