@@ -1,7 +1,9 @@
 name: Package
 
-on: push
-
+on: 
+  push:
+  schedule:
+    - cron: '0 0 1 * *'  # every month
 jobs:
   build:
     runs-on: ubuntu-latest
