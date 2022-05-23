@@ -487,7 +487,9 @@ stock void TF2_RemoveItem(int iClient, int iWeapon)
 		TF2_RemoveWearable(iClient, iExtraWearable);
 	
 	RemovePlayerItem(iClient, iWeapon);
-	RemoveEntity(iWeapon);
+	
+	//Add to list to remove later instead of removing all weapons at once
+	g_aEntityToRemove.Push(EntIndexToEntRef(iWeapon));
 }
 
 stock void TF2_AddConditionFake(int iClient, TFCond nCond)

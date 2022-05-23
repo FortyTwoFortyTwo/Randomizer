@@ -343,6 +343,7 @@ int g_iTouchItem = INVALID_ENT_REFERENCE;
 int g_iTouchToucher = INVALID_ENT_REFERENCE;
 int g_iClientEurekaTeleporting;
 int g_iClientInitClass;
+ArrayList g_aEntityToRemove;
 
 #include "randomizer/controls.sp"
 #include "randomizer/huds.sp"
@@ -427,6 +428,8 @@ public void OnPluginStart()
 	
 	AddCommandListener(Console_EurekaTeleport, "eureka_teleport");
 	AddCommandListener(Console_DropItem, "dropitem");
+	
+	g_aEntityToRemove = new ArrayList();
 }
 
 public void OnPluginEnd()
@@ -487,13 +490,72 @@ public void OnLibraryRemoved(const char[] sName)
 
 public void OnGameFrame()
 {
-	//See if any force refresh is needed
+	bool bWeaponCreated;
+	
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
 		if (IsClientInGame(iClient))
 		{
+			//Create a weapon every frame instead of all at once in 1 frame
+			if (!bWeaponCreated)
+			{
+				TFClassType nClass = Loadout_GetClientClass(iClient);
+				ArrayList aWeapons = Loadout_GetClientWeapons(iClient, nClass);
+				if (aWeapons)
+				{
+					int iLength = aWeapons.Length;
+					for (int i = 0; i < iLength; i++)
+					{
+						RandomizedWeapon eWeapon;
+						aWeapons.GetArray(i, eWeapon);
+						
+						if (eWeapon.iRef != INVALID_ENT_REFERENCE && !IsValidEntity(eWeapon.iRef))
+							eWeapon.iRef = INVALID_ENT_REFERENCE;
+						
+						if (eWeapon.iRef != INVALID_ENT_REFERENCE || !ItemIsAllowed(eWeapon.iIndex))
+							continue;
+						
+						SetClientClass(iClient, nClass);
+						
+						int iWeapon;
+						Address pItem = TF2_FindReskinItem(iClient, eWeapon.iIndex);
+						if (pItem)
+							iWeapon = TF2_GiveNamedItem(iClient, pItem, eWeapon.iSlot);
+						else
+							iWeapon = TF2_CreateWeapon(iClient, eWeapon.iIndex, eWeapon.iSlot);
+						
+						RevertClientClass(iClient);
+						
+						//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
+						if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
+							SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
+						
+						aWeapons.Set(i, EntIndexToEntRef(iWeapon), RandomizedWeapon::iRef);
+						bWeaponCreated = true;
+						break;
+					}
+				}
+			}
+			
+			//is force refresh needed
 			if (g_bClientRefresh[iClient])
 				Loadout_RefreshClient(iClient);
+		}
+	}
+	
+	if (!bWeaponCreated)
+	{
+		//Remove one entity to remove instead of all at once
+		while (g_aEntityToRemove.Length > 0)
+		{
+			int iEntity = g_aEntityToRemove.Get(0);
+			g_aEntityToRemove.Erase(0);
+			
+			if (IsValidEntity(iEntity))
+			{
+				RemoveEntity(iEntity);
+				break;
+			}
 		}
 	}
 }

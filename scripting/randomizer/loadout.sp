@@ -489,6 +489,11 @@ void Loadout_RandomizeWeapon(RandomizedLoadout eLoadout)
 	}
 }
 
+ArrayList Loadout_GetClientWeapons(int iClient, TFClassType nClass)
+{
+	return g_eLoadoutClient[iClient].aWeapons[nClass];
+}
+
 void Loadout_ApplyClientWeapons(int iClient)
 {
 	Properties_SaveActiveWeaponAmmo(iClient);
@@ -519,53 +524,53 @@ void Loadout_ApplyClientWeapons(int iClient)
 		if (eWeapon.iRef != INVALID_ENT_REFERENCE && !IsValidEntity(eWeapon.iRef))
 			eWeapon.iRef = INVALID_ENT_REFERENCE;
 		
-		if (eWeapon.iRef != INVALID_ENT_REFERENCE)
-			continue;
-		
 		if (!ItemIsAllowed(eWeapon.iIndex))
 			continue;
 		
-		Address pItem = TF2_FindReskinItem(iClient, eWeapon.iIndex);
-		if (pItem)
-			iWeapon = TF2_GiveNamedItem(iClient, pItem, eWeapon.iSlot);
+		if (eWeapon.iRef == INVALID_ENT_REFERENCE)
+		{
+			Address pItem = TF2_FindReskinItem(iClient, eWeapon.iIndex);
+			if (pItem)
+				iWeapon = TF2_GiveNamedItem(iClient, pItem, eWeapon.iSlot);
+			else
+				iWeapon = TF2_CreateWeapon(iClient, eWeapon.iIndex, eWeapon.iSlot);
+			
+			//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
+			if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
+				SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
+			
+			aWeapons.Set(i, EntIndexToEntRef(iWeapon), RandomizedWeapon::iRef);
+		}
 		else
-			iWeapon = TF2_CreateWeapon(iClient, eWeapon.iIndex, eWeapon.iSlot);
-		
-		if (iWeapon == INVALID_ENT_REFERENCE)
 		{
-			PrintToChat(iClient, "Unable to create weapon! index '%d'", eWeapon.iIndex);
-			LogError("Unable to create weapon! index '%d'", eWeapon.iIndex);
-			continue;
+			iWeapon = EntRefToEntIndex(eWeapon.iRef);
 		}
 		
-		//CTFPlayer::ItemsMatch doesnt like normal item quality, so lets use unique instead
-		if (view_as<TFQuality>(GetEntProp(iWeapon, Prop_Send, "m_iEntityQuality")) == TFQual_Normal)
-			SetEntProp(iWeapon, Prop_Send, "m_iEntityQuality", TFQual_Unique);
-		
-		TF2_EquipWeapon(iClient, iWeapon);
-		
-		//Fill charge meter
-		if (!SDKCall_AttribHookValueFloat(0.0, "item_meter_resupply_denied", iWeapon))
-			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
-		
-		//Fill ammo
-		if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
+		if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") != iClient)	//Is weapon not equipped yet?
 		{
-			int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-			if (iAmmoType != -1)
+			TF2_EquipWeapon(iClient, iWeapon);
+			
+			//Fill charge meter
+			if (!SDKCall_AttribHookValueFloat(0.0, "item_meter_resupply_denied", iWeapon))
+				Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
+			
+			//Fill ammo
+			if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
 			{
-				int iMaxAmmo = TF2_GetMaxAmmo(iClient, iWeapon, iAmmoType);
-				int iAmmo = TF2_GiveAmmo(iClient, iWeapon, 0, iMaxAmmo, iAmmoType, true, kAmmoSource_Resupply);
-				Properties_SetWeaponPropInt(iWeapon, "m_iAmmo", iAmmo);
-				if (iWeapon == GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon"))
-					Properties_UpdateActiveWeaponAmmo(iClient);
+				int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
+				if (iAmmoType != -1)
+				{
+					int iMaxAmmo = TF2_GetMaxAmmo(iClient, iWeapon, iAmmoType);
+					int iAmmo = TF2_GiveAmmo(iClient, iWeapon, 0, iMaxAmmo, iAmmoType, true, kAmmoSource_Resupply);
+					Properties_SetWeaponPropInt(iWeapon, "m_iAmmo", iAmmo);
+					if (iWeapon == GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon"))
+						Properties_UpdateActiveWeaponAmmo(iClient);
+				}
 			}
+			
+			if (ViewModels_ShouldBeInvisible(iWeapon, nClass))
+				ViewModels_EnableInvisible(iWeapon);
 		}
-		
-		if (ViewModels_ShouldBeInvisible(iWeapon, nClass))
-			ViewModels_EnableInvisible(iWeapon);
-		
-		aWeapons.Set(i, EntIndexToEntRef(iWeapon), RandomizedWeapon::iRef);
 	}
 	
 	//Set active weapon if dont have one
