@@ -396,8 +396,8 @@
 			}
 			"CBasePlayer::EquipWearable"
 			{
-				"linux"		"435"
-				"windows"	"434"
+				"linux"		"436"
+				"windows"	"435"
 			}
 			"CBaseCombatCharacter::GetAmmoCount"
 			{
@@ -416,13 +416,13 @@
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
-				"linux"		"488"
-				"windows"	"481"
+				"linux"		"489"
+				"windows"	"482"
 			}
 			"CTFPlayer::InitClass"
 			{
-				"linux"		"490"
-				"windows"	"483"
+				"linux"		"491"
+				"windows"	"484"
 			}
 			"CGameRules::FrameUpdatePostEntityThink"
 			{
