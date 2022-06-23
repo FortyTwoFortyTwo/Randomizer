@@ -1,0 +1,1037 @@
+"Phrases"
+{
+	"Controls_Stickybomb_Attack2"
+	{
+		"en"		"right click to detonate"
+	}
+	
+	"Controls_Stickybomb_Reload"
+	{
+		"en"		"reload to detonate"
+	}
+	
+	"Controls_Stickybomb_Unable"
+	{
+		"en"		"unable to detonate"
+	}
+	
+	"Controls_Shield_Attack2"
+	{
+		"en"		"right click to charge"
+	}	
+	
+	"Controls_Shield_Reload"
+	{
+		"en"		"reload to charge"
+	}
+	
+	"Controls_Shield_Unable"
+	{
+		"en"		"unable to charge"
+	}
+	
+	"Controls_Build_Attack2"
+	{
+		"en"		"right click to build"
+	}	
+	
+	"Controls_Build_Attack3"
+	{
+		"en"		"middle click to build"
+	}
+	
+	"Controls_Build_Unable"
+	{
+		"en"		"unable to build"
+	}
+	
+	"Controls_InvisWatch_Attack2"
+	{
+		"en"		"right click to cloak"
+	}	
+	
+	"Controls_InvisWatch_Attack3"
+	{
+		"en"		"middle click to cloak"
+	}
+	
+	"Controls_InvisWatch_Unable"
+	{
+		"en"		"unable to cloak"
+	}
+	
+	"Huds_Title"
+	{
+		"en"		"Weapons"
+	}
+	
+	"Huds_EffectBarRegenTime"
+	{
+		"#format"	"{1:.0f}"
+		"en"		"{1} Sec"
+	}
+	
+	"Huds_Decapitations"
+	{
+		"#format"	"{1:d}"
+		"en"		"{1} Heads"
+	}
+	
+	"Huds_Energy"
+	{
+		"#format"	"{1:.0f}"
+		"en"		"{1}％ Energy"
+	}
+	
+	"Huds_RageMeter"
+	{
+		"#format"	"{1:.0f}"
+		"en"		"{1}％ Rage"
+	}
+	
+	"Huds_RevengeCrits"
+	{
+		"#format"	"{1:d}"
+		"en"		"{1} Crits"
+	}
+	
+	"Huds_HypeMeter"
+	{
+		"#format"	"{1:.0f}"
+		"en"		"{1}％ Hype"
+	}
+	
+	"Huds_ItemChargeMeter"
+	{
+		"#format"	"{1:.0f}"
+		"en"		"{1}％"
+	}
+	
+	"Huds_PipebombCount"
+	{
+		"#format"	"{1:d}"
+		"en"		"{1} Stickies"
+	}
+	
+	"Huds_ChargeBeginTime"
+	{
+		"#format"	"{1:.0f}"
+		"en"		"{1}％ Charge"
+	}
+	
+	"Huds_ChargeMeter"
+	{
+		"#format"	"{1:.0f}"
+		"en"		"{1}％ Charge"
+	}
+	
+	"Huds_Ammo"
+	{
+		"#format"	"{1:d}"
+		"en"		"{1} Metal"
+	}
+	
+	"Huds_ChargeLevel"
+	{
+		"#format"	"{1:.0f}"
+		"en"		"{1}％ Über"
+	}
+	
+	"Huds_ChargeResistType_Bullet"
+	{
+		"en"		"Type: Bullet"
+	}
+	
+	"Huds_ChargeResistType_Blast"
+	{
+		"en"		"Type: Blast"
+	}
+	
+	"Huds_ChargeResistType_Fire"
+	{
+		"en"		"Type: Fire"
+	}
+	
+	"Huds_MinicritCharge"
+	{
+		"#format"	"{1:.0f}"
+		"en"		"{1}％ Crikey"
+	}
+	
+	"Huds_KnifeMeltTimestamp"
+	{
+		"#format"	"{1:.0f}"
+		"en"		"{1} sec"
+	}
+	
+	"Huds_DisguiseTeam_Red"
+	{
+		"en"		"Red"
+	}
+	
+	"Huds_DisguiseTeam_Blue"
+	{
+		"en"		"Blue"
+	}
+	
+	"Huds_DisguiseClass_Scout"
+	{
+		"en"		"Scout"
+	}
+	
+	"Huds_DisguiseClass_Sniper"
+	{
+		"en"		"Sniper"
+	}
+	
+	"Huds_DisguiseClass_Soldier"
+	{
+		"en"		"Soldier"
+	}
+	
+	"Huds_DisguiseClass_Demoman"
+	{
+		"en"		"Demoman"
+	}
+	
+	"Huds_DisguiseClass_Medic"
+	{
+		"en"		"Medic"
+	}
+	
+	"Huds_DisguiseClass_Heavy"
+	{
+		"en"		"Heavy"
+	}
+	
+	"Huds_DisguiseClass_Pyro"
+	{
+		"en"		"Pyro"
+	}
+	
+	"Huds_DisguiseClass_Spy"
+	{
+		"en"		"Spy"
+	}
+	
+	"Huds_DisguiseClass_Engineer"
+	{
+		"en"		"Engineer"
+	}
+	
+	"Weapon_BASEJumper"
+	{
+		"en"		"B.A.S.E. Jumper"
+	}
+	
+	"Weapon_Shotgun"
+	{
+		"en"		"Shotgun"
+	}
+	
+	"Weapon_PanicAttack"
+	{
+		"en"		"Panic Attack"
+	}
+	
+	"Weapon_Pistol"
+	{
+		"en"		"Pistol"
+	}
+	
+	"Weapon_ReserveShooter"
+	{
+		"en"		"Reserve Shooter"
+	}
+	
+	"Weapon_PainTrain"
+	{
+		"en"		"Pain Train"
+	}
+	
+	"Weapon_HalfZatoichi"
+	{
+		"en"		"Half-Zatoichi"
+	}
+	
+	"Weapon_Scattergun"
+	{
+		"en"		"Scattergun"
+	}
+	
+	"Weapon_ForceANature"
+	{
+		"en"		"Force-A-Nature"
+	}
+	
+	"Weapon_Shortstop"
+	{
+		"en"		"Shortstop"
+	}
+	
+	"Weapon_SodaPopper"
+	{
+		"en"		"Soda Popper"
+	}
+	
+	"Weapon_BabyFaceBlaster"
+	{
+		"en"		"Baby Face's Blaster"
+	}
+	
+	"Weapon_BackScatter"
+	{
+		"en"		"Back Scatter"
+	}
+	
+	"Weapon_BonkAtomicPunch"
+	{
+		"en"		"Bonk! Atomic Punch"
+	}
+	
+	"Weapon_CritaCola"
+	{
+		"en"		"Crit-a-Cola"
+	}
+	
+	"Weapon_MadMilk"
+	{
+		"en"		"Mad Milk"
+	}
+	
+	"Weapon_Winger"
+	{
+		"en"		"Winger"
+	}
+	
+	"Weapon_PrettyBoyPocketPistol"
+	{
+		"en"		"Pretty Boy's Pocket Pistol"
+	}
+	
+	"Weapon_FlyingGuillotine"
+	{
+		"en"		"Flying Guillotine"
+	}
+	
+	"Weapon_Bat"
+	{
+		"en"		"Bat"
+	}
+	
+	"Weapon_Sandman"
+	{
+		"en"		"Sandman"
+	}
+	
+	"Weapon_HolyMackerel"
+	{
+		"en"		"Holy Mackerel"
+	}
+	
+	"Weapon_CandyCane"
+	{
+		"en"		"Candy Cane"
+	}
+	
+	"Weapon_BostonBasher"
+	{
+		"en"		"Boston Basher"
+	}
+	
+	"Weapon_SunonaStick"
+	{
+		"en"		"Sun-on-a-Stick"
+	}
+	
+	"Weapon_FanOWar"
+	{
+		"en"		"Fan O'War"
+	}
+	
+	"Weapon_Atomizer"
+	{
+		"en"		"Atomizer"
+	}
+	
+	"Weapon_WrapAssassin"
+	{
+		"en"		"Wrap Assassin"
+	}
+	
+	"Weapon_RocketLauncher"
+	{
+		"en"		"Rocket Launcher"
+	}
+	
+	"Weapon_DirectHit"
+	{
+		"en"		"Direct Hit"
+	}
+	
+	"Weapon_BlackBox"
+	{
+		"en"		"Black Box"
+	}
+	
+	"Weapon_RocketJumper"
+	{
+		"en"		"Rocket Jumper"
+	}
+	
+	"Weapon_LibertyLauncher"
+	{
+		"en"		"Liberty Launcher"
+	}
+	
+	"Weapon_CowMangler5000"
+	{
+		"en"		"Cow Mangler 5000"
+	}
+	
+	"Weapon_Original"
+	{
+		"en"		"Original"
+	}
+	
+	"Weapon_BeggarBazooka"
+	{
+		"en"		"Beggar's Bazooka"
+	}
+	
+	"Weapon_AirStrike"
+	{
+		"en"		"Air Strike"
+	}
+	
+	"Weapon_BuffBanner"
+	{
+		"en"		"Buff Banner"
+	}
+	
+	"Weapon_Gunboats"
+	{
+		"en"		"Gunboats"
+	}
+	
+	"Weapon_BattalionBackup"
+	{
+		"en"		"Battalion's Backup"
+	}
+	
+	"Weapon_Concheror"
+	{
+		"en"		"Concheror"
+	}
+	
+	"Weapon_RighteousBison"
+	{
+		"en"		"Righteous Bison"
+	}
+	
+	"Weapon_Mantreads"
+	{
+		"en"		"Mantreads"
+	}
+	
+	"Weapon_Shovel"
+	{
+		"en"		"Shovel"
+	}
+	
+	"Weapon_Equalizer"
+	{
+		"en"		"Equalizer"
+	}
+	
+	"Weapon_MarketGardener"
+	{
+		"en"		"Market Gardener"
+	}
+	
+	"Weapon_DisciplinaryAction"
+	{
+		"en"		"Disciplinary Action"
+	}
+	
+	"Weapon_EscapePlan"
+	{
+		"en"		"Escape Plan"
+	}
+	
+	"Weapon_FlameThrower"
+	{
+		"en"		"Flame Thrower"
+	}
+	
+	"Weapon_Backburner"
+	{
+		"en"		"Backburner"
+	}
+	
+	"Weapon_Degreaser"
+	{
+		"en"		"Degreaser"
+	}
+	
+	"Weapon_Phlogistinator"
+	{
+		"en"		"Phlogistinator"
+	}
+	
+	"Weapon_DragonFury"
+	{
+		"en"		"Dragon's Fury"
+	}
+	
+	"Weapon_FlareGun"
+	{
+		"en"		"Flare Gun"
+	}
+	
+	"Weapon_Detonator"
+	{
+		"en"		"Detonator"
+	}
+	
+	"Weapon_Manmelter"
+	{
+		"en"		"Manmelter"
+	}
+	
+	"Weapon_ScorchShot"
+	{
+		"en"		"Scorch Shot"
+	}
+		
+	"Weapon_ThermalThruster"
+	{
+		"en"		"Thermal Thruster"
+	}
+	
+	"Weapon_GasPasser"
+	{
+		"en"		"Gas Passer"
+	}
+	
+	"Weapon_FireAxe"
+	{
+		"en"		"Fire Axe"
+	}
+	
+	"Weapon_Axtinguisher"
+	{
+		"en"		"Axtinguisher"
+	}
+	
+	"Weapon_Homewrecker"
+	{
+		"en"		"Homewrecker"
+	}
+	
+	"Weapon_Powerjack"
+	{
+		"en"		"Powerjack"
+	}
+	
+	"Weapon_BackScratcher"
+	{
+		"en"		"Back Scratcher"
+	}
+	
+	"Weapon_SharpenedVolcanoFragment"
+	{
+		"en"		"Sharpened Volcano Fragment"
+	}
+	
+	"Weapon_ThirdDegree"
+	{
+		"en"		"Third Degree"
+	}
+	
+	"Weapon_NeonAnnihilator"
+	{
+		"en"		"Neon Annihilator"
+	}
+	
+	"Weapon_HotHand"
+	{
+		"en"		"Hot Hand"
+	}
+	
+	"Weapon_GrenadeLauncher"
+	{
+		"en"		"Grenade Launcher"
+	}
+	
+	"Weapon_LochnLoad"
+	{
+		"en"		"Loch-n-Load"
+	}
+	
+	"Weapon_AliBabaWeeBooties"
+	{
+		"en"		"Ali Baba's Wee Booties"
+	}
+	
+	"Weapon_LooseCannon"
+	{
+		"en"		"Loose Cannon"
+	}
+	
+	"Weapon_IronBomber"
+	{
+		"en"		"Iron Bomber"
+	}
+	
+	"Weapon_StickybombLauncher"
+	{
+		"en"		"Stickybomb Launcher"
+	}
+	
+	"Weapon_ScottishResistance"
+	{
+		"en"		"Scottish Resistance"
+	}
+	
+	"Weapon_CharginTarge"
+	{
+		"en"		"Chargin' Targe"
+	}
+	
+	"Weapon_StickyJumper"
+	{
+		"en"		"Sticky Jumper"
+	}
+	
+	"Weapon_SplendidScreen"
+	{
+		"en"		"Splendid Screen"
+	}
+	
+	"Weapon_TideTurner"
+	{
+		"en"		"Tide Turner"
+	}
+	
+	"Weapon_QuickiebombLauncher"
+	{
+		"en"		"Quickiebomb Launcher"
+	}
+	
+	"Weapon_Bottle"
+	{
+		"en"		"Bottle"
+	}
+	
+	"Weapon_Eyelander"
+	{
+		"en"		"Eyelander"
+	}
+	
+	"Weapon_ScotsmanSkullcutter"
+	{
+		"en"		"Scotsman's Skullcutter"
+	}
+	
+	"Weapon_UllapoolCaber"
+	{
+		"en"		"Ullapool Caber"
+	}
+	
+	"Weapon_ClaidheamhMor"
+	{
+		"en"		"Claidheamh Mòr"
+	}
+	
+	"Weapon_PersianPersuader"
+	{
+		"en"		"Persian Persuader"
+	}
+	
+	"Weapon_Minigun"
+	{
+		"en"		"Minigun"
+	}
+	
+	"Weapon_Natascha"
+	{
+		"en"		"Natascha"
+	}
+	
+	"Weapon_BrassBeast"
+	{
+		"en"		"Brass Beast"
+	}
+	
+	"Weapon_Tomislav"
+	{
+		"en"		"Tomislav"
+	}
+	
+	"Weapon_HuoLongHeater"
+	{
+		"en"		"Huo-Long Heater"
+	}
+	
+	"Weapon_Sandvich"
+	{
+		"en"		"Sandvich"
+	}
+	
+	"Weapon_DalokohsBar"
+	{
+		"en"		"Dalokohs Bar"
+	}
+	
+	"Weapon_BuffaloSteakSandvich"
+	{
+		"en"		"Buffalo Steak Sandvich"
+	}
+	
+	"Weapon_FamilyBusiness"
+	{
+		"en"		"Family Business"
+	}
+		
+	"Weapon_SecondBanana"
+	{
+		"en"		"Second Banana"
+	}
+	
+	"Weapon_Fists"
+	{
+		"en"		"Fists"
+	}
+	
+	"Weapon_KillingGlovesofBoxing"
+	{
+		"en"		"Killing Gloves of Boxing"
+	}
+	
+	"Weapon_GlovesofRunningUrgently"
+	{
+		"en"		"Gloves of Running Urgently"
+	}
+	
+	"Weapon_WarriorSpirit"
+	{
+		"en"		"Warrior's Spirit"
+	}
+	
+	"Weapon_FistsofSteel"
+	{
+		"en"		"Fists of Steel"
+	}
+	
+	"Weapon_EvictionNotice"
+	{
+		"en"		"Eviction Notice"
+	}
+	
+	"Weapon_HolidayPunch"
+	{
+		"en"		"Holiday Punch"
+	}
+	
+	"Weapon_FrontierJustice"
+	{
+		"en"		"Frontier Justice"
+	}
+	
+	"Weapon_Widowmaker"
+	{
+		"en"		"Widowmaker"
+	}
+	
+	"Weapon_Pomson6000"
+	{
+		"en"		"Pomson 6000"
+	}
+	
+	"Weapon_RescueRanger"
+	{
+		"en"		"Rescue Ranger"
+	}
+	
+	"Weapon_Wrangler"
+	{
+		"en"		"Wrangler"
+	}
+	
+	"Weapon_ShortCircuit"
+	{
+		"en"		"Short Circuit"
+	}
+	
+	"Weapon_Wrench"
+	{
+		"en"		"Wrench"
+	}
+	
+	"Weapon_Gunslinger"
+	{
+		"en"		"Gunslinger"
+	}
+	
+	"Weapon_SouthernHospitality"
+	{
+		"en"		"Southern Hospitality"
+	}
+	
+	"Weapon_Jag"
+	{
+		"en"		"Jag"
+	}
+	
+	"Weapon_EurekaEffect"
+	{
+		"en"		"Eureka Effect"
+	}
+	
+	"Weapon_SyringeGun"
+	{
+		"en"		"Syringe Gun"
+	}
+	
+	"Weapon_Blutsauger"
+	{
+		"en"		"Blutsauger"
+	}
+	
+	"Weapon_CrusaderCrossbow"
+	{
+		"en"		"Crusader's Crossbow"
+	}
+	
+	"Weapon_Overdose"
+	{
+		"en"		"Overdose"
+	}
+	
+	"Weapon_MediGun"
+	{
+		"en"		"Medi Gun"
+	}
+	
+	"Weapon_Kritzkrieg"
+	{
+		"en"		"Kritzkrieg"
+	}
+	
+	"Weapon_QuickFix"
+	{
+		"en"		"Quick-Fix"
+	}
+	
+	"Weapon_Vaccinator"
+	{
+		"en"		"Vaccinator"
+	}
+	
+	"Weapon_Bonesaw"
+	{
+		"en"		"Bonesaw"
+	}
+	
+	"Weapon_Ubersaw"
+	{
+		"en"		"Übersaw"
+	}
+	
+	"Weapon_VitaSaw"
+	{
+		"en"		"Vita-Saw"
+	}
+	
+	"Weapon_Amputator"
+	{
+		"en"		"Amputator"
+	}
+	
+	"Weapon_SolemnVow"
+	{
+		"en"		"Solemn Vow"
+	}
+	
+	"Weapon_SniperRifle"
+	{
+		"en"		"Sniper Rifle"
+	}
+	
+	"Weapon_Huntsman"
+	{
+		"en"		"Huntsman"
+	}
+	
+	"Weapon_SydneySleeper"
+	{
+		"en"		"Sydney Sleeper"
+	}
+	
+	"Weapon_BazaarBargain"
+	{
+		"en"		"Bazaar Bargain"
+	}
+	
+	"Weapon_Machina"
+	{
+		"en"		"Machina"
+	}
+	
+	"Weapon_HitmanHeatmaker"
+	{
+		"en"		"Hitman's Heatmaker"
+	}
+	
+	"Weapon_Classic"
+	{
+		"en"		"Classic"
+	}
+	
+	"Weapon_SMG"
+	{
+		"en"		"SMG"
+	}
+	
+	"Weapon_Razorback"
+	{
+		"en"		"Razorback"
+	}
+	
+	"Weapon_Jarate"
+	{
+		"en"		"Jarate"
+	}
+	
+	"Weapon_DarwinDangerShield"
+	{
+		"en"		"Darwin's Danger Shield"
+	}
+	
+	"Weapon_CozyCamper"
+	{
+		"en"		"Cozy Camper"
+	}
+	
+	"Weapon_CleanerCarbine"
+	{
+		"en"		"Cleaner's Carbine"
+	}
+	
+	"Weapon_Kukri"
+	{
+		"en"		"Kukri"
+	}
+	
+	"Weapon_TribalmanShiv"
+	{
+		"en"		"Tribalman's Shiv"
+	}
+	
+	"Weapon_Bushwacka"
+	{
+		"en"		"Bushwacka"
+	}
+	
+	"Weapon_Shahanshah"
+	{
+		"en"		"Shahanshah"
+	}
+	
+	"Weapon_Revolver"
+	{
+		"en"		"Revolver"
+	}
+	
+	"Weapon_Ambassador"
+	{
+		"en"		"Ambassador"
+	}
+	
+	"Weapon_LEtranger"
+	{
+		"en"		"L'Etranger"
+	}
+	
+	"Weapon_Enforcer"
+	{
+		"en"		"Enforcer"
+	}
+	
+	"Weapon_Diamondback"
+	{
+		"en"		"Diamondback"
+	}
+	
+	"Weapon_Sapper"
+	{
+		"en"		"Sapper"
+	}
+	
+	"Weapon_RedTapeRecorder"
+	{
+		"en"		"Red-Tape Recorder"
+	}
+	
+	"Weapon_Knife"
+	{
+		"en"		"Knife"
+	}
+	
+	"Weapon_YourEternalReward"
+	{
+		"en"		"Your Eternal Reward"
+	}
+	
+	"Weapon_ConniverKunai"
+	{
+		"en"		"Conniver's Kunai"
+	}
+	
+	"Weapon_BigEarner"
+	{
+		"en"		"Big Earner"
+	}
+	
+	"Weapon_Spycicle"
+	{
+		"en"		"Spy-cicle"
+	}
+	
+	"Weapon_ConstructionPDA"
+	{
+		"en"		"Construction PDA"
+	}
+	
+	"Weapon_DestructionPDA"
+	{
+		"en"		"Destruction PDA"
+	}
+	
+	"Weapon_Toolbox"
+	{
+		"en"		"Toolbox"
+	}
+	
+	"Weapon_DisguiseKit"
+	{
+		"en"		"Disguise Kit"
+	}
+	
+	"Weapon_InvisWatch"
+	{
+		"en"		"Invis Watch"
+	}
+	
+	"Weapon_DeadRinger"
+	{
+		"en"		"Dead Ringer"
+	}
+	
+	"Weapon_CloakandDagger"
+	{
+		"en"		"Cloak and Dagger"
+	}
+}
+

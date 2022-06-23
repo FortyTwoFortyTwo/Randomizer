@@ -62,73 +62,61 @@
 	
 	"Huds_EffectBarRegenTime"
 	{
-		"#format"	"{1:.0f}"
 		"pt"		"{1} Segs"
 	}
 	
 	"Huds_Decapitations"
 	{
-		"#format"	"{1:d}"
 		"pt"		"{1} Cabeças"
 	}
 	
 	"Huds_Energy"
 	{
-		"#format"	"{1:.0f}"
 		"pt"		"{1}％ Energia"
 	}
 	
 	"Huds_RageMeter"
 	{
-		"#format"	"{1:.0f}"
 		"pt"		"{1}％ Fúria"
 	}
 	
 	"Huds_RevengeCrits"
 	{
-		"#format"	"{1:d}"
 		"pt"		"{1} Crits"
 	}
 	
 	"Huds_HypeMeter"
 	{
-		"#format"	"{1:.0f}"
 		"pt"		"{1}％ Hyper"
 	}
 	
 	"Huds_ItemChargeMeter"
 	{
-		"#format"	"{1:.0f}"
 		"pt"		"{1}％"
 	}
 	
 	"Huds_PipebombCount"
 	{
-		"#format"	"{1:d}"
 		"pt"		"{1} Stickies"
 	}
 	
 	"Huds_ChargeBeginTime"
 	{
-		"#format"	"{1:.0f}"
 		"pt"		"{1}％ Investida"
 	}
 	
 	"Huds_ChargeMeter"
 	{
-		"#format"	"{1:.0f}"
 		"pt"		"{1}％ Carga"
 	}
 	
 	"Huds_Ammo"
 	{
-		"#format"	"{1:d}"
 		"pt"		"{1} Ferro"
 	}
 	
 	"Huds_ChargeLevel"
 	{
-		"#format"	"{1:.0f}"
 		"pt"		"{1}％ Über"
 	}
 	
@@ -149,13 +137,11 @@
 	
 	"Huds_MinicritCharge"
 	{
-		"#format"	"{1:.0f}"
 		"pt"		"{1}％ Crikey"
 	}
 	
 	"Huds_KnifeMeltTimestamp"
 	{
-		"#format"	"{1:.0f}"
 		"pt"		"{1} seg"
 	}
 	
