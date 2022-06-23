@@ -461,7 +461,7 @@
 	
 	"Weapon_Ambassador"
 	{
-		"pta"		"Embaixador"
+		"pt"		"Embaixador"
 	}
 	
 	"Weapon_LEtranger"
