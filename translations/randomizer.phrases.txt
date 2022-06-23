@@ -2,1257 +2,1049 @@
 {
 	"Controls_Stickybomb_Attack2"
 	{
-		"en"		"right click to detonate"
 		"pt"		"clique direito para detonar"
 	}
 	
 	"Controls_Stickybomb_Reload"
 	{
-		"en"		"reload to detonate"
 		"pt"		"recarregue para detonar"
 	}
 	
 	"Controls_Stickybomb_Unable"
 	{
-		"en"		"unable to detonate"
 		"pt"		"incapaz de detonar"
 	}
 	
 	"Controls_Shield_Attack2"
 	{
-		"en"		"right click to charge"
 		"pt"		"clique direito para investir"
 	}	
 	
 	"Controls_Shield_Reload"
 	{
-		"en"		"reload to charge"
 		"pt"		"recarregue para investir"
 	}
 	
 	"Controls_Shield_Unable"
 	{
-		"en"		"unable to charge"
 		"pt"		"incapaz de investir"
 	}
 	
 	"Controls_Build_Attack2"
 	{
-		"en"		"right click to build"
 		"pt"		"clique direito para construir"
 	}	
 	
 	"Controls_Build_Attack3"
 	{
-		"en"		"middle click to build"
 		"pt"		"clique do meio para construir"
 	}
 	
 	"Controls_Build_Unable"
 	{
-		"en"		"unable to build"
 		"pt"		"incapaz de construir"
 	}
 	
 	"Controls_InvisWatch_Attack2"
 	{
-		"en"		"right click to cloak"
 		"pt"		"clique direito para ir invis"
 	}	
 	
 	"Controls_InvisWatch_Attack3"
 	{
-		"en"		"middle click to cloak"
 		"pt"		"clique do meio para ir invis"
 	}
 	
 	"Controls_InvisWatch_Unable"
 	{
-		"en"		"unable to cloak"
 		"pt"		"invis indisponível"
 	}
 	
 	"Huds_EffectBarRegenTime"
 	{
 		"#format"	"{1:.0f}"
-		"en"		"{1} Sec"
 		"pt"		"{1} Segs"
 	}
 	
 	"Huds_Decapitations"
 	{
 		"#format"	"{1:d}"
-		"en"		"{1} Heads"
 		"pt"		"{1} Cabeças"
 	}
 	
 	"Huds_Energy"
 	{
 		"#format"	"{1:.0f}"
-		"en"		"{1}％ Energy"
 		"pt"		"{1}％ Energia"
 	}
 	
 	"Huds_RageMeter"
 	{
 		"#format"	"{1:.0f}"
-		"en"		"{1}％ Rage"
 		"pt"		"{1}％ Fúria"
 	}
 	
 	"Huds_RevengeCrits"
 	{
 		"#format"	"{1:d}"
-		"en"		"{1} Crits"
 		"pt"		"{1} Crits"
 	}
 	
 	"Huds_HypeMeter"
 	{
 		"#format"	"{1:.0f}"
-		"en"		"{1}％ Hype"
 		"pt"		"{1}％ Hyper"
 	}
 	
 	"Huds_ItemChargeMeter"
 	{
 		"#format"	"{1:.0f}"
-		"en"		"{1}％"
 		"pt"		"{1}％"
 	}
 	
 	"Huds_PipebombCount"
 	{
 		"#format"	"{1:d}"
-		"en"		"{1} Stickies"
 		"pt"		"{1} Stickies"
 	}
 	
 	"Huds_ChargeBeginTime"
 	{
 		"#format"	"{1:.0f}"
-		"en"		"{1}％ Charge"
 		"pt"		"{1}％ Investida"
 	}
 	
 	"Huds_ChargeMeter"
 	{
 		"#format"	"{1:.0f}"
-		"en"		"{1}％ Charge"
 		"pt"		"{1}％ Carga"
 	}
 	
 	"Huds_Ammo"
 	{
 		"#format"	"{1:d}"
-		"en"		"{1} Metal"
 		"pt"		"{1} Ferro"
 	}
 	
 	"Huds_ChargeLevel"
 	{
 		"#format"	"{1:.0f}"
-		"en"		"{1}％ Über"
 		"pt"		"{1}％ Über"
 	}
 	
 	"Huds_ChargeResistType_Bullet"
 	{
-		"en"		"Type: Bullet"
 		"pt"		"Tipo: Balas"
 	}
 	
 	"Huds_ChargeResistType_Blast"
 	{
-		"en"		"Type: Blast"
 		"pt"		"Tipo: Explosão"
 	}
 	
 	"Huds_ChargeResistType_Fire"
 	{
-		"en"		"Type: Fire"
 		"pt"		"Tipo: Fogo"
 	}
 	
 	"Huds_MinicritCharge"
 	{
 		"#format"	"{1:.0f}"
-		"en"		"{1}％ Crikey"
 		"pt"		"{1}％ Crikey"
 	}
 	
 	"Huds_KnifeMeltTimestamp"
 	{
 		"#format"	"{1:.0f}"
-		"en"		"{1} sec"
 		"pt"		"{1} seg"
 	}
 	
 	"Huds_DisguiseTeam_Red"
 	{
-		"en"		"Red"
 		"pt"		"Vermelho"
 	}
 	
 	"Huds_DisguiseTeam_Blue"
 	{
-		"en"		"Blue"
 		"pt"		"Azul"
 	}
 	
 	"Huds_DisguiseClass_Scout"
 	{
-		"en"		"Scout"
 		"pt"		"Scout"
 	}
 	
 	"Huds_DisguiseClass_Sniper"
 	{
-		"en"		"Sniper"
 		"pt"		"Sniper"
 	}
 	
 	"Huds_DisguiseClass_Soldier"
 	{
-		"en"		"Soldier"
 		"pt"		"Soldier"
 	}
 	
 	"Huds_DisguiseClass_Demoman"
 	{
-		"en"		"Demoman"
 		"pt"		"Demoman"
 	}
 	
 	"Huds_DisguiseClass_Medic"
 	{
-		"en"		"Medic"
 		"pt"		"Medic"
 	}
 	
 	"Huds_DisguiseClass_Heavy"
 	{
-		"en"		"Heavy"
 		"pt"		"Heavy"
 	}
 	
 	"Huds_DisguiseClass_Pyro"
-	{
-		"en"		"Pyro"
 		"pt"		"Pyro"
 	}
 	
 	"Huds_DisguiseClass_Spy"
 	{
-		"en"		"Spy"
 		"pt"		"Spy"
 	}
 	
 	"Huds_DisguiseClass_Engineer"
 	{
-		"en"		"Engineer"
 		"pt"		"Engineer"
 	}
 	
 	"Weapon_BASEJumper"
 	{
-		"en"		"B.A.S.E. Jumper"
 		"pt"		"Saltador de B.A.S.E"
 	}
 	
 	"Weapon_Shotgun"
 	{
-		"en"		"Shotgun"
 		"pt"		"Escopeta"
 	}
 	
 	"Weapon_PanicAttack"
 	{
-		"en"		"Panic Attack"
 		"pt"		"Ataque de Panico"
 	}
 	
 	"Weapon_Pistol"
 	{
-		"en"		"Pistol"
 		"pt"		"Pistola"
 	}
 	
 	"Weapon_ReserveShooter"
 	{
-		"en"		"Reserve Shooter"
 		"pt"		"Atiradora Reversa"
 	}
 	
 	"Weapon_Scattergun"
 	{
-		"en"		"Scattergun"
 		"pt"		"Escopeta Compacta"
 	}
 	
 	"Weapon_ForceANature"
 	{
-		"en"		"Force-A-Nature"
 		"pt"		"Força-Da-Natureza"
 	}
 	
 	"Weapon_Shortstop"
 	{
-		"en"		"Shortstop"
 		"pt"		"Interbases"
 	}
 	
 	"Weapon_SodaPopper"
 	{
-		"en"		"Soda Popper"
 		"pt"		"Refriespingarda"
 	}
 	
 	"Weapon_BabyFaceBlaster"
 	{
-		"en"		"Baby Face's Blaster"
 		"pt"		"Destruidora do Degenerado"
 	}
 	
 	"Weapon_BackScatter"
 	{
-		"en"		"Back Scatter"
 		"pt"		"Fuziladora de Costas"
 	}
 	
 	"Weapon_RocketLauncher"
 	{
-		"en"		"Rocket Launcher"
 		"pt"		"Lança-Foguetes"
 	}
 	
 	"Weapon_DirectHit"
 	{
-		"en"		"Direct Hit"
 		"pt"		"Tiro Certo"
 	}
 	
 	"Weapon_BlackBox"
 	{
-		"en"		"Black Box"
 		"pt"		"Caixa Preta"
 	}
 	
 	"Weapon_RocketJumper"
 	{
-		"en"		"Rocket Jumper"
 		"pt"		"Lança-Foguetes de Treino"
 	}
 	
 	"Weapon_LibertyLauncher"
 	{
-		"en"		"Liberty Launcher"
 		"pt"		"Lançador da Liberdade"
 	}
 	
 	"Weapon_CowMangler5000"
 	{
-		"en"		"Cow Mangler 5000"
 		"pt"		"Avacalhador 5000"
 	}
 	
 	"Weapon_Original"
 	{
-		"en"		"Original"
 		"pt"		"Original"
 	}
 	
 	"Weapon_BeggarBazooka"
 	{
-		"en"		"Beggar's Bazooka"
 		"pt"		"Lança-Foguetes do Lamentável"
 	}
 	
 	"Weapon_AirStrike"
 	{
-		"en"		"Air Strike"
 		"pt"		"O Ataque Aéreo"
 	}
 	
 	"Weapon_FlameThrower"
 	{
-		"en"		"Flame Thrower"
 		"pt"		"Lança-Chamas"
 	}
 	
 	"Weapon_Backburner"
 	{
-		"en"		"Backburner"
 		"pt"		"Queima-Scostas"
 	}
 	
 	"Weapon_Degreaser"
 	{
-		"en"		"Degreaser"
 		"pt"		"Desengraxante"
 	}
 	
 	"Weapon_Phlogistinator"
 	{
-		"en"		"Phlogistinator"
 		"pt"		"Flogistinador"
 	}
 	
 	"Weapon_DragonFury"
 	{
-		"en"		"Dragon's Fury"
 		"pt"		"Fúria do Dragão"
 	}
 	
 	"Weapon_GrenadeLauncher"
 	{
-		"en"		"Grenade Launcher"
 		"pt"		"Lança-Granadas"
 	}
 	
 	"Weapon_LochnLoad"
 	{
-		"en"		"Loch-n-Load"
 		"pt"		"Bombas do Lago Ness"
 	}
 	
 	"Weapon_AliBabaWeeBooties"
 	{
-		"en"		"Ali Baba's Wee Booties"
 		"pt"		"Botinhas do Ali babá"
 	}
 	
 	"Weapon_LooseCannon"
 	{
-		"en"		"Loose Cannon"
 		"pt"		"Pavio Curto"
 	}
 	
 	"Weapon_IronBomber"
 	{
-		"en"		"Iron Bomber"
 		"pt"		"Bombardeiro de Ferro"
 	}
 	
 	"Weapon_Minigun"
 	{
-		"en"		"Minigun"
-		"pt"		"Sasha"
+		"pt"		"Minigun"
 	}
 	
 	"Weapon_Natascha"
 	{
-		"en"		"Natascha"
 		"pt"		"Natascha"
 	}
 	
 	"Weapon_BrassBeast"
 	{
-		"en"		"Brass Beast"
 		"pt"		"Fera do Bronze"
 	}
 	
 	"Weapon_Tomislav"
 	{
-		"en"		"Tomislav"
 		"pt"		"Tomislav"
 	}
 	
 	"Weapon_HuoLongHeater"
 	{
-		"en"		"Huo-Long Heater"
 		"pt"		"Chamas de Huo-long"
 	}
 	
 	"Weapon_FrontierJustice"
 	{
-		"en"		"Frontier Justice"
 		"pt"		"Justiça Vingadora"
 	}
 	
 	"Weapon_Widowmaker"
 	{
-		"en"		"Widowmaker"
 		"pt"		"Viuvadora"
 	}
 	
 	"Weapon_Pomson6000"
 	{
-		"en"		"Pomson 6000"
 		"pt"		"Pomson 6000"
 	}
 	
 	"Weapon_RescueRanger"
 	{
-		"en"		"Rescue Ranger"
 		"pt"		"Telescopeta"
 	}
 	
 	"Weapon_SyringeGun"
 	{
-		"en"		"Syringe Gun"
-		"pt"		"Arma de Vacina"
+		"pt"		"Arma de Seringas"
 	}
 	
 	"Weapon_Blutsauger"
 	{
-		"en"		"Blutsauger"
 		"pt"		"Blutsauger"
 	}
 	
 	"Weapon_CrusaderCrossbow"
 	{
-		"en"		"Crusader's Crossbow"
 		"pt"		"Besta do Cruzado"
 	}
 	
 	"Weapon_Overdose"
 	{
-		"en"		"Overdose"
 		"pt"		"Overdose"
 	}
 	
 	"Weapon_SniperRifle"
 	{
-		"en"		"Sniper Rifle"
 		"pt"		"Rifle de Sniper"
 	}
 	
 	"Weapon_Huntsman"
 	{
-		"en"		"Huntsman"
 		"pt"		"Caçador"
 	}
 	
 	"Weapon_SydneySleeper"
 	{
-		"en"		"Sydney Sleeper"
 		"pt"		"Anestesiador de Sydney"
 	}
 	
 	"Weapon_BazaarBargain"
 	{
-		"en"		"Bazaar Bargain"
 		"pt"		"Barganha do Bazar"
 	}
 	
 	"Weapon_Machina"
 	{
-		"en"		"Machina"
 		"pt"		"Machina"
 	}
 	
 	"Weapon_HitmanHeatmaker"
 	{
-		"en"		"Hitman's Heatmaker"
 		"pt"		"Assasino de Aluguel"
 	}
 	
 	"Weapon_FortifiedCompound"
 	{
-		"en"		"Fortified Compound"
 		"pt"		"Arco Composto Fortificado"
 	}
 	
 	"Weapon_Classic"
 	{
-		"en"		"Classic"
-		"pt"		"Clássico
+		"pt"		"Clássico"
 	}
 	
 	"Weapon_Revolver"
 	{
-		"en"		"Revolver"
 		"pt"		"Revólver"
 	}
 	
 	"Weapon_Ambassador"
 	{
-		"en"		"Ambassador"
 		"pta"		"Embaixador"
 	}
 	
 	"Weapon_LEtranger"
 	{
-		"en"		"L'Etranger"
 		"pt"		"L'Etranger"
 	}
 	
 	"Weapon_Enforcer"
 	{
-		"en"		"Enforcer"
 		"pt"		"Capanga"
 	}
 	
 	"Weapon_Diamondback"
 	{
-		"en"		"Diamondback"
 		"pt"		"Diamante Negro"
 	}
 	
 	"Weapon_BonkAtomicPunch"
 	{
-		"en"		"Bonk! Atomic Punch"
 		"pt"		"Bonk! Pancada Atómica"
 	}
 	
 	"Weapon_CritaCola"
 	{
-		"en"		"Crit-a-Cola"
 		"pt"		"Criti-Cola"
 	}
 	
 	"Weapon_MadMilk"
 	{
-		"en"		"Mad Milk"
 		"pt"		"Leite Louco"
 	}
 	
 	"Weapon_Winger"
 	{
-		"en"		"Winger"
 		"pt"		"Ala"
 	}
 	
 	"Weapon_PrettyBoyPocketPistol"
 	{
-		"en"		"Pretty Boy's Pocket Pistol"
 		"pt"		"Pistola Portátil do Peralta"
 	}
 	
 	"Weapon_FlyingGuillotine"
 	{
-		"en"		"Flying Guillotine"
 		"pt"		"Guilhotina Voadora"
 	}
 		
 	"Weapon_BuffBanner"
 	{
-		"en"		"Buff Banner"
 		"pt"		"Estandarte do Encorajamento"
 	}
 	
 	"Weapon_Gunboats"
 	{
-		"en"		"Gunboats"
 		"pt"		"Canhoneiras"
 	}
 	
 	"Weapon_BattalionBackup"
 	{
-		"en"		"Battalion's Backup"
 		"pt"		"Reforço do Batalhão"
 	}
 	
 	"Weapon_Concheror"
 	{
-		"en"		"Concheror"
 		"pt"		"Conchistador"
 	}
 	
 	"Weapon_RighteousBison"
 	{
-		"en"		"Righteous Bison"
 		"pt"		"Bisão Justiceiro"
 	}
 	
 	"Weapon_Mantreads"
 	{
-		"en"		"Mantreads"
 		"pt"		"Coturnos de Macho"
 	}
 		
 	"Weapon_FlareGun"
 	{
-		"en"		"Flare Gun"
 		"pt"		"Arma Sinalizadora"
 	}
 	
 	"Weapon_Detonator"
 	{
-		"en"		"Detonator"
 		"pt"		"Detonadora"
 	}
 	
 	"Weapon_Manmelter"
 	{
-		"en"		"Manmelter"
 		"pt"		"Derretedora de Homens"
 	}
 	
 	"Weapon_ScorchShot"
 	{
-		"en"		"Scorch Shot"
 		"pt"		"Queima-Roupa"
 	}
 		
 	"Weapon_ThermalThruster"
 	{
-		"en"		"Thermal Thruster"
 		"pt"		"Propulsor Térmico"
 	}
 	
 	"Weapon_GasPasser"
 	{
-		"en"		"Gas Passer"
 		"pt"		"Galão de Gasolina"
 	}
 	
 	"Weapon_StickybombLauncher"
 	{
-		"en"		"Stickybomb Launcher"
 		"pt"		"Lança-StickyBombs"
 	}
 	
 	"Weapon_ScottishResistance"
 	{
-		"en"		"Scottish Resistance"
 		"pt"		"Resistência Escocesa"
 	}
 	
 	"Weapon_CharginTarge"
 	{
-		"en"		"Chargin' Targe"
 		"pt"		"Tarja de Investida"
 	}
 	
 	"Weapon_StickyJumper"
 	{
-		"en"		"Sticky Jumper"
 		"pt"		"Sticky Bombs de Treino"
 	}
 	
 	"Weapon_SplendidScreen"
 	{
-		"en"		"Splendid Screen"
 		"pt"		"Escudo Esplêndido"
 	}
 	
 	"Weapon_TideTurner"
 	{
-		"en"		"Tide Turner"
 		"pt"		"Descobridor dos 7 Mares"
 	}
 	
 	"Weapon_QuickiebombLauncher"
 	{
-		"en"		"Quickiebomb Launcher"
 		"pt"		"Lança-Rápibombas"
 	}
 		
 	"Weapon_Sandvich"
 	{
-		"en"		"Sandvich"
 		"pt"		"Sanduba"
 	}
 	
 	"Weapon_DalokohsBar"
 	{
-		"en"		"Dalokohs Bar"
 		"pt"		"Barra de Dalokohs"
 	}
 	
 	"Weapon_BuffaloSteakSandvich"
 	{
-		"en"		"Buffalo Steak Sandvich"
 		"pt"		"Bife de Búfalo"
 	}
 	
 	"Weapon_FamilyBusiness"
 	{
-		"en"		"Family Business"
 		"pt"		"Negócios de Família"
 	}
 		
 	"Weapon_SecondBanana"
 	{
-		"en"		"Second Banana"
 		"pt"		"Banana de Consolação"
 	}
 	
 	"Weapon_Wrangler"
 	{
-		"en"		"Wrangler"
 		"pt"		"Peão"
 	}
 	
 	"Weapon_ShortCircuit"
 	{
-		"en"		"Short Circuit"
 		"pt"		"Curto-Circuito"
 	}
 	
 	"Weapon_MediGun"
 	{
-		"en"		"Medi Gun"
 		"pt"		"Arma Médica"
 	}
 	
 	"Weapon_Kritzkrieg"
 	{
-		"en"		"Kritzkrieg"
 		"pt"		"Kritzkrieg"
 	}
 	
 	"Weapon_QuickFix"
 	{
-		"en"		"Quick-Fix"
 		"pt"		"Quebra-Galho"
 	}
 	
 	"Weapon_Vaccinator"
 	{
-		"en"		"Vaccinator"
 		"pt"		"Vacinadora"
 	}
 	
 	"Weapon_SMG"
 	{
-		"en"		"SMG"
 		"pt"		"SMG"
 	}
 	
 	"Weapon_Razorback"
 	{
-		"en"		"Razorback"
 		"pt"		"Escudo Antinavalha"
 	}
 	
 	"Weapon_Jarate"
 	{
-		"en"		"Jarate"
 		"pt"		"Jarratê"
 	}
 	
 	"Weapon_DarwinDangerShield"
 	{
-		"en"		"Darwin's Danger Shield"
 		"pt"		"Escudo Darwinista de Perigo"
 	}
 	
 	"Weapon_CozyCamper"
 	{
-		"en"		"Cozy Camper"
 		"pt"		"Campista Comfortável"
 	}
 	
 	"Weapon_CleanerCarbine"
 	{
-		"en"		"Cleaner's Carbine"
 		"pt"		"Carabina do Carrasco"
 	}
 	
 	"Weapon_Sapper"
 	{
-		"en"		"Sapper"
 		"pt"		"Sabotador"
 	}
 	
 	"Weapon_RedTapeRecorder"
 	{
-		"en"		"Red-Tape Recorder"
 		"pt"		"Rebobinador"
 	}
 	
 	"Weapon_Bat"
 	{
-		"en"		"Bat"
 		"pt"		"Taco"
 	}
 	
 	"Weapon_Sandman"
 	{
-		"en"		"Sandman"
 		"pt"		"João Pestana"
 	}
 	
 	"Weapon_HolyMackerel"
 	{
-		"en"		"Holy Mackerel"
 		"pt"		"Santo Carapau"
 	}
 	
 	"Weapon_CandyCane"
 	{
-		"en"		"Candy Cane"
 		"pt"		"Bengala Doce"
 	}
 	
 	"Weapon_BostonBasher"
 	{
-		"en"		"Boston Basher"
 		"pt"		"Batedor de Boston"
 	}
 	
 	"Weapon_SunonaStick"
 	{
-		"en"		"Sun-on-a-Stick"
 		"pt"		"Espetinho de Sol"
 	}
 	
 	"Weapon_FanOWar"
 	{
-		"en"		"Fan O'War"
 		"pt"		"Leque D'Guerra"
 	}
 	
 	"Weapon_Atomizer"
 	{
-		"en"		"Atomizer"
 		"pt"		"Atomizador"
 	}
 	
 	"Weapon_WrapAssassin"
 	{
-		"en"		"Wrap Assassin"
 		"pt"		"Assasino do Embrulho"
 	}
 	
 	"Weapon_Shovel"
 	{
-		"en"		"Shovel"
 		"pt"		"Pá"
 	}
 	
 	"Weapon_Equalizer"
 	{
-		"en"		"Equalizer"
 		"pt"		"Equalizador"
 	}
 	
 	"Weapon_PainTrain"
 	{
-		"en"		"Pain Train"
 		"pt"		"Pau e Prego"
 	}
 	
 	"Weapon_HalfZatoichi"
 	{
-		"en"		"Half-Zatoichi"
 		"pt"		"Quase-Zatoichi"
 	}
 	
 	"Weapon_MarketGardener"
 	{
-		"en"		"Market Gardener"
 		"pt"		"Pá-raquedista"
 	}
 	
 	"Weapon_DisciplinaryAction"
 	{
-		"en"		"Disciplinary Action"
 		"pt"		"Ação Disciplinar"
 	}
 	
 	"Weapon_EscapePlan"
 	{
-		"en"		"Escape Plan"
 		"pt"		"Plano de Fuga"
 	}
 	
 	"Weapon_FireAxe"
 	{
-		"en"		"Fire Axe"
 		"pt"		"Machado de Incêndio"
 	}
 	
 	"Weapon_Axtinguisher"
 	{
-		"en"		"Axtinguisher"
 		"pt"		"Queimachado"
 	}
 	
 	"Weapon_Homewrecker"
 	{
-		"en"		"Homewrecker"
 		"pt"		"Quebra-Casas"
 	}
 	
 	"Weapon_Powerjack"
 	{
-		"en"		"Powerjack"
 		"pt"		"Ligação Direta"
 	}
 	
 	"Weapon_BackScratcher"
 	{
-		"en"		"Back Scratcher"
 		"pt"		"Coçador de Costas"
 	}
 	
 	"Weapon_SharpenedVolcanoFragment"
 	{
-		"en"		"Sharpened Volcano Fragment"
 		"pt"		"Fragmento Afiado de Vulcão"
 	}
 	
 	"Weapon_PostalPummeler"
 	{
-		"en"		"Postal Pummeler"
 		"pt"		"Pancada Postal"
 	}
 	
 	"Weapon_ThirdDegree"
 	{
-		"en"		"Third Degree"
 		"pt"		"Terceiro-Grau"
 	}
 	
 	"Weapon_NeonAnnihilator"
 	{
-		"en"		"Neon Annihilator"
 		"pt"		"Aniquilador Neônico"
 	}
 	
 	"Weapon_HotHand"
 	{
-		"en"		"Hot Hand"
 		"pt"		"Bofetada a Brasa"
 	}
 	
 	"Weapon_Bottle"
 	{
-		"en"		"Bottle"
 		"pt"		"Garrafa"
 	}
 	
 	"Weapon_Eyelander"
 	{
-		"en"		"Eyelander"
 		"pt"		"Eyelander"
 	}
 	
 	"Weapon_PainTrain"
 	{
-		"en"		"Pain Train"
 		"pt"		"Pau e Prego"
 	}
 	
 	"Weapon_ScotsmanSkullcutter"
 	{
-		"en"		"Scotsman's Skullcutter"
 		"pt"		"Corta-Crânios Escocês"
 	}
 	
 	"Weapon_UllapoolCaber"
 	{
-		"en"		"Ullapool Caber"
 		"pt"		"Tora de Ullapool"
 	}
 	
 	"Weapon_ClaidheamhMor"
 	{
-		"en"		"Claidheamh Mòr"
 		"pt"		"Claidheamh Mòr"
 	}
 	
 	"Weapon_HalfZatoichi"
 	{
-		"en"		"Half-Zatoichi"
 		"pt"		"Quase-Zatoichi"
 	}
 	
 	"Weapon_PersianPersuader"
 	{
-		"en"		"Persian Persuader"
 		"pt"		"Persuador Persa"
 	}
 	
 	"Weapon_Fists"
 	{
-		"en"		"Fists"
 		"pt"		"Punhos"
 	}
 	
 	"Weapon_KillingGlovesofBoxing"
 	{
-		"en"		"Killing Gloves of Boxing"
 		"pt"		"Kríticos Garantidos no Boxe"
 	}
 	
 	"Weapon_GlovesofRunningUrgently"
 	{
-		"en"		"Gloves of Running Urgently"
 		"pt"		"Geradoras Rapidez Urgente"
 	}
 	
 	"Weapon_WarriorSpirit"
 	{
-		"en"		"Warrior's Spirit"
 		"pt"		"Espírito do Guerreiro"
 	}
 	
 	"Weapon_FistsofSteel"
 	{
-		"en"		"Fists of Steel"
 		"pt"		"Punhos de Ferro"
 	}
 	
 	"Weapon_EvictionNotice"
 	{
-		"en"		"Eviction Notice"
 		"pt"		"Aviso de Despejo"
 	}
 	
 	"Weapon_HolidayPunch"
 	{
-		"en"		"Holiday Punch"
 		"pt"		"Soco Festivo"
 	}
 	
 	"Weapon_Wrench"
 	{
-		"en"		"Wrench"
 		"pt"		"Chave Inglesa"
 	}
 	
 	"Weapon_Gunslinger"
 	{
-		"en"		"Gunslinger"
 		"pt"		"Pistoleiro"
 	}
 	
 	"Weapon_SouthernHospitality"
 	{
-		"en"		"Southern Hospitality"
 		"pt"		"Hospitalidade do Sul"
 	}
 	
 	"Weapon_Jag"
 	{
-		"en"		"Jag"
 		"pt"		"Dentadura"
 	}
 	
 	"Weapon_EurekaEffect"
 	{
-		"en"		"Eureka Effect"
 		"pt"		"Efeito Eureka"
 	}
 	
 	"Weapon_Bonesaw"
 	{
-		"en"		"Bonesaw"
 		"pt"		"Serra de Ossos"
 	}
 	
 	"Weapon_Ubersaw"
 	{
-		"en"		"Übersaw"
 		"pt"		"Überserra"
 	}
 	
 	"Weapon_VitaSaw"
 	{
-		"en"		"Vita-Saw"
 		"pt"		"Vitasserra"
 	}
 	
 	"Weapon_Amputator"
 	{
-		"en"		"Amputator"
 		"pt"		"Amputadora"
 	}
 	
 	"Weapon_SolemnVow"
 	{
-		"en"		"Solemn Vow"
 		"pt"		"Voto Solene"
 	}
 	
 	"Weapon_Kukri"
 	{
-		"en"		"Kukri"
 		"pt"		"Kukri"
 	}
 	
 	"Weapon_TribalmanShiv"
 	{
-		"en"		"Tribalman's Shiv"
 		"pt"		"Estoque Tribal"
 	}
 	
 	"Weapon_Bushwacka"
 	{
-		"en"		"Bushwacka"
 		"pt"		"Facão do Desbravador"
 	}
 	
 	"Weapon_Shahanshah"
 	{
-		"en"		"Shahanshah"
 		"pt"		"Shahanshah"
 	}
 	
 	"Weapon_Knife"
 	{
-		"en"		"Knife"
 		"pt"		"Faca Borboleta"
 	}
 	
 	"Weapon_YourEternalReward"
 	{
-		"en"		"Your Eternal Reward"
 		"pt"		"Sua Eterna Recompensa"
 	}
 	
 	"Weapon_ConniverKunai"
 	{
-		"en"		"Conniver's Kunai"
 		"pt"		"Kunai do Conspirador"
 	}
 	
 	"Weapon_BigEarner"
 	{
-		"en"		"Big Earner"
 		"pt"		"Grande Ganhador"
 	}
 	
 	"Weapon_Spycicle"
 	{
-		"en"		"Spy-cicle"
 		"pt"		"Spy-Lactite"
 	}
 	
 	"Weapon_ConstructionPDA"
 	{
-		"en"		"Construction PDA"
 		"pt"		"PDA de Construção"
 	}
 	
 	"Weapon_DestructionPDA"
 	{
-		"en"		"Destruction PDA"
 		"pt"		"PDA de Demolição"
 	}
 	
 	"Weapon_Toolbox"
 	{
-		"en"		"Toolbox"
 		"pt"		"Caixa de Ferramentas"
 	}
 	
 	"Weapon_DisguiseKit"
 	{
-		"en"		"Disguise Kit"
 		"pt"		"Kit de Disfarce"
 	}
 	
 	"Weapon_InvisWatch"
 	{
-		"en"		"Invis Watch"
-		"pt"		"Relogio de Invisibilidade"
+		"pt"		"Relogio de Camuflagem"
 	}
 	
 	"Weapon_DeadRinger"
 	{
-		"en"		"Dead Ringer"
 		"pt"		"Cópia Mortal"
 	}
 	
 	"Weapon_CloakandDagger"
 	{
-		"en"		"Cloak and Dagger"
 		"pt"		"Manto e Adaga"
 	}
 }
