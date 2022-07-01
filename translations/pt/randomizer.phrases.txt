@@ -1,0 +1,1037 @@
+"Phrases"
+{
+	"Controls_Stickybomb_Attack2"
+	{
+		"pt"		"clique direito para detonar"
+	}
+	
+	"Controls_Stickybomb_Reload"
+	{
+		"pt"		"recarregue para detonar"
+	}
+	
+	"Controls_Stickybomb_Unable"
+	{
+		"pt"		"incapaz de detonar"
+	}
+	
+	"Controls_Shield_Attack2"
+	{
+		"pt"		"clique direito para investir"
+	}	
+	
+	"Controls_Shield_Reload"
+	{
+		"pt"		"recarregue para investir"
+	}
+	
+	"Controls_Shield_Unable"
+	{
+		"pt"		"incapaz de investir"
+	}
+	
+	"Controls_Build_Attack2"
+	{
+		"pt"		"clique direito para construir"
+	}	
+	
+	"Controls_Build_Attack3"
+	{
+		"pt"		"clique do meio para construir"
+	}
+	
+	"Controls_Build_Unable"
+	{
+		"pt"		"incapaz de construir"
+	}
+	
+	"Controls_InvisWatch_Attack2"
+	{
+		"pt"		"clique direito para ir invis"
+	}	
+	
+	"Controls_InvisWatch_Attack3"
+	{
+		"pt"		"clique do meio para ir invis"
+	}
+	
+	"Controls_InvisWatch_Unable"
+	{
+		"pt"		"invis indisponível"
+	}
+	
+	"Huds_EffectBarRegenTime"
+	{
+		"pt"		"{1} Segs"
+	}
+	
+	"Huds_Decapitations"
+	{
+		"pt"		"{1} Cabeças"
+	}
+	
+	"Huds_Energy"
+	{
+		"pt"		"{1}％ Energia"
+	}
+	
+	"Huds_RageMeter"
+	{
+		"pt"		"{1}％ Fúria"
+	}
+	
+	"Huds_RevengeCrits"
+	{
+		"pt"		"{1} Crits"
+	}
+	
+	"Huds_HypeMeter"
+	{
+		"pt"		"{1}％ Hyper"
+	}
+	
+	"Huds_ItemChargeMeter"
+	{
+		"pt"		"{1}％"
+	}
+	
+	"Huds_PipebombCount"
+	{
+		"pt"		"{1} Stickies"
+	}
+	
+	"Huds_ChargeBeginTime"
+	{
+		"pt"		"{1}％ Investida"
+	}
+	
+	"Huds_ChargeMeter"
+	{
+		"pt"		"{1}％ Carga"
+	}
+	
+	"Huds_Ammo"
+	{
+		"pt"		"{1} Ferro"
+	}
+	
+	"Huds_ChargeLevel"
+	{
+		"pt"		"{1}％ Über"
+	}
+	
+	"Huds_ChargeResistType_Bullet"
+	{
+		"pt"		"Tipo: Balas"
+	}
+	
+	"Huds_ChargeResistType_Blast"
+	{
+		"pt"		"Tipo: Explosão"
+	}
+	
+	"Huds_ChargeResistType_Fire"
+	{
+		"pt"		"Tipo: Fogo"
+	}
+	
+	"Huds_MinicritCharge"
+	{
+		"pt"		"{1}％ Crikey"
+	}
+	
+	"Huds_KnifeMeltTimestamp"
+	{
+		"pt"		"{1} seg"
+	}
+	
+	"Huds_DisguiseTeam_Red"
+	{
+		"pt"		"Vermelho"
+	}
+	
+	"Huds_DisguiseTeam_Blue"
+	{
+		"pt"		"Azul"
+	}
+	
+	"Huds_DisguiseClass_Scout"
+	{
+		"pt"		"Scout"
+	}
+	
+	"Huds_DisguiseClass_Sniper"
+	{
+		"pt"		"Sniper"
+	}
+	
+	"Huds_DisguiseClass_Soldier"
+	{
+		"pt"		"Soldier"
+	}
+	
+	"Huds_DisguiseClass_Demoman"
+	{
+		"pt"		"Demoman"
+	}
+	
+	"Huds_DisguiseClass_Medic"
+	{
+		"pt"		"Medic"
+	}
+	
+	"Huds_DisguiseClass_Heavy"
+	{
+		"pt"		"Heavy"
+	}
+	
+	"Huds_DisguiseClass_Pyro"
+		"pt"		"Pyro"
+	}
+	
+	"Huds_DisguiseClass_Spy"
+	{
+		"pt"		"Spy"
+	}
+	
+	"Huds_DisguiseClass_Engineer"
+	{
+		"pt"		"Engineer"
+	}
+	
+	"Weapon_BASEJumper"
+	{
+		"pt"		"Saltador de B.A.S.E"
+	}
+	
+	"Weapon_Shotgun"
+	{
+		"pt"		"Escopeta"
+	}
+	
+	"Weapon_PanicAttack"
+	{
+		"pt"		"Ataque de Panico"
+	}
+	
+	"Weapon_Pistol"
+	{
+		"pt"		"Pistola"
+	}
+	
+	"Weapon_ReserveShooter"
+	{
+		"pt"		"Atiradora Reversa"
+	}
+	
+	"Weapon_Scattergun"
+	{
+		"pt"		"Escopeta Compacta"
+	}
+	
+	"Weapon_ForceANature"
+	{
+		"pt"		"Força-Da-Natureza"
+	}
+	
+	"Weapon_Shortstop"
+	{
+		"pt"		"Interbases"
+	}
+	
+	"Weapon_SodaPopper"
+	{
+		"pt"		"Refriespingarda"
+	}
+	
+	"Weapon_BabyFaceBlaster"
+	{
+		"pt"		"Destruidora do Degenerado"
+	}
+	
+	"Weapon_BackScatter"
+	{
+		"pt"		"Fuziladora de Costas"
+	}
+	
+	"Weapon_RocketLauncher"
+	{
+		"pt"		"Lança-Foguetes"
+	}
+	
+	"Weapon_DirectHit"
+	{
+		"pt"		"Tiro Certo"
+	}
+	
+	"Weapon_BlackBox"
+	{
+		"pt"		"Caixa Preta"
+	}
+	
+	"Weapon_RocketJumper"
+	{
+		"pt"		"Lança-Foguetes de Treino"
+	}
+	
+	"Weapon_LibertyLauncher"
+	{
+		"pt"		"Lançador da Liberdade"
+	}
+	
+	"Weapon_CowMangler5000"
+	{
+		"pt"		"Avacalhador 5000"
+	}
+	
+	"Weapon_Original"
+	{
+		"pt"		"Original"
+	}
+	
+	"Weapon_BeggarBazooka"
+	{
+		"pt"		"Lança-Foguetes do Lamentável"
+	}
+	
+	"Weapon_AirStrike"
+	{
+		"pt"		"O Ataque Aéreo"
+	}
+	
+	"Weapon_FlameThrower"
+	{
+		"pt"		"Lança-Chamas"
+	}
+	
+	"Weapon_Backburner"
+	{
+		"pt"		"Queima-Scostas"
+	}
+	
+	"Weapon_Degreaser"
+	{
+		"pt"		"Desengraxante"
+	}
+	
+	"Weapon_Phlogistinator"
+	{
+		"pt"		"Flogistinador"
+	}
+	
+	"Weapon_DragonFury"
+	{
+		"pt"		"Fúria do Dragão"
+	}
+	
+	"Weapon_GrenadeLauncher"
+	{
+		"pt"		"Lança-Granadas"
+	}
+	
+	"Weapon_LochnLoad"
+	{
+		"pt"		"Bombas do Lago Ness"
+	}
+	
+	"Weapon_AliBabaWeeBooties"
+	{
+		"pt"		"Botinhas do Ali babá"
+	}
+	
+	"Weapon_LooseCannon"
+	{
+		"pt"		"Pavio Curto"
+	}
+	
+	"Weapon_IronBomber"
+	{
+		"pt"		"Bombardeiro de Ferro"
+	}
+	
+	"Weapon_Minigun"
+	{
+		"pt"		"Minigun"
+	}
+	
+	"Weapon_Natascha"
+	{
+		"pt"		"Natascha"
+	}
+	
+	"Weapon_BrassBeast"
+	{
+		"pt"		"Fera do Bronze"
+	}
+	
+	"Weapon_Tomislav"
+	{
+		"pt"		"Tomislav"
+	}
+	
+	"Weapon_HuoLongHeater"
+	{
+		"pt"		"Chamas de Huo-long"
+	}
+	
+	"Weapon_FrontierJustice"
+	{
+		"pt"		"Justiça Vingadora"
+	}
+	
+	"Weapon_Widowmaker"
+	{
+		"pt"		"Viuvadora"
+	}
+	
+	"Weapon_Pomson6000"
+	{
+		"pt"		"Pomson 6000"
+	}
+	
+	"Weapon_RescueRanger"
+	{
+		"pt"		"Telescopeta"
+	}
+	
+	"Weapon_SyringeGun"
+	{
+		"pt"		"Arma de Seringas"
+	}
+	
+	"Weapon_Blutsauger"
+	{
+		"pt"		"Blutsauger"
+	}
+	
+	"Weapon_CrusaderCrossbow"
+	{
+		"pt"		"Besta do Cruzado"
+	}
+	
+	"Weapon_Overdose"
+	{
+		"pt"		"Overdose"
+	}
+	
+	"Weapon_SniperRifle"
+	{
+		"pt"		"Rifle de Sniper"
+	}
+	
+	"Weapon_Huntsman"
+	{
+		"pt"		"Caçador"
+	}
+	
+	"Weapon_SydneySleeper"
+	{
+		"pt"		"Anestesiador de Sydney"
+	}
+	
+	"Weapon_BazaarBargain"
+	{
+		"pt"		"Barganha do Bazar"
+	}
+	
+	"Weapon_Machina"
+	{
+		"pt"		"Machina"
+	}
+	
+	"Weapon_HitmanHeatmaker"
+	{
+		"pt"		"Assasino de Aluguel"
+	}
+	
+	"Weapon_FortifiedCompound"
+	{
+		"pt"		"Arco Composto Fortificado"
+	}
+	
+	"Weapon_Classic"
+	{
+		"pt"		"Clássico"
+	}
+	
+	"Weapon_Revolver"
+	{
+		"pt"		"Revólver"
+	}
+	
+	"Weapon_Ambassador"
+	{
+		"pt"		"Embaixador"
+	}
+	
+	"Weapon_LEtranger"
+	{
+		"pt"		"L'Etranger"
+	}
+	
+	"Weapon_Enforcer"
+	{
+		"pt"		"Capanga"
+	}
+	
+	"Weapon_Diamondback"
+	{
+		"pt"		"Diamante Negro"
+	}
+	
+	"Weapon_BonkAtomicPunch"
+	{
+		"pt"		"Bonk! Pancada Atómica"
+	}
+	
+	"Weapon_CritaCola"
+	{
+		"pt"		"Criti-Cola"
+	}
+	
+	"Weapon_MadMilk"
+	{
+		"pt"		"Leite Louco"
+	}
+	
+	"Weapon_Winger"
+	{
+		"pt"		"Ala"
+	}
+	
+	"Weapon_PrettyBoyPocketPistol"
+	{
+		"pt"		"Pistola Portátil do Peralta"
+	}
+	
+	"Weapon_FlyingGuillotine"
+	{
+		"pt"		"Guilhotina Voadora"
+	}
+		
+	"Weapon_BuffBanner"
+	{
+		"pt"		"Estandarte do Encorajamento"
+	}
+	
+	"Weapon_Gunboats"
+	{
+		"pt"		"Canhoneiras"
+	}
+	
+	"Weapon_BattalionBackup"
+	{
+		"pt"		"Reforço do Batalhão"
+	}
+	
+	"Weapon_Concheror"
+	{
+		"pt"		"Conchistador"
+	}
+	
+	"Weapon_RighteousBison"
+	{
+		"pt"		"Bisão Justiceiro"
+	}
+	
+	"Weapon_Mantreads"
+	{
+		"pt"		"Coturnos de Macho"
+	}
+		
+	"Weapon_FlareGun"
+	{
+		"pt"		"Arma Sinalizadora"
+	}
+	
+	"Weapon_Detonator"
+	{
+		"pt"		"Detonadora"
+	}
+	
+	"Weapon_Manmelter"
+	{
+		"pt"		"Derretedora de Homens"
+	}
+	
+	"Weapon_ScorchShot"
+	{
+		"pt"		"Queima-Roupa"
+	}
+		
+	"Weapon_ThermalThruster"
+	{
+		"pt"		"Propulsor Térmico"
+	}
+	
+	"Weapon_GasPasser"
+	{
+		"pt"		"Galão de Gasolina"
+	}
+	
+	"Weapon_StickybombLauncher"
+	{
+		"pt"		"Lança-StickyBombs"
+	}
+	
+	"Weapon_ScottishResistance"
+	{
+		"pt"		"Resistência Escocesa"
+	}
+	
+	"Weapon_CharginTarge"
+	{
+		"pt"		"Tarja de Investida"
+	}
+	
+	"Weapon_StickyJumper"
+	{
+		"pt"		"Sticky Bombs de Treino"
+	}
+	
+	"Weapon_SplendidScreen"
+	{
+		"pt"		"Escudo Esplêndido"
+	}
+	
+	"Weapon_TideTurner"
+	{
+		"pt"		"Descobridor dos 7 Mares"
+	}
+	
+	"Weapon_QuickiebombLauncher"
+	{
+		"pt"		"Lança-Rápibombas"
+	}
+		
+	"Weapon_Sandvich"
+	{
+		"pt"		"Sanduba"
+	}
+	
+	"Weapon_DalokohsBar"
+	{
+		"pt"		"Barra de Dalokohs"
+	}
+	
+	"Weapon_BuffaloSteakSandvich"
+	{
+		"pt"		"Bife de Búfalo"
+	}
+	
+	"Weapon_FamilyBusiness"
+	{
+		"pt"		"Negócios de Família"
+	}
+		
+	"Weapon_SecondBanana"
+	{
+		"pt"		"Banana de Consolação"
+	}
+	
+	"Weapon_Wrangler"
+	{
+		"pt"		"Peão"
+	}
+	
+	"Weapon_ShortCircuit"
+	{
+		"pt"		"Curto-Circuito"
+	}
+	
+	"Weapon_MediGun"
+	{
+		"pt"		"Arma Médica"
+	}
+	
+	"Weapon_Kritzkrieg"
+	{
+		"pt"		"Kritzkrieg"
+	}
+	
+	"Weapon_QuickFix"
+	{
+		"pt"		"Quebra-Galho"
+	}
+	
+	"Weapon_Vaccinator"
+	{
+		"pt"		"Vacinadora"
+	}
+	
+	"Weapon_SMG"
+	{
+		"pt"		"SMG"
+	}
+	
+	"Weapon_Razorback"
+	{
+		"pt"		"Escudo Antinavalha"
+	}
+	
+	"Weapon_Jarate"
+	{
+		"pt"		"Jarratê"
+	}
+	
+	"Weapon_DarwinDangerShield"
+	{
+		"pt"		"Escudo Darwinista de Perigo"
+	}
+	
+	"Weapon_CozyCamper"
+	{
+		"pt"		"Campista Comfortável"
+	}
+	
+	"Weapon_CleanerCarbine"
+	{
+		"pt"		"Carabina do Carrasco"
+	}
+	
+	"Weapon_Sapper"
+	{
+		"pt"		"Sabotador"
+	}
+	
+	"Weapon_RedTapeRecorder"
+	{
+		"pt"		"Rebobinador"
+	}
+	
+	"Weapon_Bat"
+	{
+		"pt"		"Taco"
+	}
+	
+	"Weapon_Sandman"
+	{
+		"pt"		"João Pestana"
+	}
+	
+	"Weapon_HolyMackerel"
+	{
+		"pt"		"Santo Carapau"
+	}
+	
+	"Weapon_CandyCane"
+	{
+		"pt"		"Bengala Doce"
+	}
+	
+	"Weapon_BostonBasher"
+	{
+		"pt"		"Batedor de Boston"
+	}
+	
+	"Weapon_SunonaStick"
+	{
+		"pt"		"Espetinho de Sol"
+	}
+	
+	"Weapon_FanOWar"
+	{
+		"pt"		"Leque D'Guerra"
+	}
+	
+	"Weapon_Atomizer"
+	{
+		"pt"		"Atomizador"
+	}
+	
+	"Weapon_WrapAssassin"
+	{
+		"pt"		"Assasino do Embrulho"
+	}
+	
+	"Weapon_Shovel"
+	{
+		"pt"		"Pá"
+	}
+	
+	"Weapon_Equalizer"
+	{
+		"pt"		"Equalizador"
+	}
+	
+	"Weapon_PainTrain"
+	{
+		"pt"		"Pau e Prego"
+	}
+	
+	"Weapon_HalfZatoichi"
+	{
+		"pt"		"Quase-Zatoichi"
+	}
+	
+	"Weapon_MarketGardener"
+	{
+		"pt"		"Pá-raquedista"
+	}
+	
+	"Weapon_DisciplinaryAction"
+	{
+		"pt"		"Ação Disciplinar"
+	}
+	
+	"Weapon_EscapePlan"
+	{
+		"pt"		"Plano de Fuga"
+	}
+	
+	"Weapon_FireAxe"
+	{
+		"pt"		"Machado de Incêndio"
+	}
+	
+	"Weapon_Axtinguisher"
+	{
+		"pt"		"Queimachado"
+	}
+	
+	"Weapon_Homewrecker"
+	{
+		"pt"		"Quebra-Casas"
+	}
+	
+	"Weapon_Powerjack"
+	{
+		"pt"		"Ligação Direta"
+	}
+	
+	"Weapon_BackScratcher"
+	{
+		"pt"		"Coçador de Costas"
+	}
+	
+	"Weapon_SharpenedVolcanoFragment"
+	{
+		"pt"		"Fragmento Afiado de Vulcão"
+	}
+	
+	"Weapon_PostalPummeler"
+	{
+		"pt"		"Pancada Postal"
+	}
+	
+	"Weapon_ThirdDegree"
+	{
+		"pt"		"Terceiro-Grau"
+	}
+	
+	"Weapon_NeonAnnihilator"
+	{
+		"pt"		"Aniquilador Neônico"
+	}
+	
+	"Weapon_HotHand"
+	{
+		"pt"		"Bofetada a Brasa"
+	}
+	
+	"Weapon_Bottle"
+	{
+		"pt"		"Garrafa"
+	}
+	
+	"Weapon_Eyelander"
+	{
+		"pt"		"Eyelander"
+	}
+	
+	"Weapon_PainTrain"
+	{
+		"pt"		"Pau e Prego"
+	}
+	
+	"Weapon_ScotsmanSkullcutter"
+	{
+		"pt"		"Corta-Crânios Escocês"
+	}
+	
+	"Weapon_UllapoolCaber"
+	{
+		"pt"		"Tora de Ullapool"
+	}
+	
+	"Weapon_ClaidheamhMor"
+	{
+		"pt"		"Claidheamh Mòr"
+	}
+	
+	"Weapon_HalfZatoichi"
+	{
+		"pt"		"Quase-Zatoichi"
+	}
+	
+	"Weapon_PersianPersuader"
+	{
+		"pt"		"Persuador Persa"
+	}
+	
+	"Weapon_Fists"
+	{
+		"pt"		"Punhos"
+	}
+	
+	"Weapon_KillingGlovesofBoxing"
+	{
+		"pt"		"Kríticos Garantidos no Boxe"
+	}
+	
+	"Weapon_GlovesofRunningUrgently"
+	{
+		"pt"		"Geradoras Rapidez Urgente"
+	}
+	
+	"Weapon_WarriorSpirit"
+	{
+		"pt"		"Espírito do Guerreiro"
+	}
+	
+	"Weapon_FistsofSteel"
+	{
+		"pt"		"Punhos de Ferro"
+	}
+	
+	"Weapon_EvictionNotice"
+	{
+		"pt"		"Aviso de Despejo"
+	}
+	
+	"Weapon_HolidayPunch"
+	{
+		"pt"		"Soco Festivo"
+	}
+	
+	"Weapon_Wrench"
+	{
+		"pt"		"Chave Inglesa"
+	}
+	
+	"Weapon_Gunslinger"
+	{
+		"pt"		"Pistoleiro"
+	}
+	
+	"Weapon_SouthernHospitality"
+	{
+		"pt"		"Hospitalidade do Sul"
+	}
+	
+	"Weapon_Jag"
+	{
+		"pt"		"Dentadura"
+	}
+	
+	"Weapon_EurekaEffect"
+	{
+		"pt"		"Efeito Eureka"
+	}
+	
+	"Weapon_Bonesaw"
+	{
+		"pt"		"Serra de Ossos"
+	}
+	
+	"Weapon_Ubersaw"
+	{
+		"pt"		"Überserra"
+	}
+	
+	"Weapon_VitaSaw"
+	{
+		"pt"		"Vitasserra"
+	}
+	
+	"Weapon_Amputator"
+	{
+		"pt"		"Amputadora"
+	}
+	
+	"Weapon_SolemnVow"
+	{
+		"pt"		"Voto Solene"
+	}
+	
+	"Weapon_Kukri"
+	{
+		"pt"		"Kukri"
+	}
+	
+	"Weapon_TribalmanShiv"
+	{
+		"pt"		"Estoque Tribal"
+	}
+	
+	"Weapon_Bushwacka"
+	{
+		"pt"		"Facão do Desbravador"
+	}
+	
+	"Weapon_Shahanshah"
+	{
+		"pt"		"Shahanshah"
+	}
+	
+	"Weapon_Knife"
+	{
+		"pt"		"Faca Borboleta"
+	}
+	
+	"Weapon_YourEternalReward"
+	{
+		"pt"		"Sua Eterna Recompensa"
+	}
+	
+	"Weapon_ConniverKunai"
+	{
+		"pt"		"Kunai do Conspirador"
+	}
+	
+	"Weapon_BigEarner"
+	{
+		"pt"		"Grande Ganhador"
+	}
+	
+	"Weapon_Spycicle"
+	{
+		"pt"		"Spy-Lactite"
+	}
+	
+	"Weapon_ConstructionPDA"
+	{
+		"pt"		"PDA de Construção"
+	}
+	
+	"Weapon_DestructionPDA"
+	{
+		"pt"		"PDA de Demolição"
+	}
+	
+	"Weapon_Toolbox"
+	{
+		"pt"		"Caixa de Ferramentas"
+	}
+	
+	"Weapon_DisguiseKit"
+	{
+		"pt"		"Kit de Disfarce"
+	}
+	
+	"Weapon_InvisWatch"
+	{
+		"pt"		"Relogio de Camuflagem"
+	}
+	
+	"Weapon_DeadRinger"
+	{
+		"pt"		"Cópia Mortal"
+	}
+	
+	"Weapon_CloakandDagger"
+	{
+		"pt"		"Manto e Adaga"
+	}
+}
+
