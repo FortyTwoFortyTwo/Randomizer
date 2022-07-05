@@ -56,7 +56,7 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 	
 	if (0 < iAttacker <= MaxClients)
 	{
-		if (iWeapon != INVALID_ENT_REFERENCE)
+		if (iWeapon != INVALID_ENT_REFERENCE && HasEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"))	// iWeapon is not always actually a weapon
 		{
 			//Set attacker class to whatever default class from weapon,
 			// IsPlayerClass not always called on linux,
@@ -85,7 +85,7 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 	
 	if (0 < iAttacker <= MaxClients)
 	{
-		if (iWeapon != INVALID_ENT_REFERENCE)
+		if (iWeapon != INVALID_ENT_REFERENCE && HasEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"))
 		{
 			RevertClientClass(iAttacker);
 			
