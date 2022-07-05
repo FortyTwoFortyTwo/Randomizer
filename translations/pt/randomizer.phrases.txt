@@ -186,6 +186,7 @@
 	}
 	
 	"Huds_DisguiseClass_Pyro"
+	{
 		"pt"		"Pyro"
 	}
 	
