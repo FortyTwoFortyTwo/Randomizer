@@ -61,17 +61,16 @@ enum struct Patch
 		return true;
 	}
 	
-	void Enable()
+	void Enable(bool bUpdateMemAccess = true)
 	{
-		//TODO whem SM 1.11 becomes stable, set new param to false so memory patching wouldn't cause huge lag
 		for (int i = 0; i < this.iPatchCount; i++)
-			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueReplacement[i], NumberType_Int8);
+			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueReplacement[i], NumberType_Int8, bUpdateMemAccess);
 	}
 	
-	void Disable()
+	void Disable(bool bUpdateMemAccess = true)
 	{
 		for (int i = 0; i < this.iPatchCount; i++)
-			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueOriginal[i], NumberType_Int8);
+			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueOriginal[i], NumberType_Int8, bUpdateMemAccess);
 	}
 }
 
@@ -125,8 +124,9 @@ void Patch_Disable()
 
 void Patch_EnableIsPlayerClass()
 {
+	// Don't update mem access to reduce lag
 	if (g_iAllowPlayerClass == 0)
-		g_pIsPlayerClass.Enable();
+		g_pIsPlayerClass.Enable(false);
 	
 	g_iAllowPlayerClass++;
 }
@@ -136,7 +136,7 @@ void Patch_DisableIsPlayerClass()
 	g_iAllowPlayerClass--;
 	
 	if (g_iAllowPlayerClass == 0)
-		g_pIsPlayerClass.Disable();
+		g_pIsPlayerClass.Disable(false);
 }
 
 int Patch_StringToMemory(const char[] sValue, int iMemory[PATCH_MAX])
