@@ -62,19 +62,25 @@ enum struct Patch
 		return true;
 	}
 	
-	void Enable()
+	bool Enable()
 	{
 		for (int i = 0; i < this.iPatchCount; i++)
 			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueReplacement[i], NumberType_Int8, !this.bFirstPatch);
+		
+		// Updating mem access only need to be done once to each patches, after first patch we don't need to update mem access again
+		if (!this.bFirstPatch)
+		{
+			this.bFirstPatch = true;
+			return true;
+		}
+		
+		return false;
 	}
 	
 	void Disable()
 	{
 		for (int i = 0; i < this.iPatchCount; i++)
-			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueOriginal[i], NumberType_Int8, !this.bFirstPatch);
-		
-		// Updating mem access only need to be done once to each patches, after first patch we don't need to update mem access again
-		this.bFirstPatch = true;
+			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueOriginal[i], NumberType_Int8);
 	}
 }
 
@@ -111,7 +117,8 @@ void Patch_Enable()
 	{
 		Patch patch;
 		g_aPatches.GetArray(i, patch);
-		patch.Enable();
+		if (patch.Enable())
+			g_aPatches.SetArray(i, patch);
 	}
 }
 
