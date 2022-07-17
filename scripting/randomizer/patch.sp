@@ -22,6 +22,7 @@ enum struct Patch
 	int iPatchCount;
 	int iValueOriginal[PATCH_MAX];
 	int iValueReplacement[PATCH_MAX];
+	bool bFirstPatch;
 	
 	bool Load(GameData hGameData, const char[] sName, bool bSkipWarning = false)
 	{
@@ -61,16 +62,19 @@ enum struct Patch
 		return true;
 	}
 	
-	void Enable(bool bUpdateMemAccess = true)
+	void Enable()
 	{
 		for (int i = 0; i < this.iPatchCount; i++)
-			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueReplacement[i], NumberType_Int8, bUpdateMemAccess);
+			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueReplacement[i], NumberType_Int8, !this.bFirstPatch);
 	}
 	
-	void Disable(bool bUpdateMemAccess = true)
+	void Disable()
 	{
 		for (int i = 0; i < this.iPatchCount; i++)
-			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueOriginal[i], NumberType_Int8, bUpdateMemAccess);
+			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueOriginal[i], NumberType_Int8, !this.bFirstPatch);
+		
+		// Updating mem access only need to be done once to each patches, after first patch we don't need to update mem access again
+		this.bFirstPatch = true;
 	}
 }
 
@@ -124,9 +128,8 @@ void Patch_Disable()
 
 void Patch_EnableIsPlayerClass()
 {
-	// Don't update mem access to reduce lag
 	if (g_iAllowPlayerClass == 0)
-		g_pIsPlayerClass.Enable(false);
+		g_pIsPlayerClass.Enable();
 	
 	g_iAllowPlayerClass++;
 }
@@ -136,7 +139,7 @@ void Patch_DisableIsPlayerClass()
 	g_iAllowPlayerClass--;
 	
 	if (g_iAllowPlayerClass == 0)
-		g_pIsPlayerClass.Disable(false);
+		g_pIsPlayerClass.Disable();
 }
 
 int Patch_StringToMemory(const char[] sValue, int iMemory[PATCH_MAX])
