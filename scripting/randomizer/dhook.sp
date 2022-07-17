@@ -334,6 +334,9 @@ public MRESReturn DHook_GetMaxAmmoPre(int iClient, DHookReturn hReturn, DHookPar
 
 public MRESReturn DHook_TauntPre(int iClient, DHookParam hParams)
 {
+	if (!g_cvFixTaunt.BoolValue)
+		return MRES_Ignored;
+
 	//Dont allow taunting if disguised or cloaked
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguising) || TF2_IsPlayerInCondition(iClient, TFCond_Disguised) || TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
 		return MRES_Supercede;
@@ -353,6 +356,9 @@ public MRESReturn DHook_TauntPre(int iClient, DHookParam hParams)
 
 public MRESReturn DHook_TauntPost(int iClient, DHookParam hParams)
 {
+	if (!g_cvFixTaunt.BoolValue)
+		return MRES_Ignored;
+
 	//Set class back to what it was
 	RevertClientClass(iClient);
 	return MRES_Ignored;
