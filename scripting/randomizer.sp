@@ -325,6 +325,7 @@ int g_iOffsetPlayerShared;
 int g_iOffsetAlwaysAllow;
 
 ConVar g_cvEnabled;
+ConVar g_cvFixTaunt;
 ConVar g_cvDroppedWeapons;
 ConVar g_cvHuds;
 ConVar g_cvRandomize[view_as<int>(RandomizedType_MAX)];
