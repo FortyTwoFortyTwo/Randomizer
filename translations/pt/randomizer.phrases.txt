@@ -62,7 +62,6 @@
 	
 	"Huds_Title"
 	{
-		"en"		"Weapons"
 		"pt"		"Armas"
 	}
 	"Huds_EffectBarRegenTime"
