@@ -60,6 +60,10 @@
 		"pt"		"invis indisponível"
 	}
 	
+	"Huds_Title"
+	{
+		"pt"		"Armas"
+	}
 	"Huds_EffectBarRegenTime"
 	{
 		"pt"		"{1} Segs"
@@ -225,6 +229,15 @@
 		"pt"		"Atiradora Reversa"
 	}
 	
+	"Weapon_PainTrain"
+	{
+		"pt"		"Pau e Prego"
+	}
+	
+	"Weapon_HalfZatoichi"
+	{
+		"pt"		"Quase-Zatoichi"
+	}
 	"Weapon_Scattergun"
 	{
 		"pt"		"Escopeta Compacta"
@@ -509,7 +522,7 @@
 	{
 		"pt"		"Guilhotina Voadora"
 	}
-	
+
 	"Weapon_BuffBanner"
 	{
 		"pt"		"Estandarte do Encorajamento"
@@ -539,7 +552,7 @@
 	{
 		"pt"		"Coturnos de Macho"
 	}
-	
+
 	"Weapon_FlareGun"
 	{
 		"pt"		"Arma Sinalizadora"
@@ -559,7 +572,7 @@
 	{
 		"pt"		"Queima-Roupa"
 	}
-	
+
 	"Weapon_ThermalThruster"
 	{
 		"pt"		"Propulsor Térmico"
@@ -604,7 +617,7 @@
 	{
 		"pt"		"Lança-Rápibombas"
 	}
-	
+
 	"Weapon_Sandvich"
 	{
 		"pt"		"Sanduba"
@@ -624,7 +637,7 @@
 	{
 		"pt"		"Negócios de Família"
 	}
-	
+
 	"Weapon_SecondBanana"
 	{
 		"pt"		"Banana de Consolação"
