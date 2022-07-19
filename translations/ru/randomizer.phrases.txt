@@ -1,0 +1,1023 @@
+"Phrases"
+{
+	"Controls_Stickybomb_Attack2"
+	{
+		"ru"		"ПКМ, чтобы взорвать"
+	}
+	
+	"Controls_Stickybomb_Reload"
+	{
+		"ru"		"ПЕРЕЗАРЯДИТЬ, чтобы взорвать"
+	}
+	
+	"Controls_Stickybomb_Unable"
+	{
+		"ru"		"невозможно взорвать"
+	}
+	
+	"Controls_Shield_Attack2"
+	{
+		"ru"		"ПКМ для рывка"
+	}	
+	
+	"Controls_Shield_Reload"
+	{
+		"ru"		"ПЕРЕЗАРЯДКА для рывка"
+	}
+	
+	"Controls_Shield_Unable"
+	{
+		"ru"		"невозможно совершить рывок"
+	}
+	
+	"Controls_Build_Attack2"
+	{
+		"ru"		"ПКМ для строительства"
+	}	
+	
+	"Controls_Build_Attack3"
+	{
+		"ru"		"СКМ для строительства"
+	}
+	
+	"Controls_Build_Unable"
+	{
+		"ru"		"строительство невозможно"
+	}
+	
+	"Controls_InvisWatch_Attack2"
+	{
+		"ru"		"ПКМ для невидимости"
+	}	
+	
+	"Controls_InvisWatch_Attack3"
+	{
+		"ru"		"СКМ для невидимости"
+	}
+	
+	"Controls_InvisWatch_Unable"
+	{
+		"ru"		"маскировка невозможна"
+	}
+	
+	"Huds_Title"
+	{
+		"ru"		"Оружие"
+	}
+	
+	"Huds_EffectBarRegenTime"
+	{
+		"ru"		"{1} сек."
+	}
+	
+	"Huds_Decapitations"
+	{
+		"ru"		"Головы: {1}"
+	}
+	
+	"Huds_Energy"
+	{
+		"ru"		"Энергия: {1}％"
+	}
+	
+	"Huds_RageMeter"
+	{
+		"ru"		"Ярость: {1}％"
+	}
+	
+	"Huds_RevengeCrits"
+	{
+		"ru"		"Криты: {1}"
+	}
+	
+	"Huds_HypeMeter"
+	{
+		"ru"		"Заряд: {1}％"
+	}
+	
+	"Huds_ItemChargeMeter"
+	{
+		"ru"		"{1}％"
+	}
+	
+	"Huds_PipebombCount"
+	{
+		"ru"		"Бомб-липучек: {1}"
+	}
+	
+	"Huds_ChargeBeginTime"
+	{
+		"ru"		"Заряд: {1}％"
+	}
+	
+	"Huds_ChargeMeter"
+	{
+		"ru"		"Заряд: {1}％"
+	}
+	
+	"Huds_Ammo"
+	{
+		"ru"		"Металл: {1}"
+	}
+	
+	"Huds_ChargeLevel"
+	{
+		"ru"		"Убер-заряд: {1}％"
+	}
+	
+	"Huds_ChargeResistType_Bullet"
+	{
+		"ru"		"Тип: Пули"
+	}
+	
+	"Huds_ChargeResistType_Blast"
+	{
+		"ru"		"Тип: Взрыв"
+	}
+	
+	"Huds_ChargeResistType_Fire"
+	{
+		"ru"		"Тип: Огонь"
+	}
+	
+	"Huds_MinicritCharge"
+	{
+		"ru"		"Криты: {1}％"
+	}
+	
+	"Huds_KnifeMeltTimestamp"
+	{
+		"ru"		"{1} сек."
+	}
+	
+	"Huds_DisguiseTeam_Red"
+	{
+		"ru"		"Красные"
+	}
+	
+	"Huds_DisguiseTeam_Blue"
+	{
+		"ru"		"Синие"
+	}
+	
+	"Huds_DisguiseClass_Scout"
+	{
+		"ru"		"Разведчик"
+	}
+	
+	"Huds_DisguiseClass_Sniper"
+	{
+		"ru"		"Снайпер"
+	}
+	
+	"Huds_DisguiseClass_Soldier"
+	{
+		"ru"		"Солдат"
+	}
+	
+	"Huds_DisguiseClass_Demoman"
+	{
+		"ru"		"Подрывник"
+	}
+	
+	"Huds_DisguiseClass_Medic"
+	{
+		"ru"		"Медик"
+	}
+	
+	"Huds_DisguiseClass_Heavy"
+	{
+		"ru"		"Пулемётчик"
+	}
+	
+	"Huds_DisguiseClass_Pyro"
+	{
+		"ru"		"Поджигатель"
+	}
+	
+	"Huds_DisguiseClass_Spy"
+	{
+		"ru"		"Шпион"
+	}
+	
+	"Huds_DisguiseClass_Engineer"
+	{
+		"ru"		"Инженер"
+	}
+	
+	"Weapon_BASEJumper"
+	{
+		"ru"		"Парашютист"
+	}
+	
+	"Weapon_Shotgun"
+	{
+		"ru"		"Дробовик"
+	}
+	
+	"Weapon_PanicAttack"
+	{
+		"ru"		"Паническая атака"
+	}
+	
+	"Weapon_Pistol"
+	{
+		"ru"		"Пистолет"
+	}
+	
+	"Weapon_ReserveShooter"
+	{
+		"ru"		"Офицер запаса"
+	}
+	
+	"Weapon_PainTrain"
+	{
+		"ru"		"Костыль"
+	}
+	
+	"Weapon_HalfZatoichi"
+	{
+		"ru"		"Полудзатоити"
+	}
+	
+	"Weapon_Scattergun"
+	{
+		"ru"		"Обрез"
+	}
+	
+	"Weapon_ForceANature"
+	{
+		"ru"		"Неумолимая сила"
+	}
+	
+	"Weapon_Shortstop"
+	{
+		"ru"		"Прерыватель"
+	}
+	
+	"Weapon_SodaPopper"
+	{
+		"ru"		"Газировщик"
+	}
+	
+	"Weapon_BabyFaceBlaster"
+	{
+		"ru"		"Обрез Малыша"
+	}
+	
+	"Weapon_BackScatter"
+	{
+		"ru"		"Спинобрез"
+	}
+	
+	"Weapon_BonkAtomicPunch"
+	{
+		"ru"		"Бонк! Атомный залп"
+	}
+	
+	"Weapon_CritaCola"
+	{
+		"ru"		"Критокола"
+	}
+	
+	"Weapon_MadMilk"
+	{
+		"ru"		"Зломолоко"
+	}
+	
+	"Weapon_Winger"
+	{
+		"ru"		"Окрылённый"
+	}
+	
+	"Weapon_PrettyBoyPocketPistol"
+	{
+		"ru"		"Дамский пистолет Красавчика"
+	}
+	
+	"Weapon_FlyingGuillotine"
+	{
+		"ru"		"Летающая гильотина"
+	}
+	
+	"Weapon_Bat"
+	{
+		"ru"		"Бита"
+	}
+	
+	"Weapon_Sandman"
+	{
+		"ru"		"Дрёма"
+	}
+	
+	"Weapon_HolyMackerel"
+	{
+		"ru"		"Поддай леща"
+	}
+	
+	"Weapon_CandyCane"
+	{
+		"ru"		"Карамельная трость"
+	}
+	
+	"Weapon_BostonBasher"
+	{
+		"ru"		"Бостонский раздолбай"
+	}
+	
+	"Weapon_SunonaStick"
+	{
+		"ru"		"Солнце на палочке"
+	}
+	
+	"Weapon_FanOWar"
+	{
+		"ru"		"Веер войны"
+	}
+	
+	"Weapon_Atomizer"
+	{
+		"ru"		"Расщепитель"
+	}
+	
+	"Weapon_WrapAssassin"
+	{
+		"ru"		"Обёрточный убийца"
+	}
+	
+	"Weapon_RocketLauncher"
+	{
+		"ru"		"Ракетомёт"
+	}
+	
+	"Weapon_DirectHit"
+	{
+		"ru"		"Прямое попадание"
+	}
+	
+	"Weapon_BlackBox"
+	{
+		"ru"		"Чёрный ящик"
+	}
+	
+	"Weapon_RocketJumper"
+	{
+		"ru"		"Тренировочный ракетомёт"
+	}
+	
+	"Weapon_LibertyLauncher"
+	{
+		"ru"		"Освободитель"
+	}
+	
+	"Weapon_CowMangler5000"
+	{
+		"ru"		"Линчеватель скота 5000"
+	}
+	
+	"Weapon_Original"
+	{
+		"ru"		"Прародитель"
+	}
+	
+	"Weapon_BeggarBazooka"
+	{
+		"ru"		"Базука бродяги"
+	}
+	
+	"Weapon_AirStrike"
+	{
+		"ru"		"Авиаудар"
+	}
+	
+	"Weapon_BuffBanner"
+	{
+		"ru"		"Вдохновляющее знамя"
+	}
+	
+	"Weapon_Gunboats"
+	{
+		"ru"		"Штурмботинки"
+	}
+	
+	"Weapon_BattalionBackup"
+	{
+		"ru"		"Поддержка батальона"
+	}
+	
+	"Weapon_Concheror"
+	{
+		"ru"		"Завоеватель"
+	}
+	
+	"Weapon_RighteousBison"
+	{
+		"ru"		"Благочестивый бизон"
+	}
+	
+	"Weapon_Mantreads"
+	{
+		"ru"		"Людодавы"
+	}
+	
+	"Weapon_Shovel"
+	{
+		"ru"		"Лопата"
+	}
+	
+	"Weapon_Equalizer"
+	{
+		"ru"		"Уравнитель"
+	}
+	
+	"Weapon_MarketGardener"
+	{
+		"ru"		"Землекоп"
+	}
+	
+	"Weapon_DisciplinaryAction"
+	{
+		"ru"		"Дисциплинарное взыскание"
+	}
+	
+	"Weapon_EscapePlan"
+	{
+		"ru"		"План эвакуации"
+	}
+	
+	"Weapon_FlameThrower"
+	{
+		"ru"		"Огнемёт"
+	}
+	
+	"Weapon_Backburner"
+	{
+		"ru"		"Дожигатель"
+	}
+	
+	"Weapon_Degreaser"
+	{
+		"ru"		"Чистильщик"
+	}
+	
+	"Weapon_Phlogistinator"
+	{
+		"ru"		"Флогистонатор"
+	}
+	
+	"Weapon_DragonFury"
+	{
+		"ru"		"Ярость дракона"
+	}
+	
+	"Weapon_FlareGun"
+	{
+		"ru"		"Ракетница"
+	}
+	
+	"Weapon_Detonator"
+	{
+		"ru"		"Детонатор"
+	}
+	
+	"Weapon_Manmelter"
+	{
+		"ru"		"Людоплав"
+	}
+	
+	"Weapon_ScorchShot"
+	{
+		"ru"		"Обжигающий выстрел"
+	}
+		
+	"Weapon_ThermalThruster"
+	{
+		"ru"		"Термическая тяга"
+	}
+	
+	"Weapon_GasPasser"
+	{
+		"ru"		"Запасной бак"
+	}
+	
+	"Weapon_FireAxe"
+	{
+		"ru"		"Пожарный топор"
+	}
+	
+	"Weapon_Axtinguisher"
+	{
+		"ru"		"Огнетопор"
+	}
+	
+	"Weapon_Homewrecker"
+	{
+		"ru"		"Крушитель"
+	}
+	
+	"Weapon_Powerjack"
+	{
+		"ru"		"Разъединитель"
+	}
+	
+	"Weapon_BackScratcher"
+	{
+		"ru"		"Спиночёс"
+	}
+	
+	"Weapon_SharpenedVolcanoFragment"
+	{
+		"ru"		"Заострённый осколок вулкана"
+	}
+	
+	"Weapon_ThirdDegree"
+	{
+		"ru"		"Третья степень"
+	}
+	
+	"Weapon_NeonAnnihilator"
+	{
+		"ru"		"Неоновый аннигилятор"
+	}
+	
+	"Weapon_HotHand"
+	{
+		"ru"		"Горячая рука"
+	}
+	
+	"Weapon_GrenadeLauncher"
+	{
+		"ru"		"Гранатомёт"
+	}
+	
+	"Weapon_LochnLoad"
+	{
+		"ru"		"Подкидыш"
+	}
+	
+	"Weapon_AliBabaWeeBooties"
+	{
+		"ru"		"Ботиночки Али-Бабы"
+	}
+	
+	"Weapon_LooseCannon"
+	{
+		"ru"		"Пушка без лафета"
+	}
+	
+	"Weapon_IronBomber"
+	{
+		"ru"		"Железный бомбардир"
+	}
+	
+	"Weapon_StickybombLauncher"
+	{
+		"ru"		"Липучкомёт"
+	}
+	
+	"Weapon_ScottishResistance"
+	{
+		"ru"		"Шотландское сопротивление"
+	}
+	
+	"Weapon_CharginTarge"
+	{
+		"ru"		"Штурмовой щит"
+	}
+	
+	"Weapon_StickyJumper"
+	{
+		"ru"		"Тренировочный липучкомёт"
+	}
+	
+	"Weapon_SplendidScreen"
+	{
+		"ru"		"Роскошное прикрытие"
+	}
+	
+	"Weapon_TideTurner"
+	{
+		"ru"		"Верный штурвал"
+	}
+	
+	"Weapon_QuickiebombLauncher"
+	{
+		"ru"		"Быстромёт"
+	}
+	
+	"Weapon_Bottle"
+	{
+		"ru"		"Бутылка"
+	}
+	
+	"Weapon_Eyelander"
+	{
+		"ru"		"Одноглазый горец"
+	}
+	
+	"Weapon_ScotsmanSkullcutter"
+	{
+		"ru"		"Шотландский головорез"
+	}
+	
+	"Weapon_UllapoolCaber"
+	{
+		"ru"		"Аллапульское бревно"
+	}
+	
+	"Weapon_ClaidheamhMor"
+	{
+		"ru"		"Клеймор"
+	}
+	
+	"Weapon_PersianPersuader"
+	{
+		"ru"		"Персидский заклинатель"
+	}
+	
+	"Weapon_Minigun"
+	{
+		"ru"		"Пулемёт"
+	}
+	
+	"Weapon_Natascha"
+	{
+		"ru"		"Наташа"
+	}
+	
+	"Weapon_BrassBeast"
+	{
+		"ru"		"Латунный монстр"
+	}
+	
+	"Weapon_Tomislav"
+	{
+		"ru"		"Томислав"
+	}
+	
+	"Weapon_HuoLongHeater"
+	{
+		"ru"		"Огненный дракон"
+	}
+	
+	"Weapon_Sandvich"
+	{
+		"ru"		"Бутерброд"
+	}
+	
+	"Weapon_DalokohsBar"
+	{
+		"ru"		"Плитка «Далокош»"
+	}
+	
+	"Weapon_BuffaloSteakSandvich"
+	{
+		"ru"		"Бутерброд из мяса буйвола"
+	}
+	
+	"Weapon_FamilyBusiness"
+	{
+		"ru"		"Семейное дело"
+	}
+		
+	"Weapon_SecondBanana"
+	{
+		"ru"		"Утешительный банан"
+	}
+	
+	"Weapon_Fists"
+	{
+		"ru"		"Кулаки"
+	}
+	
+	"Weapon_KillingGlovesofBoxing"
+	{
+		"ru"		"Кулаки грозного боксёра"
+	}
+	
+	"Weapon_GlovesofRunningUrgently"
+	{
+		"ru"		"Горящие рукавицы ускорения"
+	}
+	
+	"Weapon_WarriorSpirit"
+	{
+		"ru"		"Воинский дух"
+	}
+	
+	"Weapon_FistsofSteel"
+	{
+		"ru"		"Стальные кулаки"
+	}
+	
+	"Weapon_EvictionNotice"
+	{
+		"ru"		"Уведомление о выселении"
+	}
+	
+	"Weapon_HolidayPunch"
+	{
+		"ru"		"Праздничный удар"
+	}
+	
+	"Weapon_FrontierJustice"
+	{
+		"ru"		"Самосуд"
+	}
+	
+	"Weapon_Widowmaker"
+	{
+		"ru"		"Овдовитель"
+	}
+	
+	"Weapon_Pomson6000"
+	{
+		"ru"		"Помсон 6000"
+	}
+	
+	"Weapon_RescueRanger"
+	{
+		"ru"		"Спасатель"
+	}
+	
+	"Weapon_Wrangler"
+	{
+		"ru"		"Поводырь"
+	}
+	
+	"Weapon_ShortCircuit"
+	{
+		"ru"		"Короткое замыкание"
+	}
+	
+	"Weapon_Wrench"
+	{
+		"ru"		"Гаечный ключ"
+	}
+	
+	"Weapon_Gunslinger"
+	{
+		"ru"		"Оружейник"
+	}
+	
+	"Weapon_SouthernHospitality"
+	{
+		"ru"		"Южное гостеприимство"
+	}
+	
+	"Weapon_Jag"
+	{
+		"ru"		"Острозуб"
+	}
+	
+	"Weapon_EurekaEffect"
+	{
+		"ru"		"Озарение"
+	}
+	
+	"Weapon_SyringeGun"
+	{
+		"ru"		"Шприцемёт"
+	}
+	
+	"Weapon_Blutsauger"
+	{
+		"ru"		"Кровопийца"
+	}
+	
+	"Weapon_CrusaderCrossbow"
+	{
+		"ru"		"Арбалет крестоносца"
+	}
+	
+	"Weapon_Overdose"
+	{
+		"ru"		"Передоз"
+	}
+	
+	"Weapon_MediGun"
+	{
+		"ru"		"Лечебная пушка"
+	}
+	
+	"Weapon_Kritzkrieg"
+	{
+		"ru"		"Крицкриг"
+	}
+	
+	"Weapon_QuickFix"
+	{
+		"ru"		"Быстроправ"
+	}
+	
+	"Weapon_Vaccinator"
+	{
+		"ru"		"Вакцинатор"
+	}
+	
+	"Weapon_Bonesaw"
+	{
+		"ru"		"Медицинская пила"
+	}
+	
+	"Weapon_Ubersaw"
+	{
+		"ru"		"Убер-пила"
+	}
+	
+	"Weapon_VitaSaw"
+	{
+		"ru"		"Вита-пила"
+	}
+	
+	"Weapon_Amputator"
+	{
+		"ru"		"Ампутатор"
+	}
+	
+	"Weapon_SolemnVow"
+	{
+		"ru"		"Священная клятва"
+	}
+	
+	"Weapon_SniperRifle"
+	{
+		"ru"		"Снайперская винтовка"
+	}
+	
+	"Weapon_Huntsman"
+	{
+		"ru"		"Охотник"
+	}
+	
+	"Weapon_SydneySleeper"
+	{
+		"ru"		"Сиднейский соня"
+	}
+	
+	"Weapon_BazaarBargain"
+	{
+		"ru"		"Базарная безделушка"
+	}
+	
+	"Weapon_Machina"
+	{
+		"ru"		"Махина"
+	}
+	
+	"Weapon_HitmanHeatmaker"
+	{
+		"ru"		"Разжигатель разбойника"
+	}
+	
+	"Weapon_Classic"
+	{
+		"ru"		"Классика"
+	}
+	
+	"Weapon_SMG"
+	{
+		"ru"		"Пистолет-пулемёт"
+	}
+	
+	"Weapon_Razorback"
+	{
+		"ru"		"Бронепанцирь"
+	}
+	
+	"Weapon_Jarate"
+	{
+		"ru"		"Банкате"
+	}
+	
+	"Weapon_DarwinDangerShield"
+	{
+		"ru"		"Дарвинистский щит"
+	}
+	
+	"Weapon_CozyCamper"
+	{
+		"ru"		"Набор для кемпинга"
+	}
+	
+	"Weapon_CleanerCarbine"
+	{
+		"ru"		"Карабин Чистильщика"
+	}
+	
+	"Weapon_Kukri"
+	{
+		"ru"		"Кукри"
+	}
+	
+	"Weapon_TribalmanShiv"
+	{
+		"ru"		"Заточка дикаря"
+	}
+	
+	"Weapon_Bushwacka"
+	{
+		"ru"		"Кустолом"
+	}
+	
+	"Weapon_Shahanshah"
+	{
+		"ru"		"Шаханшах"
+	}
+	
+	"Weapon_Revolver"
+	{
+		"ru"		"Револьвер"
+	}
+	
+	"Weapon_Ambassador"
+	{
+		"ru"		"Амбассадор"
+	}
+	
+	"Weapon_LEtranger"
+	{
+		"ru"		"Незнакомец"
+	}
+	
+	"Weapon_Enforcer"
+	{
+		"ru"		"Принудитель"
+	}
+	
+	"Weapon_Diamondback"
+	{
+		"ru"		"Алмазный змей"
+	}
+	
+	"Weapon_Sapper"
+	{
+		"ru"		"Жучок"
+	}
+	
+	"Weapon_RedTapeRecorder"
+	{
+		"ru"		"Откатофон"
+	}
+	
+	"Weapon_Knife"
+	{
+		"ru"		"Нож"
+	}
+	
+	"Weapon_YourEternalReward"
+	{
+		"ru"		"Вечный покой"
+	}
+	
+	"Weapon_ConniverKunai"
+	{
+		"ru"		"Кунай заговорщика"
+	}
+	
+	"Weapon_BigEarner"
+	{
+		"ru"		"Главный делец"
+	}
+	
+	"Weapon_Spycicle"
+	{
+		"ru"		"Сосулька"
+	}
+	
+	"Weapon_ConstructionPDA"
+	{
+		"ru"		"КПК постройки"
+	}
+	
+	"Weapon_DestructionPDA"
+	{
+		"ru"		"КПК разрушения"
+	}
+	
+	"Weapon_Toolbox"
+	{
+		"ru"		"Набор инструментов"
+	}
+	
+	"Weapon_DisguiseKit"
+	{
+		"ru"		"Маскировочный набор"
+	}
+	
+	"Weapon_InvisWatch"
+	{
+		"ru"		"Часы невидимости"
+	}
+	
+	"Weapon_DeadRinger"
+	{
+		"ru"		"Звон смерти"
+	}
+	
+	"Weapon_CloakandDagger"
+	{
+		"ru"		"Плащ и кинжал"
+	}
+}
+
