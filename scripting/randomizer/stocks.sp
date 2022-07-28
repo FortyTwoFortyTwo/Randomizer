@@ -212,6 +212,7 @@ stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos, bool bCosmetic = fa
 	
 	//No more weapons to loop
 	iWeapon = INVALID_ENT_REFERENCE;
+	iPos = 0;
 	return false;
 }
 
