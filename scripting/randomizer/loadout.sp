@@ -709,20 +709,21 @@ void Loadout_ApplyClientCosmetics(int iClient, const int[] iSlots, int iSlotCoun
 	g_eLoadoutClient[iClient].iCurrentCosmeticId = g_eLoadoutClient[iClient].iNextCosmeticId;
 	
 	//Destroy any cosmetics left
-	int iCosmetic;
-	while ((iCosmetic = FindEntityByClassname(iCosmetic, "tf_wearable*")) > MaxClients)
+	int iWearableCount = TF2_GetWearableCount(iClient);
+	for (int i = 0; i < iWearableCount; i++)
 	{
-		if (GetEntPropEnt(iCosmetic, Prop_Send, "m_hOwnerEntity") == iClient)
+		int iWearable = TF2_GetWearable(iClient, i);
+		if (iWearable == INVALID_ENT_REFERENCE)
+			continue;
+		
+		int iIndex = GetEntProp(iWearable, Prop_Send, "m_iItemDefinitionIndex");
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 		{
-			int iIndex = GetEntProp(iCosmetic, Prop_Send, "m_iItemDefinitionIndex");
-			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+			if (iSlot == LoadoutSlot_Misc)
 			{
-				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-				if (iSlot == LoadoutSlot_Misc)
-				{
-					TF2_RemoveItem(iClient, iCosmetic);
-					continue;
-				}
+				TF2_RemoveItem(iClient, iWearable);
+				continue;
 			}
 		}
 	}

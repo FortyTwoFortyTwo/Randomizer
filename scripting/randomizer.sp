@@ -321,6 +321,7 @@ bool g_bTF2Items;
 bool g_bAllowGiveNamedItem;
 int g_iRuneCount;
 int g_iOffsetItemDefinitionIndex;
+int g_iOffsetMyWearables;
 int g_iOffsetPlayerShared;
 int g_iOffsetAlwaysAllow;
 
@@ -392,6 +393,7 @@ public void OnPluginStart()
 	
 	//Any weapons using m_Item would work to get offset
 	g_iOffsetItemDefinitionIndex = FindSendPropInfo("CTFWearable", "m_iItemDefinitionIndex") - FindSendPropInfo("CTFWearable", "m_Item");
+	g_iOffsetMyWearables = FindSendPropInfo("CTFPlayer", "m_hMyWearables");
 	g_iOffsetPlayerShared = FindSendPropInfo("CTFPlayer", "m_Shared");
 	
 	/* This is an ugly way to get offset, but atleast it should almost never break from tf2 updates,

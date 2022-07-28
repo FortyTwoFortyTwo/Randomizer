@@ -986,38 +986,37 @@ public MRESReturn DHook_InitClassPre(int iClient)
 	}
 	
 	//ValidateWearables validates both wearable weapons and cosmetics, avoid having it destroyed by disguising as disguise weapon
-	int iWearable;
-	while ((iWearable = FindEntityByClassname(iWearable, "tf_wearable*")) > MaxClients)
+	int iWearableCount = TF2_GetWearableCount(iClient);
+	for (int i = 0; i < iWearableCount; i++)
 	{
-		if (GetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity") == iClient)
+		int iWearable = TF2_GetWearable(iClient, i);
+		if (iWearable == INVALID_ENT_REFERENCE || GetEntData(iWearable, g_iOffsetAlwaysAllow, 1))	//TF2 already planning not to delete this
+			continue;
+		
+		int iIndex = GetEntProp(iWearable, Prop_Send, "m_iItemDefinitionIndex");
+		
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
 		{
-			int iIndex = GetEntProp(iWearable, Prop_Send, "m_iItemDefinitionIndex");
-			if (GetEntData(iWearable, g_iOffsetAlwaysAllow, 1))	//TF2 already planning not to delete this
-				continue;
+			int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
 			
-			for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+			bool bAllow;
+			if (LoadoutSlot_Primary <= iSlot <= LoadoutSlot_PDA2 && Group_IsClientRandomized(iClient, RandomizedType_Weapons))
+				bAllow = true;
+			else if (iSlot == LoadoutSlot_Misc && Group_IsClientRandomized(iClient, RandomizedType_Cosmetics))
+				bAllow = true;
+			
+			if (bAllow)
 			{
-				int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+				SetEntData(iWearable, g_iOffsetAlwaysAllow, true, 1);
 				
-				bool bAllow;
-				if (LoadoutSlot_Primary <= iSlot <= LoadoutSlot_PDA2 && Group_IsClientRandomized(iClient, RandomizedType_Weapons))
-					bAllow = true;
-				else if (iSlot == LoadoutSlot_Misc && Group_IsClientRandomized(iClient, RandomizedType_Cosmetics))
-					bAllow = true;
+				if (!g_aAllowWearables)
+					g_aAllowWearables = new ArrayList();
 				
-				if (bAllow)
-				{
-					SetEntData(iWearable, g_iOffsetAlwaysAllow, true, 1);
-					
-					if (!g_aAllowWearables)
-						g_aAllowWearables = new ArrayList();
-					
-					g_aAllowWearables.Push(iWearable);
-				}
-				
-				if (iSlot != -1)
-					break;
+				g_aAllowWearables.Push(iWearable);
 			}
+			
+			if (iSlot != -1)
+				break;
 		}
 	}
 	
