@@ -138,6 +138,18 @@ stock bool TF2_IsWearable(int iWeapon)
 	return StrContains(sClassname, "tf_wearable") == 0 || StrEqual(sClassname, "tf_powerup_bottle");
 }
 
+
+stock int TF2_GetWearableCount(int iClient)
+{
+	return GetEntData(iClient, g_iOffsetMyWearables + 0x0C);
+}
+
+stock int TF2_GetWearable(int iClient, int iIndex)
+{
+	Address pData = view_as<Address>(LoadFromAddress(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetMyWearables), NumberType_Int32));
+	return EntRefToEntIndex(LoadFromAddress(pData + view_as<Address>(0x04 * iIndex), NumberType_Int32) | (1 << 31));
+}
+
 stock bool TF2_IndexFindAttribute(int iIndex, const char[] sAttrib, float &flVal)
 {
 	ArrayList aAttribs = TF2Econ_GetItemStaticAttributes(iIndex);
@@ -168,50 +180,38 @@ stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos, bool bCosmetic = fa
 		
 		if (iWeapon != INVALID_ENT_REFERENCE)
 			return true;
-		
-		//Reset iWeapon for wearable loop below
-		if (iPos == iMaxWeapons)
-			iWeapon = INVALID_ENT_REFERENCE;
 	}
 	
-	if (iPos == iMaxWeapons)
+	int iWearableIndex = iPos - iMaxWeapons;
+	int iWearableCount = TF2_GetWearableCount(iClient);
+	
+	//Loop through all wearables
+	while (iWearableCount > iWearableIndex)
 	{
-		//Loop through all wearables
-		while ((iWeapon = FindEntityByClassname(iWeapon, "tf_wearable*")) != INVALID_ENT_REFERENCE)
-		{
-			if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") == iClient)
-			{
-				int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
-				if (iIndex < 0 || iIndex >= 65535)
-					continue;	//Probably attached wearable from weapon
-				
-				if (bCosmetic)
-					return true;
-				
-				//Check if it not cosmetic
-				for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
-				{
-					int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
-					if (0 <= iSlot <= WeaponSlot_Building)
-						return true;
-				}
-			}
-		}
+		iWeapon = TF2_GetWearable(iClient, iWearableIndex);
+		iPos++;
+		iWearableIndex++;
+		if (iWeapon == INVALID_ENT_REFERENCE)
+			continue;
 		
-		//Reset iWeapon for canteen loop below
-		iWeapon = INVALID_ENT_REFERENCE;
-		iPos = iMaxWeapons + 1;
-	}
-	
-	//Loop through all canteens
-	if (bCosmetic)
-		while ((iWeapon = FindEntityByClassname(iWeapon, "tf_powerup_bottle")) != INVALID_ENT_REFERENCE)
-			if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") == iClient)
+		int iIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+		if (iIndex < 0 || iIndex >= 65535)
+			continue;	//Probably attached wearable from weapon
+		
+		if (bCosmetic)
+			return true;
+		
+		//Check if it not cosmetic
+		for (int iClass = CLASS_MIN; iClass <= CLASS_MAX; iClass++)
+		{
+			int iSlot = TF2_GetSlotFromIndex(iIndex, view_as<TFClassType>(iClass));
+			if (0 <= iSlot <= WeaponSlot_Building)
 				return true;
+		}
+	}
 	
 	//No more weapons to loop
 	iWeapon = INVALID_ENT_REFERENCE;
-	iPos = 0;
 	return false;
 }
 
