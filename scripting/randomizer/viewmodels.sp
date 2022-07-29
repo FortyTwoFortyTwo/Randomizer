@@ -47,12 +47,10 @@ methodmap WeaponClassList < StringMap
 }
 
 static WeaponClassList g_mViewModelsInvisible;
-static WeaponClassList g_mViewModelsRobotArm;
 
 void ViewModels_Init()
 {
 	g_mViewModelsInvisible = new WeaponClassList();
-	g_mViewModelsRobotArm = new WeaponClassList();
 }
 
 void ViewModels_Refresh()
@@ -62,7 +60,6 @@ void ViewModels_Refresh()
 		return;
 	
 	g_mViewModelsInvisible.Load(kv, "Invisible");
-	g_mViewModelsRobotArm.Load(kv, "RobotArm");
 	
 	delete kv;
 }
@@ -96,22 +93,4 @@ void ViewModels_DisableInvisible(int iWeapon)
 {
 	SetEntityRenderMode(iWeapon, RENDER_NORMAL); 
 	SetEntityRenderColor(iWeapon, 255, 255, 255, 255);
-}
-
-void ViewModels_CheckRobotArm(int iClient)
-{
-	TFClassType nClass = TF2_GetPlayerClass(iClient);
-	int iWeapon, iPos;
-	while (TF2_GetItem(iClient, iWeapon, iPos))
-	{
-		bool bCurrentRobotArm = g_mViewModelsRobotArm.Exists(iWeapon, nClass);
-		bool bNextRobotArm = bCurrentRobotArm;
-		if (Group_IsClientRandomized(iClient, RandomizedType_Class))
-			bNextRobotArm = g_mViewModelsRobotArm.Exists(iWeapon, Loadout_GetClientClass(iClient));
-		
-		if (bNextRobotArm)	//Should have one
-			TF2Attrib_SetByName(iWeapon, "mod wrench builds minisentry", 1.0);
-		else if (bCurrentRobotArm)	//Currently have robot arm but shouldn't have one for new class
-			TF2Attrib_RemoveByName(iWeapon, "mod wrench builds minisentry");
-	}
 }
