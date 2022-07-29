@@ -266,9 +266,6 @@ public void Client_WeaponEquipPost(int iClient, int iWeapon)
 {
 	RevertClientClass(iClient);
 	
-	//Give robot arm viewmodel if weapon isnt good with current viewmodel
-	ViewModels_CheckRobotArm(iClient);
-	
 	//Refresh controls and huds
 	Controls_RefreshClient(iClient);
 	Huds_RefreshClient(iClient);
