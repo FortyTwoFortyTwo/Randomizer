@@ -58,7 +58,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetChargeEffectBeingProvided", DHook_GetChargeEffectBeingProvidedPre, DHook_GetChargeEffectBeingProvidedPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxHealthForBuffing", DHook_GetMaxHealthForBuffingPre, DHook_GetMaxHealthForBuffingPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::TeamFortress_CalculateMaxSpeed", DHook_CalculateMaxSpeedPre, DHook_CalculateMaxSpeedPost);
-	DHook_CreateDetour(hGameData, "CTFPlayer::TakeHealth", DHook_TakeHealthPre, _);
+	DHook_CreateDetour(hGameData, "CTFPlayer::TakeHealth", DHook_TakeHealthPre, DHook_TakeHealthPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CheckBlockBackstab", DHook_CheckBlockBackstabPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanPickupBuilding", _, DHook_CanPickupBuildingPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DropRune", DHook_DropRunePre, _);
@@ -1059,11 +1059,32 @@ public MRESReturn DHook_InitClassPost(int iClient)
 
 public MRESReturn DHook_TakeHealthPre(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
+	// We dont want randomizer's class changes with different max health to affect here
+	if (g_iClientCurrentClass[iClient] != TFClass_Unknown && TF2_GetPlayerClass(iClient) != TFClass_Unknown)
+	{
+		TFClassType iClass = g_iClientCurrentClass[iClient];
+		g_iClientCurrentClass[iClient] = TF2_GetPlayerClass(iClient);
+		TF2_SetPlayerClass(iClient, iClass);
+	}
+	
 	if (g_bApplyBiteEffectsChocolate[iClient]) 
 	{
 		hParams.Set(2, DMG_GENERIC);
 		return MRES_ChangedHandled;
 	}
+	
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_TakeHealthPost(int iClient, DHookReturn hReturn, DHookParam hParams)
+{
+	if (g_iClientCurrentClass[iClient] != TFClass_Unknown && TF2_GetPlayerClass(iClient) != TFClass_Unknown)
+	{
+		TFClassType iClass = g_iClientCurrentClass[iClient];
+		g_iClientCurrentClass[iClient] = TF2_GetPlayerClass(iClient);
+		TF2_SetPlayerClass(iClient, iClass);
+	}
+	
 	return MRES_Ignored;
 }
 
