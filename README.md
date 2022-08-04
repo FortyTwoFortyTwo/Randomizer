@@ -11,7 +11,6 @@ To download latest build version, select latest package then "Artifacts" section
 - SourceMod 1.11
 - [tf2attributes](https://forums.alliedmods.net/showthread.php?t=210221)
 - [tf_econ_data](https://forums.alliedmods.net/showthread.php?t=315011)
-- [dhooks with detour support](https://forums.alliedmods.net/showpost.php?p=2588686&postcount=589)
 
 ## ConVars
 - `randomizer_version`: Plugin version number, don't touch.
@@ -22,6 +21,7 @@ To download latest build version, select latest package then "Artifacts" section
 - `randomizer_rune`: How should mannpower rune be randomized.
 - `randomizer_spells`: How should halloween spells be randomized.
 - `randomizer_droppedweapons`: Enable/Disable dropped weapons.
+- `randomizer_fix_taunt`: Enable/Disable `CTFPlayer::Taunt` detour fix.
 - `randomizer_huds`: Mode to display weapons from hud.
   - 0: No hud display
   - 1: Hud text
