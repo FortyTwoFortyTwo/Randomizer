@@ -809,6 +809,16 @@
 				"hooktype"	"entity"
 				"return"	"void"
 				"this"		"entity"
+				"linux"
+				{
+					"arguments"
+					{
+						"info"
+						{
+							"type"    "objectptr"
+						}
+					}
+				}
 			}
 			"CBaseObject::CanBeUpgraded"
 			{

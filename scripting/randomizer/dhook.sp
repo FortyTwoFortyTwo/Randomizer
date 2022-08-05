@@ -751,7 +751,7 @@ public MRESReturn DHook_GetEffectBarAmmoPost(int iWeapon, DHookReturn hReturn)
 
 public MRESReturn DHook_KilledPre(int iObject)
 {
-	//There is 1 Param, CTakeDamageInfo ref, but not listed as it gives windows crashes
+	//There is 1 Param, CTakeDamageInfo ref, but not listed in windows as it gives crashes
 	//Save current revenge count, then set to 0 for both builder and attacker
 	
 	int iClient = GetEntPropEnt(iObject, Prop_Send, "m_hBuilder");
