@@ -25,6 +25,7 @@ static DynamicHook g_hDHookFrameUpdatePostEntityThink;
 static bool g_bSkipGetMaxAmmo;
 static ArrayList g_aAllowWearables;
 static bool g_bInitClass;
+static int g_iInitClassActiveWeapon = INVALID_ENT_REFERENCE;
 static int g_iInitClassWeapons[48] = {INVALID_ENT_REFERENCE, ...};
 static int g_iBuildingKilledSapper = INVALID_ENT_REFERENCE;
 
@@ -954,6 +955,8 @@ public MRESReturn DHook_InitClassPre(int iClient)
 	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
 		Loadout_ApplyClientRune(iClient);
 	
+	g_iInitClassActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	
 	//ValidateWeapons validates non-wearable weapons, remove em at m_hMyWeapons so there nothing to validates!
 	for (int i = 0; i < sizeof(g_iInitClassWeapons); i++)
 	{
@@ -1049,6 +1052,10 @@ public MRESReturn DHook_InitClassPost(int iClient)
 		
 		delete g_aAllowWearables;
 	}
+	
+	//Make sure active weapon is still the same and not switched in a buggy way, e.g. quick-fix overheal
+	if (IsValidEntity(g_iInitClassActiveWeapon))
+		SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", g_iInitClassActiveWeapon);
 	
 	//Also messed up huds because of m_hMyWeapons
 	Huds_RefreshClient(iClient);
