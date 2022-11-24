@@ -572,6 +572,16 @@ stock bool IsClassname(int iEntity, const char[] sClassname)
 	return StrEqual(sBuffer, sClassname);
 }
 
+stock void AddEntityEffect(int iEntity, int iFlag)
+{
+	SetEntProp(iEntity, Prop_Send, "m_fEffects", GetEntProp(iEntity, Prop_Send, "m_fEffects") | iFlag);
+}
+
+stock void RemoveEntityEffect(int iEntity, int iFlag)
+{
+	SetEntProp(iEntity, Prop_Send, "m_fEffects", GetEntProp(iEntity, Prop_Send, "m_fEffects") & ~iFlag);
+}
+
 stock bool ItemIsAllowed(int iIndex)
 {
 	if (GameRules_GetProp("m_bPlayingMedieval") || (GameRules_GetRoundState() == RoundState_Stalemate && FindConVar("mp_stalemate_meleeonly").BoolValue))
@@ -629,6 +639,12 @@ stock void GetEntityModel(int iEntity, char[] sModel, int iMaxSize)
 	int iIndex = GetEntProp(iEntity, Prop_Send, "m_nModelIndex");
 	int iTable = FindStringTable("modelprecache");
 	ReadStringTable(iTable, iIndex, sModel, iMaxSize);
+}
+
+stock int GetModelIndex(const char[] sModel)
+{
+	int iTable = FindStringTable("modelprecache");
+	return FindStringIndex(iTable, sModel);
 }
 
 stock int PrecacheParticleSystem(const char[] sParticle)

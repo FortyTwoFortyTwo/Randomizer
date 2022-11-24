@@ -1,3 +1,4 @@
+static Handle g_hSDKSelectWeightedSequence;
 static Handle g_hSDKGetMaxAmmo;
 static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
@@ -15,9 +16,18 @@ static Handle g_hSDKGetMaxHealth;
 static Handle g_hSDKWeaponCanSwitchTo;
 static Handle g_hSDKEquipWearable;
 static Handle g_hSDKGiveNamedItem;
+static Handle g_hSDKTranslateViewmodelHandActivityInternal;
 
 public void SDKCall_Init(GameData hGameData)
 {
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CBaseAnimating::SelectWeightedSequence");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+	g_hSDKSelectWeightedSequence = EndPrepSDKCall();
+	if (!g_hSDKSelectWeightedSequence)
+		LogMessage("Failed to create call: CBaseAnimating::SelectWeightedSequence");
+	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
@@ -154,6 +164,19 @@ public void SDKCall_Init(GameData hGameData)
 	g_hSDKGiveNamedItem = EndPrepSDKCall();
 	if (!g_hSDKGiveNamedItem)
 		LogError("Failed to create call: CTFPlayer::GiveNamedItem");
+	
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CEconEntity::TranslateViewmodelHandActivityInternal");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
+	g_hSDKTranslateViewmodelHandActivityInternal = EndPrepSDKCall();
+	if (!g_hSDKTranslateViewmodelHandActivityInternal)
+		LogError("Failed to create call: CEconEntity::TranslateViewmodelHandActivityInternal");
+}
+
+int SDKCall_SelectWeightedSequence(int iEntity, int iActivity)
+{
+	return SDKCall(g_hSDKSelectWeightedSequence, iEntity, iActivity);
 }
 
 int SDKCall_GetMaxAmmo(int iClient, int iAmmoType, TFClassType nClass = view_as<TFClassType>(-1))
@@ -239,4 +262,9 @@ void SDKCall_EquipWearable(int iClient, int iWearable)
 int SDKCall_GiveNamedItem(int iClient, const char[] sClassname, int iSubType, Address pItem, bool b = false)
 {
 	return SDKCall(g_hSDKGiveNamedItem, iClient, sClassname, iSubType, pItem, b);
+}
+
+int SDKCall_TranslateViewmodelHandActivityInternal(int iEntity, int iActivity)
+{
+	return SDKCall(g_hSDKTranslateViewmodelHandActivityInternal, iEntity, iActivity);
 }

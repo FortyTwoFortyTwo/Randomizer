@@ -564,9 +564,6 @@ void Loadout_ApplyClientWeapons(int iClient)
 						Properties_UpdateActiveWeaponAmmo(iClient);
 				}
 			}
-			
-			if (ViewModels_ShouldBeInvisible(iWeapon, nClass))
-				ViewModels_EnableInvisible(iWeapon);
 		}
 	}
 	

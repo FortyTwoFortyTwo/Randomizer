@@ -60,7 +60,6 @@ Examples:
 - `randomizer_spells "trigger=@red group=@blue action=death, trigger=@blue group=@red action=cp-capture"`: On any red team's death, blue team spells is rerolled. And on blue team's capture, red team spells is rerolled.
 
 ## Commands
-- `sm_cantsee`: Set your active weapon transparent or fully visible, for everyone
 - `sm_rndclass`: Set specified player a given class, admin only
 - `sm_rndsetweapon`: Replaces specified player all weapons to given weapons
 - `sm_rndsetslotweapon`: Replaces specified player weapons to given weapons based on slot
@@ -79,7 +78,6 @@ There currently 5 [configs](https://github.com/FortyTwoFortyTwo/Randomizer/tree/
 - `controls.cfg`: Manages how weapons with `attack2` passive button should be handled, should it be `attack3` or `reload` instead.
 - `huds.cfg`: Lists all of the netprop meters to display in hud for many weapons.
 - `reskins.cfg`: List of reskins for players to equip weapon from loadout instead of default weapon.
-- `viewmodels.cfg`: List of all weapons with class specified to set transparent by default, without needing to use `sm_cantsee` on weapon that covers player screen everytime.
 - `weapons.cfg`: Whitelist of weapon indexs to select from random pool, along with weapon name to display in HUD.
 
 ## TF2 Updates

@@ -119,10 +119,7 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 
 public void Client_PreThink(int iClient)
 {
-	//Non-team colored weapons can show incorrect viewmodel skin
-	int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
-	if (iViewModel > MaxClients)
-		SetEntProp(iViewModel, Prop_Send, "m_nSkin", GetEntProp(iClient, Prop_Send, "m_nSkin"));
+	ViewModels_UpdateArmsModel(iClient);
 	
 	//Make sure player cant use primary or secondary attack while cloaked
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
@@ -266,6 +263,8 @@ public void Client_WeaponEquipPost(int iClient, int iWeapon)
 {
 	RevertClientClass(iClient);
 	
+	ViewModels_UpdateArms(iClient);
+	
 	//Refresh controls and huds
 	Controls_RefreshClient(iClient);
 	Huds_RefreshClient(iClient);
@@ -288,6 +287,9 @@ public Action Client_WeaponSwitch(int iClient, int iWeapon)
 
 public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 {
+	ViewModels_UpdateArms(iClient);
+	ViewModels_SetSequence(iClient, 171);	// ACT_VM_DRAW TODO gamedata for value
+	
 	//Update ammo for new active weapon
 	Properties_UpdateActiveWeaponAmmo(iClient);
 	

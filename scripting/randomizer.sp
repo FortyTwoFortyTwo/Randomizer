@@ -15,7 +15,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.9.1"
+#define PLUGIN_VERSION			"1.10.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
@@ -50,6 +50,42 @@ enum
 										// the parent is not in the PVS.
 	EF_ITEM_BLINK			= (1<<8),	// blink an item so that the user notices it.
 	EF_PARENT_ANIMATES		= (1<<9),	// always assume that the parent entity is animating
+};
+
+enum SolidFlags
+{
+	FSOLID_CUSTOMRAYTEST	= (1 << 0),
+	FSOLID_CUSTOMBOXTEST	= (1 << 1),
+	FSOLID_NOT_SOLID		= (1 << 2),
+	FSOLID_TRIGGER			= (1 << 3),
+};
+
+enum
+{
+	COLLISION_GROUP_NONE  = 0,
+	COLLISION_GROUP_DEBRIS,			// Collides with nothing but world and static stuff
+	COLLISION_GROUP_DEBRIS_TRIGGER, // Same as debris, but hits triggers
+	COLLISION_GROUP_INTERACTIVE_DEBRIS,	// Collides with everything except other interactive debris or debris
+	COLLISION_GROUP_INTERACTIVE,	// Collides with everything except interactive debris or debris
+	COLLISION_GROUP_PLAYER,
+	COLLISION_GROUP_BREAKABLE_GLASS,
+	COLLISION_GROUP_VEHICLE,
+	COLLISION_GROUP_PLAYER_MOVEMENT,  // For HL2, same as Collision_Group_Player, for
+										// TF2, this filters out other players and CBaseObjects
+	COLLISION_GROUP_NPC,			// Generic NPC group
+	COLLISION_GROUP_IN_VEHICLE,		// for any entity inside a vehicle
+	COLLISION_GROUP_WEAPON,			// for any weapons that need collision detection
+	COLLISION_GROUP_VEHICLE_CLIP,	// vehicle clip brush to restrict vehicle movement
+	COLLISION_GROUP_PROJECTILE,		// Projectiles!
+	COLLISION_GROUP_DOOR_BLOCKER,	// Blocks entities not permitted to get near moving doors
+	COLLISION_GROUP_PASSABLE_DOOR,	// Doors that the player shouldn't collide with
+	COLLISION_GROUP_DISSOLVING,		// Things that are dissolving are in this group
+	COLLISION_GROUP_PUSHAWAY,		// Nonsolid on client and server, pushaway in player code
+
+	COLLISION_GROUP_NPC_ACTOR,		// Used so NPCs in scripts ignore the player.
+	COLLISION_GROUP_NPC_SCRIPTED,	// USed for NPCs in scripts that should not collide with each other
+
+	LAST_SHARED_COLLISION_GROUP
 };
 
 enum TFQuality
@@ -426,7 +462,6 @@ public void OnPluginStart()
 	Group_Init();
 	Huds_Init();
 	Loadout_Init();
-	ViewModels_Init();
 	Weapons_Init();
 	
 	AddCommandListener(Console_EurekaTeleport, "eureka_teleport");
@@ -448,7 +483,6 @@ public void OnMapStart()
 	
 	Controls_Refresh();
 	Huds_Refresh();
-	ViewModels_Refresh();
 	Weapons_Refresh();
 	
 	ConVar_Refresh();	//After Weapons_Refresh
@@ -698,6 +732,7 @@ public void OnEntityDestroyed(int iEntity)
 	if (0 <= iEntity < 2048)
 	{
 		Properties_RemoveWeapon(iEntity);
+		ViewModels_RemoveFromWeapon(iEntity);
 		
 		if (g_iTouchItem == iEntity) //SDKHook doesn't call hook while pending deletion, call it now
 			Item_TouchPost(g_iTouchItem, g_iTouchToucher);
@@ -738,6 +773,8 @@ void DisableRandomizer()
 	
 	Patch_Disable();
 	g_bEnabled = false;
+	
+	ViewModels_RemoveAll();
 	
 	int iBuilding = MaxClients+1;
 	while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)

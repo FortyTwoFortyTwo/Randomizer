@@ -1,96 +1,165 @@
-#define FILEPATH_CONFIG_VIEWMODELS "configs/randomizer/viewmodels.cfg"
+char g_sViewModelsArms[][] = {
+	"",
+	"models/weapons/c_models/c_scout_arms.mdl",
+	"models/weapons/c_models/c_sniper_arms.mdl",
+	"models/weapons/c_models/c_soldier_arms.mdl",
+	"models/weapons/c_models/c_demo_arms.mdl",
+	"models/weapons/c_models/c_medic_arms.mdl",
+	"models/weapons/c_models/c_heavy_arms.mdl",
+	"models/weapons/c_models/c_pyro_arms.mdl",
+	"models/weapons/c_models/c_spy_arms.mdl",
+	"models/weapons/c_models/c_engineer_arms.mdl",
+};
 
-methodmap WeaponClassList < StringMap
+int ViewModels_GetClientArms(int iClient)
 {
-	public WeaponClassList()
+	int iArms = INVALID_ENT_REFERENCE;
+	while ((iArms=FindEntityByClassname(iArms, "tf_wearable_vm")) != INVALID_ENT_REFERENCE)
 	{
-		return view_as<WeaponClassList>(new StringMap());
+		if (iClient == GetEntPropEnt(iArms, Prop_Send, "m_hOwnerEntity") && GetEntPropEnt(iArms, Prop_Send, "m_hWeaponAssociatedWith") == INVALID_ENT_REFERENCE)
+			return iArms;
 	}
 	
-	public void Load(KeyValues kv, const char[] sKey)
+	return INVALID_ENT_REFERENCE;
+}
+
+void ViewModels_UpdateArmsModel(int iClient)
+{
+	int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
+	if (iViewModel != INVALID_ENT_REFERENCE)
 	{
-		this.Clear();
+		AddEntityEffect(iViewModel, EF_NODRAW);
 		
-		if (kv.JumpToKey(sKey))
+		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+		if (iActiveWeapon != INVALID_ENT_REFERENCE)
 		{
-			if (kv.GotoFirstSubKey(false))
-			{
-				do
-				{
-					char sClassname[CONFIG_MAXCHAR], sTF2Class[CONFIG_MAXCHAR];
-					kv.GetSectionName(sClassname, sizeof(sClassname));
-					kv.GetString(NULL_STRING, sTF2Class, sizeof(sTF2Class));
-					TFClassType nClass = TF2_GetClass(sTF2Class);
-					
-					bool bInvisible[10];
-					this.GetArray(sClassname, bInvisible, sizeof(bInvisible));
-					bInvisible[nClass] = true;
-					this.SetArray(sClassname, bInvisible, sizeof(bInvisible));
-				}
-				while (kv.GotoNextKey(false));
-				kv.GoBack();
-			}
+			TFClassType nClass = TF2_GetDefaultClassFromItem(iActiveWeapon);
 			
-			kv.GoBack();
+			if (GetEntProp(iViewModel, Prop_Send, "m_nModelIndex") != GetModelIndex(g_sViewModelsArms[nClass]))
+			{
+				//There is a TF bug that tf_viewmodel may change its model back to what it was at delay
+				SetEntityModel(iViewModel, g_sViewModelsArms[nClass]);
+				ViewModels_SetSequence(iClient, 173);	// ACT_VM_IDLE TODO gamedata for value
+			}
 		}
 	}
 	
-	public bool Exists(int iWeapon, TFClassType nClass)
+	int iArms = ViewModels_GetClientArms(iClient);
+	int iArmsModelIndex = GetModelIndex(g_sViewModelsArms[TF2_GetPlayerClass(iClient)]);
+	if (iArms != INVALID_ENT_REFERENCE && GetEntProp(iArms, Prop_Send, "m_nModelIndex") != iArmsModelIndex)
 	{
-		char sClassname[CONFIG_MAXCHAR];
-		GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+		RemoveEntity(iArms);
+		iArms = INVALID_ENT_REFERENCE;
+	}
+	
+	if (iArms == INVALID_ENT_REFERENCE)
+		iArms = ViewModels_CreateWearable(iClient, "tf_wearable_vm", INVALID_ENT_REFERENCE, iArmsModelIndex);
+}
+
+void ViewModels_UpdateArms(int iClient)
+{
+	ViewModels_UpdateArmsModel(iClient);
+	//ViewModels_CreateWearable(iClient, "tf_wearable", iWeapon);
+	
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	
+	int iMaxWeapons = GetMaxWeapons();
+	for (int i = 0; i < iMaxWeapons; i++)
+	{
+		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
+		if (iWeapon == INVALID_ENT_REFERENCE)
+			continue;
 		
-		bool bInvisible[10];
-		this.GetArray(sClassname, bInvisible, sizeof(bInvisible));
-		return bInvisible[nClass];
+		int iWearableViewModel = GetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearableViewModel");
+		if (iWearableViewModel == INVALID_ENT_REFERENCE)
+			iWearableViewModel = ViewModels_CreateWearable(iClient, "tf_wearable_vm", iWeapon, GetEntProp(iWeapon, Prop_Send, "m_iWorldModelIndex"));
+		
+		SetEntProp(iWeapon, Prop_Send, "m_iViewModelIndex", GetModelIndex("models/empty.mdl"));
+		
+		if (iWeapon == iActiveWeapon)
+			RemoveEntityEffect(iWearableViewModel, EF_NODRAW);
+		else
+			AddEntityEffect(iWearableViewModel, EF_NODRAW);
 	}
 }
 
-static WeaponClassList g_mViewModelsInvisible;
-
-void ViewModels_Init()
+void ViewModels_SetSequence(int iClient, int iActivity)
 {
-	g_mViewModelsInvisible = new WeaponClassList();
-}
-
-void ViewModels_Refresh()
-{
-	KeyValues kv = LoadConfig(FILEPATH_CONFIG_VIEWMODELS, "ViewModels");
-	if (!kv)
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon == INVALID_ENT_REFERENCE)
 		return;
 	
-	g_mViewModelsInvisible.Load(kv, "Invisible");
+	int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
 	
-	delete kv;
+	iActivity = SDKCall_TranslateViewmodelHandActivityInternal(iActiveWeapon, iActivity);
+	SetEntProp(iViewModel, Prop_Send, "m_nSequence", SDKCall_SelectWeightedSequence(iViewModel, iActivity));
 }
 
-bool ViewModels_ShouldBeInvisible(int iWeapon, TFClassType nClass)
+int ViewModels_CreateWearable(int iClient, const char[] sClassname, int iWeapon, int iModelIndex)
 {
-	return g_mViewModelsInvisible.Exists(iWeapon, nClass);
-}
-
-bool ViewModels_ToggleInvisible(int iWeapon)
-{
-	if (GetEntityRenderMode(iWeapon) == RENDER_NORMAL)
+	int iWearable = CreateEntityByName(sClassname);
+	
+	float vecOrigin[3], vecAngles[3];
+	GetEntPropVector(iClient, Prop_Send, "m_vecOrigin", vecOrigin);
+	GetEntPropVector(iClient, Prop_Send, "m_angRotation", vecAngles);
+	TeleportEntity(iWearable, vecOrigin, vecAngles, NULL_VECTOR);
+	
+	SetEntProp(iWearable, Prop_Send, "m_bValidatedAttachedEntity", true);
+	SetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity", iClient);
+	SetEntProp(iWearable, Prop_Send, "m_iTeamNum", GetClientTeam(iClient));
+	SetEntProp(iWearable, Prop_Send, "m_usSolidFlags", FSOLID_NOT_SOLID);
+	SetEntProp(iWearable, Prop_Send, "m_CollisionGroup", COLLISION_GROUP_WEAPON);
+	SetEntProp(iWearable, Prop_Send, "m_fEffects", EF_BONEMERGE|EF_BONEMERGE_FASTCULL);
+	
+	SetEntProp(iWearable, Prop_Send, "m_nModelIndex", iModelIndex);
+	
+	if (iWeapon != INVALID_ENT_REFERENCE)
 	{
-		ViewModels_EnableInvisible(iWeapon);
-		return true;
+		SetEntPropEnt(iWearable, Prop_Send, "m_hWeaponAssociatedWith", iWeapon);
+		SetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearableViewModel", iWearable);
 	}
-	else
+	
+	DispatchSpawn(iWearable);
+	
+	if (StrEqual(sClassname, "tf_wearable_vm"))
 	{
-		ViewModels_DisableInvisible(iWeapon);
-		return false;
+		SetVariantString("!activator");
+		AcceptEntityInput(iWearable, "SetParent", GetEntPropEnt(iClient, Prop_Send, "m_hViewModel"));
+	}
+	else if (StrEqual(sClassname, "tf_wearable"))
+	{
+		SetVariantString("!activator");
+		AcceptEntityInput(iWearable, "SetParent", iClient);
+		AcceptEntityInput(iWeapon, "Clearparent");	//Disables the baseitem from appearing in thirdperson. However, weapon appears while taunting.
+	}
+	
+	return iWearable;
+}
+
+void ViewModels_RemoveAll()
+{
+	int iViewmodel = INVALID_ENT_REFERENCE;
+	while ((iViewmodel=FindEntityByClassname(iViewmodel, "tf_wearable_vm")) != INVALID_ENT_REFERENCE)
+		RemoveEntity(iViewmodel);
+	
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+	{
+		if (!IsClientInGame(iClient))
+			continue;
+		
+		int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
+		if (iViewModel == INVALID_ENT_REFERENCE)
+			continue;
+		
+		RemoveEntityEffect(iViewModel, EF_NODRAW);
+		SetEntityModel(iViewModel, g_sViewModelsArms[TF2_GetPlayerClass(iClient)]);
 	}
 }
 
-void ViewModels_EnableInvisible(int iWeapon)
+void ViewModels_RemoveFromWeapon(int iWeapon)
 {
-	SetEntityRenderMode(iWeapon, RENDER_TRANSCOLOR);
-	SetEntityRenderColor(iWeapon, 255, 255, 255, 75);
-}
-
-void ViewModels_DisableInvisible(int iWeapon)
-{
-	SetEntityRenderMode(iWeapon, RENDER_NORMAL); 
-	SetEntityRenderColor(iWeapon, 255, 255, 255, 255);
+	int iViewmodel = INVALID_ENT_REFERENCE;
+	while ((iViewmodel=FindEntityByClassname(iViewmodel, "tf_wearable_vm")) != INVALID_ENT_REFERENCE)
+		if (GetEntPropEnt(iViewmodel, Prop_Send, "m_hWeaponAssociatedWith") == iWeapon)
+			RemoveEntity(iViewmodel);
 }
