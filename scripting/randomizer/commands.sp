@@ -15,6 +15,7 @@ void Commands_Init()
 	RegAdminCmd("sm_rndgiveweapon", Command_GiveWeapon, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndrune", Command_Rune, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndgenerate", Command_Generate, ADMFLAG_CHANGEMAP);
+	RegAdminCmd("sm_rndsequence", Command_Sequence, ADMFLAG_CHANGEMAP);
 }
 
 public Action Command_Class(int iClient, int iArgs)
@@ -272,6 +273,41 @@ public Action Command_Generate(int iClient, int iArgs)
 	}
 	
 	ReplyToCommand(iClient, "Regenerated %s loadout", sGroupName);
+	return Plugin_Handled;
+}
+
+public Action Command_Sequence(int iClient, int iArgs)
+{
+	if (!g_bEnabled)
+		return Plugin_Continue;
+	
+	if (iArgs < 2)
+	{
+		ReplyToCommand(iClient, "Format: sm_rndgenerate <@target> <activity>");
+		return Plugin_Handled;
+	}
+	
+	char sGroup[32];
+	GetCmdArg(1, sGroup, sizeof(sGroup));
+	
+	int[] iTargetList = new int[MaxClients];
+	char sGroupName[MAX_TARGET_LENGTH];
+	bool bIsML;
+	
+	int iTargetCount = ProcessTargetString(sGroup, iClient, iTargetList, MaxClients, COMMAND_FILTER_NO_IMMUNITY, sGroupName, sizeof(sGroupName), bIsML);
+	if (iTargetCount <= 0)
+	{
+		ReplyToCommand(iClient, "Could not find anyone to set sequence");
+		return Plugin_Handled;
+	}
+	
+	char sActivity[256];
+	GetCmdArg(2, sActivity, sizeof(sActivity));
+	
+	for (int i = 0; i < iTargetCount; i++)
+		ViewModels_SetSequence(iTargetList[i], sActivity);
+	
+	ReplyToCommand(iClient, "Set %s sequence to %s", sActivity);
 	return Plugin_Handled;
 }
 
