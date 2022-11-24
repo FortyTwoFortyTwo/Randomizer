@@ -39,7 +39,7 @@ void ViewModels_UpdateArmsModel(int iClient)
 			{
 				//There is a TF bug that tf_viewmodel may change its model back to what it was at delay
 				SetEntityModel(iViewModel, g_sViewModelsArms[nClass]);
-				ViewModels_SetSequence(iClient, 173);	// ACT_VM_IDLE TODO gamedata for value
+				ViewModels_SetSequence(iClient, "ACT_VM_IDLE");
 			}
 		}
 	}
@@ -83,7 +83,7 @@ void ViewModels_UpdateArms(int iClient)
 	}
 }
 
-void ViewModels_SetSequence(int iClient, int iActivity)
+void ViewModels_SetSequence(int iClient, const char[] sActivityName)
 {
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon == INVALID_ENT_REFERENCE)
@@ -91,8 +91,23 @@ void ViewModels_SetSequence(int iClient, int iActivity)
 	
 	int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
 	
-	iActivity = SDKCall_TranslateViewmodelHandActivityInternal(iActiveWeapon, iActivity);
-	SetEntProp(iViewModel, Prop_Send, "m_nSequence", SDKCall_SelectWeightedSequence(iViewModel, iActivity));
+	int iActivity = SDKCall_IndexForName(sActivityName);
+	if (iActivity == ACTIVITY_NOT_AVAILABLE)
+	{
+		LogError("Invalid activity name '%s'", sActivityName);
+		return;
+	}
+	
+	int iTranslateActivity = SDKCall_TranslateViewmodelHandActivityInternal(iActiveWeapon, iActivity);
+	
+	int iSequence = SDKCall_SelectWeightedSequence(iViewModel, iTranslateActivity);
+	if (iSequence == ACTIVITY_NOT_AVAILABLE)
+	{
+		LogError("Could not get sequence from activity '%s' (id %d translate %d)", sActivityName, iActivity, iTranslateActivity);
+		return;
+	}
+	
+	SetEntProp(iViewModel, Prop_Send, "m_nSequence", iSequence);
 }
 
 int ViewModels_CreateWearable(int iClient, const char[] sClassname, int iWeapon, int iModelIndex)

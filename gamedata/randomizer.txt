@@ -352,6 +352,12 @@
 				"linux"		"@_Z14HandleRageGainP9CTFPlayerjff"
 				"windows"	"\x55\x8B\xEC\x56\x8B\x75\x08\x85\xF6\x0F\x84\x2A\x2A\x2A\x2A\x53"
 			}
+			"ActivityList_IndexForName"
+			{
+				"library"	"server"
+				"linux"		"@_Z25ActivityList_IndexForNamePKc"
+				"windows"	"\x55\x8B\xEC\x8B\x0D\x2A\x2A\x2A\x2A\x85\xC9\x75\x2A\x83\xC8\xFF"
+			}
 		}
 		"Offsets"
 		{

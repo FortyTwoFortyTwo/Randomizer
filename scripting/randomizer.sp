@@ -33,6 +33,8 @@
 #define PARTICLE_BEAM_BLU	"medicgun_beam_blue"
 #define PARTICLE_BEAM_RED	"medicgun_beam_red"
 
+#define ACTIVITY_NOT_AVAILABLE		-1
+
 // entity effects
 enum
 {

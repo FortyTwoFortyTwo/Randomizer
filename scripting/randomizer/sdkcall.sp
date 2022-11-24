@@ -11,6 +11,7 @@ static Handle g_hSDKModifyRage;
 static Handle g_hSDKSetCarryingRuneType;
 static Handle g_hSDKAttribHookValueFloat;
 static Handle g_hSDKHandleRageGain;
+static Handle g_hSDKIndexForName;
 static Handle g_hSDKGetBaseEntity;
 static Handle g_hSDKGetMaxHealth;
 static Handle g_hSDKWeaponCanSwitchTo;
@@ -125,6 +126,14 @@ public void SDKCall_Init(GameData hGameData)
 	if (!g_hSDKHandleRageGain)
 		LogError("Failed to create call: HandleRageGain");
 	
+	StartPrepSDKCall(SDKCall_Static);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "ActivityList_IndexForName");
+	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+	g_hSDKIndexForName = EndPrepSDKCall();
+	if (!g_hSDKIndexForName)
+		LogError("Failed to create call: ActivityList_IndexForName");
+	
 	StartPrepSDKCall(SDKCall_Raw);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetBaseEntity");
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
@@ -237,6 +246,11 @@ float SDKCall_AttribHookValueFloat(float flInitial, const char[] sAttribClass, i
 void SDKCall_HandleRageGain(int iClient, int iRequiredBuffFlags, float flDamage, float fInverseRageGainScale)
 {
 	SDKCall(g_hSDKHandleRageGain, iClient, iRequiredBuffFlags, flDamage, fInverseRageGainScale);
+}
+
+int SDKCall_IndexForName(const char[] sActivityName)
+{
+	return SDKCall(g_hSDKIndexForName, sActivityName);
 }
 
 int SDKCall_GetBaseEntity(Address pEntity)

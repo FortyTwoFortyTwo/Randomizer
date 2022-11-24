@@ -288,7 +288,7 @@ public Action Client_WeaponSwitch(int iClient, int iWeapon)
 public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 {
 	ViewModels_UpdateArms(iClient);
-	ViewModels_SetSequence(iClient, 171);	// ACT_VM_DRAW TODO gamedata for value
+	ViewModels_SetSequence(iClient, "ACT_VM_DRAW");
 	
 	//Update ammo for new active weapon
 	Properties_UpdateActiveWeaponAmmo(iClient);
