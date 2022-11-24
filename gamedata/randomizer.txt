@@ -792,6 +792,20 @@
 					}
 				}
 			}
+			"CEconEntity::TranslateViewmodelHandActivityInternal"
+			{
+				"offset"	"CEconEntity::TranslateViewmodelHandActivityInternal"
+				"hooktype"	"entity"
+				"return"	"int"
+				"this"		"entity"
+				"arguments"
+				{
+					"actBase"
+					{
+						"type"    "int"
+					}
+				}
+			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"offset"	"CBaseCombatWeapon::SecondaryAttack"

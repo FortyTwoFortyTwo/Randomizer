@@ -9,6 +9,7 @@ enum struct Detour
 static ArrayList g_aDHookDetours;
 
 static DynamicHook g_hDHookEventKilled;
+static DynamicHook g_hDHookTranslateViewmodelHandActivityInternal;
 static DynamicHook g_hDHookSecondaryAttack;
 static DynamicHook g_hDHookGetEffectBarAmmo;
 static DynamicHook g_hDHookSwing;
@@ -74,6 +75,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "HandleRageGain", DHook_HandleRageGainPre, _);
 	
 	g_hDHookEventKilled = DHook_CreateVirtual(hGameData, "CBaseEntity::Event_Killed");
+	g_hDHookTranslateViewmodelHandActivityInternal = DHook_CreateVirtual(hGameData, "CEconEntity::TranslateViewmodelHandActivityInternal");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookGetEffectBarAmmo = DHook_CreateVirtual(hGameData, "CTFWeaponBase::GetEffectBarAmmo");
 	g_hDHookSwing = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Swing");
@@ -212,6 +214,8 @@ void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 	if (StrContains(sClassname, "tf_weapon_") == 0)
 	{
 		SDKHook(iEntity, SDKHook_SpawnPost, DHook_SpawnPost);
+		g_hDHookTranslateViewmodelHandActivityInternal.HookEntity(Hook_Pre, iEntity, DHook_TranslateViewmodelHandActivityInternalPre);
+		g_hDHookTranslateViewmodelHandActivityInternal.HookEntity(Hook_Post, iEntity, DHook_TranslateViewmodelHandActivityInternalPost);
 		g_hDHookSecondaryAttack.HookEntity(Hook_Post, iEntity, DHook_SecondaryWeaponPost);
 		g_hDHookGetEffectBarAmmo.HookEntity(Hook_Post, iEntity, DHook_GetEffectBarAmmoPost);
 	}
@@ -722,6 +726,20 @@ public MRESReturn DHook_SwingPre(int iWeapon, DHookReturn hReturn)
 	if (0 < iClient <= MaxClients)
 		SDKCall_EndClassSpecialSkill(iClient);
 	
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_TranslateViewmodelHandActivityInternalPre(int iWeapon, DHookReturn hReturn, DHookParam hParams)
+{
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_TranslateViewmodelHandActivityInternalPost(int iWeapon, DHookReturn hReturn, DHookParam hParams)
+{
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	RevertClientClass(iClient);
 	return MRES_Ignored;
 }
 
