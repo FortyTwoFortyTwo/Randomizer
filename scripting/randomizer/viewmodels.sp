@@ -25,15 +25,20 @@ int ViewModels_GetClientArms(int iClient)
 
 void ViewModels_UpdateArmsModel(int iClient)
 {
+	bool bSameClass;
+	
 	int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
 	if (iViewModel != INVALID_ENT_REFERENCE)
 	{
-		AddEntityEffect(iViewModel, EF_NODRAW);
-		
 		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 		if (iActiveWeapon != INVALID_ENT_REFERENCE)
 		{
 			TFClassType nClass = TF2_GetDefaultClassFromItem(iActiveWeapon);
+			bSameClass = nClass == TF2_GetPlayerClass(iClient);
+			if (bSameClass)
+				RemoveEntityEffect(iViewModel, EF_NODRAW);
+			else
+				AddEntityEffect(iViewModel, EF_NODRAW);
 			
 			if (GetEntProp(iViewModel, Prop_Send, "m_nModelIndex") != GetModelIndex(g_sViewModelsArms[nClass]))
 			{
@@ -54,6 +59,11 @@ void ViewModels_UpdateArmsModel(int iClient)
 	
 	if (iArms == INVALID_ENT_REFERENCE)
 		iArms = ViewModels_CreateWearable(iClient, "tf_wearable_vm", INVALID_ENT_REFERENCE, iArmsModelIndex);
+	
+	if (bSameClass)
+		AddEntityEffect(iArms, EF_NODRAW);
+	else
+		RemoveEntityEffect(iArms, EF_NODRAW);
 }
 
 void ViewModels_UpdateArms(int iClient)
@@ -61,6 +71,7 @@ void ViewModels_UpdateArms(int iClient)
 	ViewModels_UpdateArmsModel(iClient);
 	//ViewModels_CreateWearable(iClient, "tf_wearable", iWeapon);
 	
+	TFClassType nClass = TF2_GetPlayerClass(iClient);
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	
 	int iMaxWeapons = GetMaxWeapons();
@@ -70,16 +81,29 @@ void ViewModels_UpdateArms(int iClient)
 		if (iWeapon == INVALID_ENT_REFERENCE)
 			continue;
 		
-		int iWearableViewModel = GetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearableViewModel");
-		if (iWearableViewModel == INVALID_ENT_REFERENCE)
-			iWearableViewModel = ViewModels_CreateWearable(iClient, "tf_wearable_vm", iWeapon, GetEntProp(iWeapon, Prop_Send, "m_iWorldModelIndex"));
+		bool bSameClass = TF2_GetDefaultClassFromItem(iWeapon) == nClass;
 		
+		int iWearableViewModel = GetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearableViewModel");
+		if (iWearableViewModel == INVALID_ENT_REFERENCE && !bSameClass)
+		{
+			iWearableViewModel = ViewModels_CreateWearable(iClient, "tf_wearable_vm", iWeapon, GetEntProp(iWeapon, Prop_Send, "m_iWorldModelIndex"));
+		}
+		else if (iWearableViewModel != INVALID_ENT_REFERENCE && bSameClass)
+		{
+			RemoveEntity(iWearableViewModel);
+			iWearableViewModel = INVALID_ENT_REFERENCE;
+		}
+		
+		//TODO this wont be needed from future TF2 update
 		SetEntProp(iWeapon, Prop_Send, "m_iViewModelIndex", GetModelIndex("models/empty.mdl"));
 		
-		if (iWeapon == iActiveWeapon)
-			RemoveEntityEffect(iWearableViewModel, EF_NODRAW);
-		else
-			AddEntityEffect(iWearableViewModel, EF_NODRAW);
+		if (iWearableViewModel != INVALID_ENT_REFERENCE)
+		{
+			if (iWeapon == iActiveWeapon)
+				RemoveEntityEffect(iWearableViewModel, EF_NODRAW);
+			else
+				AddEntityEffect(iWearableViewModel, EF_NODRAW);
+		}
 	}
 }
 
