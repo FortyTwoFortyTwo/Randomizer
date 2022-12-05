@@ -16,7 +16,7 @@
 			}
 			"PatchReplace_03"	//Medic class check for healing charging
 			{
-				"linux"		"\x90\x90\x90\x90\x90\x90"	// Replace 'jz' (if '==' jump) to NOP (skip)
+				"linux"		"\x90\x90\x90\x90\x90\x90"	// Replace 'jnz' to NOP (skip)
 				"windows"	"\x90\x90\x90\x90\x90\x90"	// Replace 'jz' (if '==' jump) to NOP (skip)
 			}
 			"PatchReplace_04"	//Medic class check for Overdose speed
@@ -82,10 +82,6 @@
 			"PatchSig_04"
 			{
 				"signature" "PatchSig_04"
-				"linux"
-				{
-					"offset"	"3"	//Start is pushed back by 3 to make good unique sig
-				}
 			}
 			"PatchSig_05"
 			{
@@ -129,22 +125,22 @@
 			}
 			"PatchSig_02"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
 			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x80\xBB\x2A\x1D\x00\x00\x00"
+				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x80\xBB\x2A\x1E\x00\x00\x00"
 				"windows"	"\x75\x2A\x6A\x00\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x6A\x00\x6A\x40\x8B\xCE"
 			}
 			"PatchSig_03"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
 			{
-				"linux"		"\x0F\x85\x2A\x2A\x2A\x2A\x8B\x85\x2A\x2A\x2A\x2A\x85\xC0\x74\x2A\xC7\x44\x24\x2A\x2A\x2A\x2A\x00"
+				"linux"		"\x0F\x85\x2A\x2A\x2A\x2A\x8B\x45\xB4\x85\xC0\x0F\x84\x2A\x2A\x2A\x2A"
 				"windows"	"\x0F\x85\x2A\x2A\x2A\x2A\x85\xDB\x0F\x84\x2A\x2A\x2A\x2A\x6A\x00"
 			}
 			"PatchSig_04"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
 			{
-				"linux"		"\x83\xFF\x05\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A"
+				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x8B\x45\xB4\xC7\x44\x24\x2A\x2A\x2A\x2A\x00\xC7\x44\x24\x2A\x2A\x2A\x2A\x00"
 				"windows"	"\x75\x2A\x6A\x00\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x6A\x00\x6A\x32"
 			}
 			"PatchSig_05"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
 			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x83\xFF\x01\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x85\xC0"
+				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x83\xFE\x01\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x85\xC0"
 				"windows"	"\x75\x2A\xF3\x0F\x10\x45\xE8\x8B\xCF"
 			}
 			"PatchSig_06"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
@@ -200,43 +196,43 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZNK9CTFPlayer10CanAirDashEv"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x57\x8B\xF9\xF7\x87\x84\x1A\x00\x00\x00\x00\x04\x00"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x57\x8B\xF9\xF7\x87\xB4\x1B\x00\x00\x00\x00\x04\x00"
 			}
 			"CTFPlayer::AddObject"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer9AddObjectEP11CBaseObject"
-				"windows"	"\x55\x8B\xEC\x53\x56\x57\x8B\x7D\x08\x8B\xD9\x85\xFF\x74\x2A\x8B\x07\x8B\xCF\xFF\x50\x08\x8B\xCF"
+				"windows"	"\x55\x8B\xEC\x56\x8B\x75\x08\x57\x8B\xF9\x85\xF6\x74\x2A\x8B\x06\x8B\xCE\xFF\x50\x08\x8B\x00\x89\x45\x08\xEB\x2A\xC7\x45\x08\xFF\xFF\xFF\xFF\x8D\x45\x08\x50\x8D\x8F\xB0\x22\x00\x00"
 			}
 			"CTFPlayer::RemoveObject"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer12RemoveObjectEP11CBaseObject"
-				"windows"	"\x55\x8B\xEC\x8B\xD1\x56\x8B\xB2\x8C\x21\x00\x00"
+				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x57\x8B\xBE\xBC\x22\x00\x00"
 			}
 			"CTFPlayer::Weapon_GetWeaponByType"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer22Weapon_GetWeaponByTypeEi"
-				"windows"	"\x55\x8B\xEC\x53\x56\x57\x33\xF6\x8D\xB9\x44\x07\x00\x00"
+				"windows"	"\x55\x8B\xEC\x53\x56\x57\x33\xF6\x8D\xB9\x70\x07\x00\x00"
 			}
 			"CTFPlayer::DoClassSpecialSkill"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer19DoClassSpecialSkillEv"
-				"windows"	"\x56\x8B\xF1\x8B\x06\x8B\x80\x04\x01\x00\x00\xFF\xD0\x84\xC0\x75\x2A\x32\xC0\x5E\xC3\xF7\x86\x84\x1A\x00\x00\x00\x00\x04\x00"
+				"windows"	"\x56\x8B\xF1\x8B\x06\x8B\x80\x0C\x01\x00\x00\xFF\xD0\x84\xC0\x75\x2A\x32\xC0\x5E\xC3\xF7\x86\xB4\x1B\x00\x00\x00\x00\x04\x00"
 			}
 			"CTFPlayer::EndClassSpecialSkill"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer20EndClassSpecialSkillEv"
-				"windows"	"\x56\x8B\xF1\x8B\x06\x8B\x80\x04\x01\x00\x00\xFF\xD0\x84\xC0\x75\x2A\x5E\xC3"
+				"windows"	"\x56\x8B\xF1\x8B\x06\x8B\x80\x0C\x01\x00\x00\xFF\xD0\x84\xC0\x75\x2A\x5E\xC3"
 			}
 			"CTFPlayer::GetChargeEffectBeingProvided"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer28GetChargeEffectBeingProvidedEv"
-				"windows"	"\x55\x8B\xEC\x51\x56\x8B\xF1\x8D\x86\x0C\x21\x00\x00"
+				"windows"	"\x55\x8B\xEC\x51\x56\x8B\xF1\x8D\x86\x3C\x22\x00\x00"
 			}
 			"CTFPlayer::GetLoadoutItem"
 			{
@@ -248,7 +244,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer22GetMaxHealthForBuffingEv"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x53\x56\x57\x8B\xF9\xFF\xB7\x10\x21\x00\x00"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x53\x56\x57\x8B\xF9\xFF\xB7\x40\x22\x00\x00"
 			}
 			"CTFPlayer::TeamFortress_CalculateMaxSpeed"
 			{
@@ -266,7 +262,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer18CheckBlockBackstabEPS_"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x56\x57\x8B\xF9\x8D\x9F\xB0\x19\x00\x00"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x56\x57\x8B\xF9\x8D\x9F\xE0\x1A\x00\x00"
 			}
 			"CTFPlayer::CanPickupBuilding"
 			{
@@ -278,7 +274,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer8DropRuneEbi"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x53\x56\x8B\xF1\x57\x8D\x8E\xB0\x19\x00\x00"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x53\x56\x8B\xF1\x57\x8D\x8E\xE0\x1A\x00\x00"
 			}
 			"CTFPlayerClassShared::CanBuildObject"
 			{
@@ -290,7 +286,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN8CTFKnife14DisguiseOnKillEv"
-				"windows"	"\x55\x8B\xEC\x51\x56\x57\x8B\xF9\x8B\xB7\x00\x08\x00\x00"
+				"windows"	"\x53\x56\x8B\xF1\x8B\x96\x28\x08\x00\x00"
 			}
 			"CTFLunchBox::ApplyBiteEffects"
 			{
@@ -302,7 +298,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN12CTFSpellBook12RollNewSpellEib"
-				"windows"	"\x55\x8B\xEC\x57\x8B\xF9\x83\xBF\xFC\x07\x00\x00\x00"
+				"windows"	"\x55\x8B\xEC\x57\x8B\xF9\x83\xBF\x24\x08\x00\x00\x00"
 			}
 			"CTFGameStats::Event_PlayerFiredWeapon"
 			{
@@ -314,13 +310,13 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN15CTFPlayerShared22UpdateRageBuffsAndRageEv"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x53\x8B\xD9\x8B\x8B\x90\x01\x00\x00\x8B\x01\x8B\x80\x04\x01\x00\x00\xFF\xD0\x84\xC0\x2A\x2A\x8B\xCB"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x53\x8B\xD9\x8B\x8B\x8C\x01\x00\x00\x8B\x01\x8B\x80\x0C\x01\x00\x00\xFF\xD0\x84\xC0\x75\x2A"
 			}
 			"CTFPlayerShared::ModifyRage"
 			{
 				"library"	"server"
 				"linux"		"@_ZN15CTFPlayerShared10ModifyRageEf"
-				"windows"	"\x55\x8B\xEC\xF3\x0F\x10\x81\x8C\x02\x00\x00"
+				"windows"	"\x55\x8B\xEC\xF3\x0F\x10\x81\x88\x02\x00\x00"
 			}
 			"CTFPlayerShared::ActivateRageBuff"
 			{
@@ -368,13 +364,13 @@
 			}
 			"CBaseEntity::Event_Killed"
 			{
-				"linux"		"67"
-				"windows"	"66"
+				"linux"		"69"
+				"windows"	"68"
 			}
 			"CBaseEntity::GetMaxHealth"
 			{
-				"linux"		"121"
-				"windows"	"120"
+				"linux"		"123"
+				"windows"	"122"
 			}
 			"CEconEntity::TranslateViewmodelHandActivityInternal"
 			{
@@ -383,63 +379,63 @@
 			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
-				"linux"		"290"
-				"windows"	"284"
+				"linux"		"293"
+				"windows"	"287"
 			}
 			"CTFWeaponBase::GetEffectBarAmmo"
 			{
-				"linux"		"465"
-				"windows"	"458"
+				"linux"		"468"
+				"windows"	"461"
 			}
 			"CTFWeaponBaseMelee::Swing"
 			{
-				"linux"		"482"
-				"windows"	"475"
+				"linux"		"485"
+				"windows"	"478"
 			}
 			"CBaseObject::Killed"
 			{
-				"linux"		"353"
-				"windows"	"352"
+				"linux"		"356"
+				"windows"	"355"
 			}
 			"CBaseObject::CanBeUpgraded"
+			{
+				"linux"		"383"
+				"windows"	"382"
+			}
+			"CBasePlayer::ForceRespawn"
+			{
+				"linux"		"337"
+				"windows"	"336"
+			}
+			"CBasePlayer::EquipWearable"
+			{
+				"linux"		"439"
+				"windows"	"438"
+			}
+			"CBaseCombatCharacter::GetAmmoCount"
+			{
+				"linux"		"266"
+				"windows"	"265"
+			}
+			"CBaseCombatCharacter::Weapon_CanSwitchTo"
+			{
+				"linux"		"277"
+				"windows"	"276"
+			}
+			"CTFPlayer::ClientCommand"
 			{
 				"linux"		"380"
 				"windows"	"379"
 			}
-			"CBasePlayer::ForceRespawn"
-			{
-				"linux"		"334"
-				"windows"	"333"
-			}
-			"CBasePlayer::EquipWearable"
-			{
-				"linux"		"436"
-				"windows"	"435"
-			}
-			"CBaseCombatCharacter::GetAmmoCount"
-			{
-				"linux"		"263"
-				"windows"	"262"
-			}
-			"CBaseCombatCharacter::Weapon_CanSwitchTo"
-			{
-				"linux"		"274"
-				"windows"	"273"
-			}
-			"CTFPlayer::ClientCommand"
-			{
-				"linux"		"377"
-				"windows"	"376"
-			}
 			"CTFPlayer::GiveNamedItem"
 			{
-				"linux"		"489"
-				"windows"	"482"
+				"linux"		"493"
+				"windows"	"486"
 			}
 			"CTFPlayer::InitClass"
 			{
-				"linux"		"491"
-				"windows"	"484"
+				"linux"		"495"
+				"windows"	"488"
 			}
 			"CGameRules::FrameUpdatePostEntityThink"
 			{
