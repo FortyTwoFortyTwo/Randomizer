@@ -119,8 +119,6 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 
 public void Client_PreThink(int iClient)
 {
-	ViewModels_UpdateArmsModel(iClient);
-	
 	//Make sure player cant use primary or secondary attack while cloaked
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
 	{

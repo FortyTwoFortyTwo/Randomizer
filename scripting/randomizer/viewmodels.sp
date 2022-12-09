@@ -41,11 +41,7 @@ void ViewModels_UpdateArmsModel(int iClient)
 				AddEntityEffect(iViewModel, EF_NODRAW);
 			
 			if (GetEntProp(iViewModel, Prop_Send, "m_nModelIndex") != GetModelIndex(g_sViewModelsArms[nClass]))
-			{
-				//There is a TF bug that tf_viewmodel may change its model back to what it was at delay
 				SetEntityModel(iViewModel, g_sViewModelsArms[nClass]);
-				ViewModels_SetSequence(iClient, "ACT_VM_IDLE");
-			}
 		}
 	}
 	
@@ -69,7 +65,6 @@ void ViewModels_UpdateArmsModel(int iClient)
 void ViewModels_UpdateArms(int iClient)
 {
 	ViewModels_UpdateArmsModel(iClient);
-	//ViewModels_CreateWearable(iClient, "tf_wearable", iWeapon);
 	
 	TFClassType nClass = TF2_GetPlayerClass(iClient);
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
