@@ -716,6 +716,8 @@ public void TF2_OnConditionRemoved(int iClient, TFCond nCond)
 	//TODO dont remove cond if under steak effect, steak itself is already buggy that needs to be fixed
 	if (nCond == TFCond_RuneKnockout)
 		TF2_RemoveCondition(iClient, TFCond_RestrictToMelee);
+	else if (nCond == TFCond_Zoomed)
+		ViewModels_UpdateArms(iClient);	//TF2 modified EF_NODRAW when zooming it
 }
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)
