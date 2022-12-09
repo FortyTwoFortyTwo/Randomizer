@@ -83,6 +83,10 @@ void ViewModels_UpdateArms(int iClient)
 		
 		bool bSameClass = TF2_GetDefaultClassFromItem(iWeapon) == nClass;
 		
+		char sModel[PLATFORM_MAX_PATH];
+		GetEntityModel(iWeapon, sModel, sizeof(sModel));
+		SDKCall_SetCustomViewModel(iWeapon, sModel);
+		
 		int iWearableViewModel = GetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearableViewModel");
 		if (iWearableViewModel == INVALID_ENT_REFERENCE && !bSameClass)
 		{
@@ -93,9 +97,6 @@ void ViewModels_UpdateArms(int iClient)
 			RemoveEntity(iWearableViewModel);
 			iWearableViewModel = INVALID_ENT_REFERENCE;
 		}
-		
-		//TODO this wont be needed from future TF2 update
-		SetEntProp(iWeapon, Prop_Send, "m_iViewModelIndex", GetModelIndex("models/empty.mdl"));
 		
 		if (iWearableViewModel != INVALID_ENT_REFERENCE)
 		{

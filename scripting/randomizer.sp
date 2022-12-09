@@ -482,6 +482,7 @@ public void OnMapStart()
 {
 	PrecacheParticleSystem(PARTICLE_BEAM_RED);
 	PrecacheParticleSystem(PARTICLE_BEAM_BLU);
+	PrecacheModel("models/weapons/c_models/c_engineer_gunslinger.mdl");	// TODO proper handling with gunslinger
 	
 	Controls_Refresh();
 	Huds_Refresh();
