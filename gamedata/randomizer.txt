@@ -282,6 +282,12 @@
 				"linux"		"@_ZN20CTFPlayerClassShared14CanBuildObjectEi"
 				"windows"	"\x55\x8B\xEC\x53\x56\xFF\x71\x04"
 			}
+			"CEconEntity::UpdateModelToClass"
+			{
+				"library"	"server"
+				"linux"		"@_ZN11CEconEntity18UpdateModelToClassEv"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x53\x56\x8B\x35\x2A\x2A\x2A\x2A\x8B\xD9"
+			}
 			"CBaseCombatWeapon::SetCustomViewModel"
 			{
 				"library"	"server"
@@ -653,6 +659,13 @@
 						"type"	"int"
 					}
 				}
+			}
+			"CEconEntity::UpdateModelToClass"
+			{
+				"signature" "CEconEntity::UpdateModelToClass"
+				"callconv" "thiscall"
+				"return" "void"
+				"this" "entity"
 			}
 			"CTFKnife::DisguiseOnKill"
 			{

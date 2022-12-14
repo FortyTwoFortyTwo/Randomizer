@@ -65,6 +65,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanPickupBuilding", _, DHook_CanPickupBuildingPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DropRune", DHook_DropRunePre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
+	DHook_CreateDetour(hGameData, "CEconEntity::UpdateModelToClass", DHook_UpdateModelToClassPre, _);
 	DHook_CreateDetour(hGameData, "CTFKnife::DisguiseOnKill", DHook_DisguiseOnKillPre, DHook_DisguiseOnKillPost);
 	DHook_CreateDetour(hGameData, "CTFLunchBox::ApplyBiteEffects", DHook_ApplyBiteEffectsPre, DHook_ApplyBiteEffectsPost);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
@@ -580,6 +581,18 @@ public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, DHookRetur
 	
 	hReturn.Value = true;
 	return MRES_Supercede;
+}
+
+public MRESReturn DHook_UpdateModelToClassPre(int iWeapon)
+{
+	//Custom viewmodel can weirdly bug out on weapons with "provide_on_active" attribute,
+	// Prevent UpdateModelToClass from being called again, which usually happens on weapon switch
+	
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	if (iClient != INVALID_ENT_REFERENCE)
+		return MRES_Supercede;
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_DisguiseOnKillPre(int iWeapon)
