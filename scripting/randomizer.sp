@@ -737,7 +737,6 @@ public void OnEntityDestroyed(int iEntity)
 	if (0 <= iEntity < 2048)
 	{
 		Properties_RemoveWeapon(iEntity);
-		ViewModels_RemoveFromWeapon(iEntity);
 		
 		if (g_iTouchItem == iEntity) //SDKHook doesn't call hook while pending deletion, call it now
 			Item_TouchPost(g_iTouchItem, g_iTouchToucher);

@@ -11,28 +11,34 @@ char g_sViewModelsArms[][] = {
 	"models/weapons/c_models/c_engineer_arms.mdl",
 };
 
-int ViewModels_GetClientArms(int iClient)
+int ViewModels_GetFromClient(int iClient, bool bArms)
 {
-	int iArms = INVALID_ENT_REFERENCE;
-	while ((iArms=FindEntityByClassname(iArms, "tf_wearable_vm")) != INVALID_ENT_REFERENCE)
+	int iWearable = INVALID_ENT_REFERENCE;
+	while ((iWearable=FindEntityByClassname(iWearable, "tf_wearable_vm")) != INVALID_ENT_REFERENCE)
 	{
-		if (iClient == GetEntPropEnt(iArms, Prop_Send, "m_hOwnerEntity") && GetEntPropEnt(iArms, Prop_Send, "m_hWeaponAssociatedWith") == INVALID_ENT_REFERENCE)
-			return iArms;
+		if (iClient != GetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity"))
+			continue;
+		
+		int iParent = GetEntPropEnt(iWearable, Prop_Data, "m_pParent");
+		if (bArms && IsClassname(iParent, "tf_viewmodel"))
+			return iWearable;
+		else if (!bArms && IsClassname(iParent, "tf_wearable_vm"))
+			return iWearable;
 	}
 	
 	return INVALID_ENT_REFERENCE;
 }
 
-void ViewModels_UpdateArmsModel(int iClient)
+void ViewModels_UpdateArms(int iClient)
 {
 	bool bSameClass;
 	
+	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
 	if (iViewModel != INVALID_ENT_REFERENCE)
 	{
 		TFClassType nClass;
 		
-		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 		if (iActiveWeapon != INVALID_ENT_REFERENCE)
 			nClass = TF2_GetDefaultClassFromItem(iActiveWeapon);
 		else
@@ -49,7 +55,7 @@ void ViewModels_UpdateArmsModel(int iClient)
 		
 	}
 	
-	int iArms = ViewModels_GetClientArms(iClient);
+	int iArms = ViewModels_GetFromClient(iClient, true);
 	int iArmsModelIndex = GetModelIndex(g_sViewModelsArms[TF2_GetPlayerClass(iClient)]);
 	if (iArms != INVALID_ENT_REFERENCE && GetEntProp(iArms, Prop_Send, "m_nModelIndex") != iArmsModelIndex)
 	{
@@ -58,56 +64,47 @@ void ViewModels_UpdateArmsModel(int iClient)
 	}
 	
 	if (iArms == INVALID_ENT_REFERENCE)
-		iArms = ViewModels_CreateWearable(iClient, "tf_wearable_vm", INVALID_ENT_REFERENCE, iArmsModelIndex);
+		iArms = ViewModels_CreateWearable(iClient, iArmsModelIndex, iViewModel);
 	
 	if (bSameClass)
 		AddEntityEffect(iArms, EF_NODRAW);
 	else
 		RemoveEntityEffect(iArms, EF_NODRAW);
-}
-
-void ViewModels_UpdateArms(int iClient)
-{
-	ViewModels_UpdateArmsModel(iClient);
 	
-	TFClassType nClass = TF2_GetPlayerClass(iClient);
-	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+	{
+		int iWeaponModelIndex = GetEntProp(iActiveWeapon, Prop_Send, "m_iWorldModelIndex");
+	
+		int iWearable = ViewModels_GetFromClient(iClient, false);
+		
+		if (iWearable != INVALID_ENT_REFERENCE && (bSameClass || GetEntProp(iWearable, Prop_Send, "m_nModelIndex") != iWeaponModelIndex))
+		{
+			RemoveEntity(iWearable);
+			iWearable = INVALID_ENT_REFERENCE;
+		}
+		
+		if (!bSameClass && iWearable == INVALID_ENT_REFERENCE)
+			iWearable = ViewModels_CreateWearable(iClient, iWeaponModelIndex, iArms);
+		
+		if (iWearable != INVALID_ENT_REFERENCE)
+		{
+			SetEntPropEnt(iArms, Prop_Send, "m_hWeaponAssociatedWith", iActiveWeapon);
+			SetEntPropEnt(iWearable, Prop_Send, "m_hWeaponAssociatedWith", iActiveWeapon);
+		}
+	}
 	
 	int iMaxWeapons = GetMaxWeapons();
 	for (int i = 0; i < iMaxWeapons; i++)
 	{
 		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
-		if (iWeapon == INVALID_ENT_REFERENCE)
-			continue;
-		
-		bool bSameClass = TF2_GetDefaultClassFromItem(iWeapon) == nClass;
-		
-		SetEntProp(iWeapon, Prop_Send, "m_nCustomViewmodelModelIndex", GetEntProp(iWeapon, Prop_Send, "m_nModelIndex"));
-		
-		int iWearableViewModel = GetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearableViewModel");
-		if (iWearableViewModel == INVALID_ENT_REFERENCE && !bSameClass)
-		{
-			iWearableViewModel = ViewModels_CreateWearable(iClient, "tf_wearable_vm", iWeapon, GetEntProp(iWeapon, Prop_Send, "m_iWorldModelIndex"));
-		}
-		else if (iWearableViewModel != INVALID_ENT_REFERENCE && bSameClass)
-		{
-			RemoveEntity(iWearableViewModel);
-			iWearableViewModel = INVALID_ENT_REFERENCE;
-		}
-		
-		if (iWearableViewModel != INVALID_ENT_REFERENCE)
-		{
-			if (iWeapon == iActiveWeapon)
-				RemoveEntityEffect(iWearableViewModel, EF_NODRAW);
-			else
-				AddEntityEffect(iWearableViewModel, EF_NODRAW);
-		}
+		if (iWeapon != INVALID_ENT_REFERENCE)
+			SetEntProp(iWeapon, Prop_Send, "m_nCustomViewmodelModelIndex", GetEntProp(iWeapon, Prop_Send, "m_nModelIndex"));
 	}
 }
 
-int ViewModels_CreateWearable(int iClient, const char[] sClassname, int iWeapon, int iModelIndex)
+int ViewModels_CreateWearable(int iClient, int iModelIndex, int iParent)
 {
-	int iWearable = CreateEntityByName(sClassname);
+	int iWearable = CreateEntityByName("tf_wearable_vm");
 	
 	float vecOrigin[3], vecAngles[3];
 	GetEntPropVector(iClient, Prop_Send, "m_vecOrigin", vecOrigin);
@@ -123,25 +120,10 @@ int ViewModels_CreateWearable(int iClient, const char[] sClassname, int iWeapon,
 	
 	SetEntProp(iWearable, Prop_Send, "m_nModelIndex", iModelIndex);
 	
-	if (iWeapon != INVALID_ENT_REFERENCE)
-	{
-		SetEntPropEnt(iWearable, Prop_Send, "m_hWeaponAssociatedWith", iWeapon);
-		SetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearableViewModel", iWearable);
-	}
-	
 	DispatchSpawn(iWearable);
 	
-	if (StrEqual(sClassname, "tf_wearable_vm"))
-	{
-		SetVariantString("!activator");
-		AcceptEntityInput(iWearable, "SetParent", GetEntPropEnt(iClient, Prop_Send, "m_hViewModel"));
-	}
-	else if (StrEqual(sClassname, "tf_wearable"))
-	{
-		SetVariantString("!activator");
-		AcceptEntityInput(iWearable, "SetParent", iClient);
-		AcceptEntityInput(iWeapon, "Clearparent");	//Disables the baseitem from appearing in thirdperson. However, weapon appears while taunting.
-	}
+	SetVariantString("!activator");
+	AcceptEntityInput(iWearable, "SetParent", iParent);
 	
 	return iWearable;
 }
@@ -164,12 +146,4 @@ void ViewModels_RemoveAll()
 		RemoveEntityEffect(iViewModel, EF_NODRAW);
 		SetEntityModel(iViewModel, g_sViewModelsArms[TF2_GetPlayerClass(iClient)]);
 	}
-}
-
-void ViewModels_RemoveFromWeapon(int iWeapon)
-{
-	int iViewmodel = INVALID_ENT_REFERENCE;
-	while ((iViewmodel=FindEntityByClassname(iViewmodel, "tf_wearable_vm")) != INVALID_ENT_REFERENCE)
-		if (GetEntPropEnt(iViewmodel, Prop_Send, "m_hWeaponAssociatedWith") == iWeapon)
-			RemoveEntity(iViewmodel);
 }
