@@ -30,19 +30,23 @@ void ViewModels_UpdateArmsModel(int iClient)
 	int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
 	if (iViewModel != INVALID_ENT_REFERENCE)
 	{
+		TFClassType nClass;
+		
 		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 		if (iActiveWeapon != INVALID_ENT_REFERENCE)
-		{
-			TFClassType nClass = TF2_GetDefaultClassFromItem(iActiveWeapon);
-			bSameClass = nClass == TF2_GetPlayerClass(iClient);
-			if (bSameClass)
-				RemoveEntityEffect(iViewModel, EF_NODRAW);
-			else
-				AddEntityEffect(iViewModel, EF_NODRAW);
-			
-			if (GetEntProp(iViewModel, Prop_Send, "m_nModelIndex") != GetModelIndex(g_sViewModelsArms[nClass]))
-				SetEntityModel(iViewModel, g_sViewModelsArms[nClass]);
-		}
+			nClass = TF2_GetDefaultClassFromItem(iActiveWeapon);
+		else
+			nClass = TF2_GetPlayerClass(iClient);
+		
+		bSameClass = nClass == TF2_GetPlayerClass(iClient);
+		if (bSameClass)
+			RemoveEntityEffect(iViewModel, EF_NODRAW);
+		else
+			AddEntityEffect(iViewModel, EF_NODRAW);
+		
+		if (GetEntProp(iViewModel, Prop_Send, "m_nModelIndex") != GetModelIndex(g_sViewModelsArms[nClass]))
+			SetEntityModel(iViewModel, g_sViewModelsArms[nClass]);
+		
 	}
 	
 	int iArms = ViewModels_GetClientArms(iClient);
@@ -99,33 +103,6 @@ void ViewModels_UpdateArms(int iClient)
 				AddEntityEffect(iWearableViewModel, EF_NODRAW);
 		}
 	}
-}
-
-void ViewModels_SetSequence(int iClient, const char[] sActivityName)
-{
-	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon == INVALID_ENT_REFERENCE)
-		return;
-	
-	int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
-	
-	int iActivity = SDKCall_IndexForName(sActivityName);
-	if (iActivity == ACTIVITY_NOT_AVAILABLE)
-	{
-		LogError("Invalid activity name '%s'", sActivityName);
-		return;
-	}
-	
-	int iTranslateActivity = SDKCall_TranslateViewmodelHandActivityInternal(iActiveWeapon, iActivity);
-	
-	int iSequence = SDKCall_SelectWeightedSequence(iViewModel, iTranslateActivity);
-	if (iSequence == ACTIVITY_NOT_AVAILABLE)
-	{
-		LogError("Could not get sequence from activity '%s' (id %d translate %d)", sActivityName, iActivity, iTranslateActivity);
-		return;
-	}
-	
-	SetEntProp(iViewModel, Prop_Send, "m_nSequence", iSequence);
 }
 
 int ViewModels_CreateWearable(int iClient, const char[] sClassname, int iWeapon, int iModelIndex)

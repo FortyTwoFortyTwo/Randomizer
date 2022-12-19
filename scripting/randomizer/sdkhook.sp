@@ -270,6 +270,8 @@ public void Client_WeaponEquipPost(int iClient, int iWeapon)
 
 public Action Client_WeaponSwitch(int iClient, int iWeapon)
 {
+	ViewModels_UpdateArms(iClient);	// Incase if weapons were to be not properly set up yet for draw animation
+	
 	//Save current active weapon properties before potentally switched out
 	Properties_SaveActiveWeaponAmmo(iClient);
 	
@@ -285,8 +287,7 @@ public Action Client_WeaponSwitch(int iClient, int iWeapon)
 
 public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 {
-	ViewModels_UpdateArms(iClient);
-	ViewModels_SetSequence(iClient, "ACT_VM_DRAW");
+	ViewModels_UpdateArms(iClient);	// Update arms model with new active weapon
 	
 	//Update ammo for new active weapon
 	Properties_UpdateActiveWeaponAmmo(iClient);
