@@ -5,7 +5,6 @@ static Handle g_hSDKRemoveObject;
 static Handle g_hSDKDoClassSpecialSkill;
 static Handle g_hSDKEndClassSpecialSkill;
 static Handle g_hSDKGetLoadoutItem;
-static Handle g_hSDKSetCustomViewModel;
 static Handle g_hSDKRollNewSpell;
 static Handle g_hSDKUpdateRageBuffsAndRage;
 static Handle g_hSDKModifyRage;
@@ -76,13 +75,6 @@ public void SDKCall_Init(GameData hGameData)
 	g_hSDKGetLoadoutItem = EndPrepSDKCall();
 	if (!g_hSDKGetLoadoutItem)
 		LogError("Failed to create call: CTFPlayer::GetLoadoutItem");
-	
-	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CBaseCombatWeapon::SetCustomViewModel");
-	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
-	g_hSDKSetCustomViewModel = EndPrepSDKCall();
-	if (!g_hSDKSetCustomViewModel)
-		LogError("Failed to create call: CBaseCombatWeapon::SetCustomViewModel");
 	
 	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFSpellBook::RollNewSpell");
@@ -224,11 +216,6 @@ bool SDKCall_EndClassSpecialSkill(int iClient)
 Address SDKCall_GetLoadoutItem(int iClient, TFClassType nClass, int iSlot, bool bReportWhitelistFails = false)
 {
 	return SDKCall(g_hSDKGetLoadoutItem, iClient, nClass, iSlot, bReportWhitelistFails);
-}
-
-void SDKCall_SetCustomViewModel(int iWeapon, const char[] sModel)
-{
-	SDKCall(g_hSDKSetCustomViewModel, iWeapon, sModel);
 }
 
 void SDKCall_RollNewSpell(int iSpellbook, int iTier, bool bForceReroll)

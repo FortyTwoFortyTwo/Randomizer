@@ -288,12 +288,6 @@
 				"linux"		"@_ZN11CEconEntity18UpdateModelToClassEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x53\x56\x8B\x35\x2A\x2A\x2A\x2A\x8B\xD9"
 			}
-			"CBaseCombatWeapon::SetCustomViewModel"
-			{
-				"library"	"server"
-				"linux"		"@_ZN17CBaseCombatWeapon18SetCustomViewModelEPKc"
-				"windows"	"\x55\x8B\xEC\x56\x8B\x75\x08\x57\x8B\xF9\x85\xF6\x74\x2A\x80\x3E\x00\x74\x2A\xE8\x2A\x2A\x2A\x2A"
-			}
 			"CTFKnife::DisguiseOnKill"
 			{
 				"library"	"server"

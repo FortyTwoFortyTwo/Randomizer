@@ -78,9 +78,7 @@ void ViewModels_UpdateArms(int iClient)
 		
 		bool bSameClass = TF2_GetDefaultClassFromItem(iWeapon) == nClass;
 		
-		char sModel[PLATFORM_MAX_PATH];
-		GetEntityModel(iWeapon, sModel, sizeof(sModel));
-		SDKCall_SetCustomViewModel(iWeapon, sModel);
+		SetEntProp(iWeapon, Prop_Send, "m_nCustomViewmodelModelIndex", GetEntProp(iWeapon, Prop_Send, "m_nModelIndex"));
 		
 		int iWearableViewModel = GetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearableViewModel");
 		if (iWearableViewModel == INVALID_ENT_REFERENCE && !bSameClass)
