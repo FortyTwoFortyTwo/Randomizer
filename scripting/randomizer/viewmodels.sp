@@ -1,4 +1,4 @@
-char g_sViewModelsArms[][] = {
+char g_sViewModelsArms[][PLATFORM_MAX_PATH] = {
 	"",
 	"models/weapons/c_models/c_scout_arms.mdl",
 	"models/weapons/c_models/c_sniper_arms.mdl",
@@ -11,29 +11,46 @@ char g_sViewModelsArms[][] = {
 	"models/weapons/c_models/c_engineer_arms.mdl",
 };
 
-int ViewModels_GetFromClient(int iClient, bool bArms)
+enum ViewModels
 {
-	int iWearable = INVALID_ENT_REFERENCE;
-	while ((iWearable=FindEntityByClassname(iWearable, "tf_wearable_vm")) != INVALID_ENT_REFERENCE)
-	{
-		if (iClient != GetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity"))
-			continue;
-		
-		int iParent = GetEntPropEnt(iWearable, Prop_Data, "m_pParent");
-		if (bArms && IsClassname(iParent, "tf_viewmodel"))
-			return iWearable;
-		else if (!bArms && IsClassname(iParent, "tf_wearable_vm"))
-			return iWearable;
-	}
+	ViewModels_Arm,
+	ViewModels_Weapon,
 	
-	return INVALID_ENT_REFERENCE;
+	ViewModels_MAX,
 }
 
-void ViewModels_UpdateArms(int iClient)
+static int g_iViewModels[TF_MAXPLAYERS][ViewModels_MAX];
+
+int ViewModels_GetFromClient(int iClient, ViewModels nViewModels, int iModelIndex)
+{
+	if (!g_iViewModels[iClient][nViewModels] || !IsValidEntity(g_iViewModels[iClient][nViewModels]))
+		g_iViewModels[iClient][nViewModels] = INVALID_ENT_REFERENCE;
+	
+	if (g_iViewModels[iClient][nViewModels] != INVALID_ENT_REFERENCE && GetEntProp(g_iViewModels[iClient][nViewModels], Prop_Send, "m_nModelIndex") != iModelIndex)
+	{
+		RemoveEntity(g_iViewModels[iClient][nViewModels]);
+		g_iViewModels[iClient][nViewModels] = INVALID_ENT_REFERENCE;
+	}
+	
+	if (g_iViewModels[iClient][nViewModels] == INVALID_ENT_REFERENCE)
+		g_iViewModels[iClient][nViewModels] = ViewModels_CreateWearable(iClient, iModelIndex);
+	
+	return g_iViewModels[iClient][nViewModels];
+}
+
+void ViewModels_DeleteFromClient(int iClient, ViewModels nViewModels)
+{
+	if (g_iViewModels[iClient][nViewModels] && IsValidEntity(g_iViewModels[iClient][nViewModels]))
+		RemoveEntity(g_iViewModels[iClient][nViewModels]);
+	
+	g_iViewModels[iClient][nViewModels] = INVALID_ENT_REFERENCE;
+}
+
+void ViewModels_UpdateArms(int iClient, int iForceWeapon = INVALID_ENT_REFERENCE)
 {
 	bool bSameClass;
 	
-	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	int iActiveWeapon = iForceWeapon == INVALID_ENT_REFERENCE ? GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") : iForceWeapon;
 	int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
 	if (iViewModel != INVALID_ENT_REFERENCE)
 	{
@@ -50,47 +67,37 @@ void ViewModels_UpdateArms(int iClient)
 		else
 			AddEntityEffect(iViewModel, EF_NODRAW);
 		
-		if (GetEntProp(iViewModel, Prop_Send, "m_nModelIndex") != GetModelIndex(g_sViewModelsArms[nClass]))
-			SetEntityModel(iViewModel, g_sViewModelsArms[nClass]);
+		char sModel[PLATFORM_MAX_PATH];
+		int iTarget = iActiveWeapon == INVALID_ENT_REFERENCE ? iClient : iActiveWeapon;
+		if (SDKCall_AttribHookValueFloat(0.0, "wrench_builds_minisentry", iTarget))
+			sModel = MODEL_ARMS_ROBOTARM;
+		else
+			sModel = g_sViewModelsArms[nClass];
 		
+		int iModelIndex = GetModelIndex(sModel);
+		if (GetEntProp(iViewModel, Prop_Send, "m_nModelIndex") != iModelIndex)
+			SetEntProp(iViewModel, Prop_Send, "m_nModelIndex", iModelIndex);
 	}
 	
-	int iArms = ViewModels_GetFromClient(iClient, true);
 	int iArmsModelIndex = GetModelIndex(g_sViewModelsArms[TF2_GetPlayerClass(iClient)]);
-	if (iArms != INVALID_ENT_REFERENCE && GetEntProp(iArms, Prop_Send, "m_nModelIndex") != iArmsModelIndex)
-	{
-		RemoveEntity(iArms);
-		iArms = INVALID_ENT_REFERENCE;
-	}
-	
-	if (iArms == INVALID_ENT_REFERENCE)
-		iArms = ViewModels_CreateWearable(iClient, iArmsModelIndex, iViewModel);
+	int iArms = ViewModels_GetFromClient(iClient, ViewModels_Arm, iArmsModelIndex);
 	
 	if (bSameClass)
 		AddEntityEffect(iArms, EF_NODRAW);
 	else
 		RemoveEntityEffect(iArms, EF_NODRAW);
 	
-	if (iActiveWeapon != INVALID_ENT_REFERENCE)
+	if (bSameClass)
+	{
+		ViewModels_DeleteFromClient(iClient, ViewModels_Weapon);
+	}
+	else if (iActiveWeapon != INVALID_ENT_REFERENCE)
 	{
 		int iWeaponModelIndex = GetEntProp(iActiveWeapon, Prop_Send, "m_iWorldModelIndex");
-	
-		int iWearable = ViewModels_GetFromClient(iClient, false);
+		int iWearable = ViewModels_GetFromClient(iClient, ViewModels_Weapon, iWeaponModelIndex);
 		
-		if (iWearable != INVALID_ENT_REFERENCE && (bSameClass || GetEntProp(iWearable, Prop_Send, "m_nModelIndex") != iWeaponModelIndex))
-		{
-			RemoveEntity(iWearable);
-			iWearable = INVALID_ENT_REFERENCE;
-		}
-		
-		if (!bSameClass && iWearable == INVALID_ENT_REFERENCE)
-			iWearable = ViewModels_CreateWearable(iClient, iWeaponModelIndex, iArms);
-		
-		if (iWearable != INVALID_ENT_REFERENCE)
-		{
-			SetEntPropEnt(iArms, Prop_Send, "m_hWeaponAssociatedWith", iActiveWeapon);
-			SetEntPropEnt(iWearable, Prop_Send, "m_hWeaponAssociatedWith", iActiveWeapon);
-		}
+		SetEntPropEnt(iArms, Prop_Send, "m_hWeaponAssociatedWith", iActiveWeapon);
+		SetEntPropEnt(iWearable, Prop_Send, "m_hWeaponAssociatedWith", iActiveWeapon);
 	}
 	
 	int iMaxWeapons = GetMaxWeapons();
@@ -102,7 +109,7 @@ void ViewModels_UpdateArms(int iClient)
 	}
 }
 
-int ViewModels_CreateWearable(int iClient, int iModelIndex, int iParent)
+int ViewModels_CreateWearable(int iClient, int iModelIndex)
 {
 	int iWearable = CreateEntityByName("tf_wearable_vm");
 	
@@ -123,9 +130,9 @@ int ViewModels_CreateWearable(int iClient, int iModelIndex, int iParent)
 	DispatchSpawn(iWearable);
 	
 	SetVariantString("!activator");
-	AcceptEntityInput(iWearable, "SetParent", iParent);
+	AcceptEntityInput(iWearable, "SetParent", GetEntPropEnt(iClient, Prop_Send, "m_hViewModel"));
 	
-	return iWearable;
+	return EntIndexToEntRef(iWearable);
 }
 
 void ViewModels_RemoveAll()

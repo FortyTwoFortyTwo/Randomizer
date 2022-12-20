@@ -250,15 +250,23 @@ public void Client_PostThinkPost(int iClient)
 
 public Action Client_WeaponEquip(int iClient, int iWeapon)
 {
-	//Change class before equipping the weapon, otherwise reload times are odd
-	//This also somehow fixes sniper with a banner
+	ViewModels_UpdateArms(iClient, iWeapon);	// Set arms for the weapon were about to equip
+	
+	//Change class before equipping the weapon, otherwise anims and reload times are odd
 	SetEntProp(iWeapon, Prop_Send, "m_hOwnerEntity", iClient);	//So client's class can be attempted first for TF2_GetDefaultClassFromItem
 	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
+	
+	// Don't allow robotarm model screw up anims
+	if (SDKCall_AttribHookValueFloat(0.0, "wrench_builds_minisentry", iClient) == 1.0)
+		TF2Attrib_SetByName(iClient, "mod wrench builds minisentry", -1.0);	// 1.0 + -1.0 = 0.0
+	
 	return Plugin_Continue;
 }
 
 public void Client_WeaponEquipPost(int iClient, int iWeapon)
 {
+	TF2Attrib_RemoveByName(iClient, "mod wrench builds minisentry");
+	
 	RevertClientClass(iClient);
 	
 	ViewModels_UpdateArms(iClient);

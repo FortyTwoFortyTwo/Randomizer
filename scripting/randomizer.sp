@@ -30,6 +30,8 @@
 #define MAX_WEAPONS		40			//Max 48 m_hMyWeapons, give 8 as a space for other weapons (PDA, action etc)
 #define MAX_GROUPS		64
 
+#define MODEL_ARMS_ROBOTARM "models/weapons/c_models/c_engineer_gunslinger.mdl"
+
 #define PARTICLE_BEAM_BLU	"medicgun_beam_blue"
 #define PARTICLE_BEAM_RED	"medicgun_beam_red"
 
@@ -480,9 +482,9 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
+	PrecacheModel(MODEL_ARMS_ROBOTARM);
 	PrecacheParticleSystem(PARTICLE_BEAM_RED);
 	PrecacheParticleSystem(PARTICLE_BEAM_BLU);
-	PrecacheModel("models/weapons/c_models/c_engineer_gunslinger.mdl");	// TODO proper handling with gunslinger
 	
 	Controls_Refresh();
 	Huds_Refresh();
