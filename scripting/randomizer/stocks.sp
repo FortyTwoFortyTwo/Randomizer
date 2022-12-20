@@ -634,9 +634,9 @@ stock int GetMaxWeapons()
 	return iMaxWeapons;
 }
 
-stock void GetEntityModel(int iEntity, char[] sModel, int iMaxSize)
+stock void GetEntityModel(int iEntity, char[] sModel, int iMaxSize, const char[] sProp = "m_nModelIndex")
 {
-	int iIndex = GetEntProp(iEntity, Prop_Send, "m_nModelIndex");
+	int iIndex = GetEntProp(iEntity, Prop_Send, sProp);
 	int iTable = FindStringTable("modelprecache");
 	ReadStringTable(iTable, iIndex, sModel, iMaxSize);
 }

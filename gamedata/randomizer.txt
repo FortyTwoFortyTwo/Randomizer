@@ -381,6 +381,11 @@
 				"linux"		"468"
 				"windows"	"461"
 			}
+			"CTFWeaponBaseMelee::Smack"
+			{
+				"linux"		"476"
+				"windows"	"469"
+			}
 			"CTFWeaponBaseMelee::Swing"
 			{
 				"linux"		"485"
@@ -815,6 +820,13 @@
 				"offset"	"CTFWeaponBase::GetEffectBarAmmo"
 				"hooktype"	"entity"
 				"return"	"int"
+				"this"		"entity"
+			}
+			"CTFWeaponBaseMelee::Smack"
+			{
+				"offset"	"CTFWeaponBaseMelee::Smack"
+				"hooktype"	"entity"
+				"return"	"void"
 				"this"		"entity"
 			}
 			"CTFWeaponBaseMelee::Swing"

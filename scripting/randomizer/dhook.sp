@@ -12,6 +12,7 @@ static DynamicHook g_hDHookEventKilled;
 static DynamicHook g_hDHookTranslateViewmodelHandActivityInternal;
 static DynamicHook g_hDHookSecondaryAttack;
 static DynamicHook g_hDHookGetEffectBarAmmo;
+static DynamicHook g_hDHookSmack;
 static DynamicHook g_hDHookSwing;
 static DynamicHook g_hDHookKilled;
 static DynamicHook g_hDHookCanBeUpgraded;
@@ -79,6 +80,7 @@ public void DHook_Init(GameData hGameData)
 	g_hDHookTranslateViewmodelHandActivityInternal = DHook_CreateVirtual(hGameData, "CEconEntity::TranslateViewmodelHandActivityInternal");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookGetEffectBarAmmo = DHook_CreateVirtual(hGameData, "CTFWeaponBase::GetEffectBarAmmo");
+	g_hDHookSmack = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Smack");
 	g_hDHookSwing = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Swing");
 	g_hDHookKilled = DHook_CreateVirtual(hGameData, "CBaseObject::Killed");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
@@ -245,7 +247,12 @@ void DHook_UnhookGamerules()
 public void DHook_SpawnPost(int iWeapon)
 {
 	if (TF2_GetSlot(iWeapon) == WeaponSlot_Melee)
+	{
+		if (HasEntProp(iWeapon, Prop_Send, "m_bBroken"))
+			g_hDHookSmack.HookEntity(Hook_Post, iWeapon, DHook_SmackPost);
+		
 		g_hDHookSwing.HookEntity(Hook_Pre, iWeapon, DHook_SwingPre);
+	}
 }
 
 public MRESReturn DHook_GiveAmmoPre(int iClient, DHookReturn hReturn, DHookParam hParams)
@@ -730,6 +737,40 @@ public MRESReturn DHook_HandleRageGainPre(DHookParam hParams)
 	
 	RequestFrame(Properties_HandleRageGain, hPack);
 	return MRES_Supercede;
+}
+
+public MRESReturn DHook_SmackPost(int iWeapon)
+{
+	if (!GetEntProp(iWeapon, Prop_Send, "m_bBroken"))
+		return MRES_Ignored;
+	
+	//Bottle and Caber may've updated its model after smack, where only client(?) bothered to update it's model,
+	// so we'll have to update model index prop just so custom viewmodels can work
+	char sModel[PLATFORM_MAX_PATH];
+	int iModelIndex = INVALID_STRING_INDEX;
+	if (IsClassname(iWeapon, "tf_weapon_stickbomb"))
+	{
+		sModel = "models/workshop/weapons/c_models/c_caber/c_caber_exploded.mdl";
+		iModelIndex = GetModelIndex(sModel);
+	}
+	else
+	{
+		GetEntityModel(iWeapon, sModel, sizeof(sModel), "m_iWorldModelIndex");
+		if (StrContains(sModel, "_broken.mdl") != -1)
+			return MRES_Ignored;	//Model is already updated
+		
+		ReplaceString(sModel, sizeof(sModel), ".mdl", "_broken.mdl");
+		if (!FileExists(sModel, true))
+			ReplaceString(sModel, sizeof(sModel), "workshop/", "");	// Scottish Handshake hahaaaa
+		
+		iModelIndex = PrecacheModel(sModel);
+	}
+	
+	SetEntProp(iWeapon, Prop_Send, "m_iWorldModelIndex", iModelIndex);
+	
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	ViewModels_UpdateArms(iClient);
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_SwingPre(int iWeapon, DHookReturn hReturn)
