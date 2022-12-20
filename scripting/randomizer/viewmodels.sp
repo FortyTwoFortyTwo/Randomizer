@@ -121,8 +121,6 @@ int ViewModels_CreateWearable(int iClient, int iModelIndex)
 	SetEntProp(iWearable, Prop_Send, "m_bValidatedAttachedEntity", true);
 	SetEntPropEnt(iWearable, Prop_Send, "m_hOwnerEntity", iClient);
 	SetEntProp(iWearable, Prop_Send, "m_iTeamNum", GetClientTeam(iClient));
-	SetEntProp(iWearable, Prop_Send, "m_usSolidFlags", FSOLID_NOT_SOLID);
-	SetEntProp(iWearable, Prop_Send, "m_CollisionGroup", COLLISION_GROUP_WEAPON);
 	SetEntProp(iWearable, Prop_Send, "m_fEffects", EF_BONEMERGE|EF_BONEMERGE_FASTCULL);
 	
 	SetEntProp(iWearable, Prop_Send, "m_nModelIndex", iModelIndex);

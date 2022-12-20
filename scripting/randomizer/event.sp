@@ -63,8 +63,6 @@ public void Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bD
 		if (!SDKCall_AttribHookValueFloat(0.0, "item_meter_resupply_denied", iWeapon))
 			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
 	}
-	
-	ViewModels_UpdateArms(iClient);
 }
 
 public void Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadcast)

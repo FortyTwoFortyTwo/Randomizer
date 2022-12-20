@@ -35,8 +35,6 @@
 #define PARTICLE_BEAM_BLU	"medicgun_beam_blue"
 #define PARTICLE_BEAM_RED	"medicgun_beam_red"
 
-#define ACTIVITY_NOT_AVAILABLE		-1
-
 // entity effects
 enum
 {
@@ -54,42 +52,6 @@ enum
 										// the parent is not in the PVS.
 	EF_ITEM_BLINK			= (1<<8),	// blink an item so that the user notices it.
 	EF_PARENT_ANIMATES		= (1<<9),	// always assume that the parent entity is animating
-};
-
-enum SolidFlags
-{
-	FSOLID_CUSTOMRAYTEST	= (1 << 0),
-	FSOLID_CUSTOMBOXTEST	= (1 << 1),
-	FSOLID_NOT_SOLID		= (1 << 2),
-	FSOLID_TRIGGER			= (1 << 3),
-};
-
-enum
-{
-	COLLISION_GROUP_NONE  = 0,
-	COLLISION_GROUP_DEBRIS,			// Collides with nothing but world and static stuff
-	COLLISION_GROUP_DEBRIS_TRIGGER, // Same as debris, but hits triggers
-	COLLISION_GROUP_INTERACTIVE_DEBRIS,	// Collides with everything except other interactive debris or debris
-	COLLISION_GROUP_INTERACTIVE,	// Collides with everything except interactive debris or debris
-	COLLISION_GROUP_PLAYER,
-	COLLISION_GROUP_BREAKABLE_GLASS,
-	COLLISION_GROUP_VEHICLE,
-	COLLISION_GROUP_PLAYER_MOVEMENT,  // For HL2, same as Collision_Group_Player, for
-										// TF2, this filters out other players and CBaseObjects
-	COLLISION_GROUP_NPC,			// Generic NPC group
-	COLLISION_GROUP_IN_VEHICLE,		// for any entity inside a vehicle
-	COLLISION_GROUP_WEAPON,			// for any weapons that need collision detection
-	COLLISION_GROUP_VEHICLE_CLIP,	// vehicle clip brush to restrict vehicle movement
-	COLLISION_GROUP_PROJECTILE,		// Projectiles!
-	COLLISION_GROUP_DOOR_BLOCKER,	// Blocks entities not permitted to get near moving doors
-	COLLISION_GROUP_PASSABLE_DOOR,	// Doors that the player shouldn't collide with
-	COLLISION_GROUP_DISSOLVING,		// Things that are dissolving are in this group
-	COLLISION_GROUP_PUSHAWAY,		// Nonsolid on client and server, pushaway in player code
-
-	COLLISION_GROUP_NPC_ACTOR,		// Used so NPCs in scripts ignore the player.
-	COLLISION_GROUP_NPC_SCRIPTED,	// USed for NPCs in scripts that should not collide with each other
-
-	LAST_SHARED_COLLISION_GROUP
 };
 
 enum TFQuality
@@ -718,8 +680,6 @@ public void TF2_OnConditionRemoved(int iClient, TFCond nCond)
 	//TODO dont remove cond if under steak effect, steak itself is already buggy that needs to be fixed
 	if (nCond == TFCond_RuneKnockout)
 		TF2_RemoveCondition(iClient, TFCond_RestrictToMelee);
-	else if (nCond == TFCond_Zoomed)
-		ViewModels_UpdateArms(iClient);	//TF2 modified EF_NODRAW when zooming it
 }
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)
