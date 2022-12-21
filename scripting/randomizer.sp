@@ -322,6 +322,7 @@ bool g_bEnabled;
 bool g_bTF2Items;
 bool g_bAllowGiveNamedItem;
 int g_iRuneCount;
+int g_iOffsetItem;
 int g_iOffsetItemDefinitionIndex;
 int g_iOffsetMyWearables;
 int g_iOffsetPlayerShared;
@@ -394,7 +395,8 @@ public void OnPluginStart()
 	delete hGameData;
 	
 	//Any weapons using m_Item would work to get offset
-	g_iOffsetItemDefinitionIndex = FindSendPropInfo("CTFWearable", "m_iItemDefinitionIndex") - FindSendPropInfo("CTFWearable", "m_Item");
+	g_iOffsetItem = FindSendPropInfo("CTFWearable", "m_Item");
+	g_iOffsetItemDefinitionIndex = FindSendPropInfo("CTFWearable", "m_iItemDefinitionIndex") - g_iOffsetItem;
 	g_iOffsetMyWearables = FindSendPropInfo("CTFPlayer", "m_hMyWearables");
 	g_iOffsetPlayerShared = FindSendPropInfo("CTFPlayer", "m_Shared");
 	

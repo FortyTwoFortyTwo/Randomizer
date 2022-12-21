@@ -113,15 +113,8 @@ int ViewModels_CreateWearable(int iClient, int iModelIndex, int iWeapon = INVALI
 {
 	int iWearable = CreateEntityByName("tf_wearable_vm");
 	
-	if (iWeapon != INVALID_ENT_REFERENCE)
-	{
-		//Copy m_Item from weapon, so reskin stuffs can show
-		
-		char sClass[256];
-		GetEntityNetClass(iWeapon, sClass, sizeof(sClass));
-		int iOffset = FindSendPropInfo(sClass, "m_Item");
-		SDKCall_SetItem(GetEntityAddress(iWearable) + view_as<Address>(iOffset), GetEntityAddress(iWeapon) + view_as<Address>(iOffset));
-	}
+	if (iWeapon != INVALID_ENT_REFERENCE)	//Copy m_Item from weapon, so reskin stuffs can show
+		SDKCall_SetItem(GetEntityAddress(iWearable) + view_as<Address>(g_iOffsetItem), GetEntityAddress(iWeapon) + view_as<Address>(g_iOffsetItem));
 	
 	float vecOrigin[3], vecAngles[3];
 	GetEntPropVector(iClient, Prop_Send, "m_vecOrigin", vecOrigin);
