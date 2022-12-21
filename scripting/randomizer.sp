@@ -31,6 +31,7 @@
 #define MAX_GROUPS		64
 
 #define MODEL_ARMS_ROBOTARM "models/weapons/c_models/c_engineer_gunslinger.mdl"
+#define MODEL_ARMS_DISGUISE	"models/weapons/v_models/v_pda_spy.mdl"
 
 #define PARTICLE_BEAM_BLU	"medicgun_beam_blue"
 #define PARTICLE_BEAM_RED	"medicgun_beam_red"
