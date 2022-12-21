@@ -276,6 +276,12 @@
 				"linux"		"@_ZN20CTFPlayerClassShared14CanBuildObjectEi"
 				"windows"	"\x55\x8B\xEC\x53\x56\xFF\x71\x04"
 			}
+			"CEconEntity::UpdateModelToClass"
+			{
+				"library"	"server"
+				"linux"		"@_ZN11CEconEntity18UpdateModelToClassEv"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x53\x56\x8B\x35\x2A\x2A\x2A\x2A\x8B\xD9"
+			}
 			"CTFKnife::DisguiseOnKill"
 			{
 				"library"	"server"
@@ -342,6 +348,12 @@
 				"linux"		"@_Z14HandleRageGainP9CTFPlayerjff"
 				"windows"	"\x55\x8B\xEC\x56\x8B\x75\x08\x85\xF6\x0F\x84\x2A\x2A\x2A\x2A\x53"
 			}
+			"CEconItemView::operator="
+			{
+				"library"	"server"
+				"linux"		"@_ZN13CEconItemViewaSERKS_"
+				"windows"	"\x55\x8B\xEC\x51\x53\x8B\x5D\x08\x56\x8B\xF1\xB1\x20"
+			}
 		}
 		"Offsets"
 		{
@@ -360,6 +372,11 @@
 				"linux"		"123"
 				"windows"	"122"
 			}
+			"CEconEntity::TranslateViewmodelHandActivityInternal"
+			{
+				"linux"		"235"
+				"windows"	"229"
+			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"linux"		"293"
@@ -369,6 +386,11 @@
 			{
 				"linux"		"468"
 				"windows"	"461"
+			}
+			"CTFWeaponBaseMelee::Smack"
+			{
+				"linux"		"476"
+				"windows"	"469"
 			}
 			"CTFWeaponBaseMelee::Swing"
 			{
@@ -631,6 +653,13 @@
 					}
 				}
 			}
+			"CEconEntity::UpdateModelToClass"
+			{
+				"signature" "CEconEntity::UpdateModelToClass"
+				"callconv" "thiscall"
+				"return" "void"
+				"this" "entity"
+			}
 			"CTFKnife::DisguiseOnKill"
 			{
 				"signature" "CTFKnife::DisguiseOnKill"
@@ -771,6 +800,20 @@
 					}
 				}
 			}
+			"CEconEntity::TranslateViewmodelHandActivityInternal"
+			{
+				"offset"	"CEconEntity::TranslateViewmodelHandActivityInternal"
+				"hooktype"	"entity"
+				"return"	"int"
+				"this"		"entity"
+				"arguments"
+				{
+					"actBase"
+					{
+						"type"    "int"
+					}
+				}
+			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
 				"offset"	"CBaseCombatWeapon::SecondaryAttack"
@@ -783,6 +826,13 @@
 				"offset"	"CTFWeaponBase::GetEffectBarAmmo"
 				"hooktype"	"entity"
 				"return"	"int"
+				"this"		"entity"
+			}
+			"CTFWeaponBaseMelee::Smack"
+			{
+				"offset"	"CTFWeaponBaseMelee::Smack"
+				"hooktype"	"entity"
+				"return"	"void"
 				"this"		"entity"
 			}
 			"CTFWeaponBaseMelee::Swing"

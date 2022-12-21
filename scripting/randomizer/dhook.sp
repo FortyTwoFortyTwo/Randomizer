@@ -9,8 +9,10 @@ enum struct Detour
 static ArrayList g_aDHookDetours;
 
 static DynamicHook g_hDHookEventKilled;
+static DynamicHook g_hDHookTranslateViewmodelHandActivityInternal;
 static DynamicHook g_hDHookSecondaryAttack;
 static DynamicHook g_hDHookGetEffectBarAmmo;
+static DynamicHook g_hDHookSmack;
 static DynamicHook g_hDHookSwing;
 static DynamicHook g_hDHookKilled;
 static DynamicHook g_hDHookCanBeUpgraded;
@@ -64,6 +66,7 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFPlayer::CanPickupBuilding", _, DHook_CanPickupBuildingPost);
 	DHook_CreateDetour(hGameData, "CTFPlayer::DropRune", DHook_DropRunePre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayerClassShared::CanBuildObject", DHook_CanBuildObjectPre, _);
+	DHook_CreateDetour(hGameData, "CEconEntity::UpdateModelToClass", DHook_UpdateModelToClassPre, _);
 	DHook_CreateDetour(hGameData, "CTFKnife::DisguiseOnKill", DHook_DisguiseOnKillPre, DHook_DisguiseOnKillPost);
 	DHook_CreateDetour(hGameData, "CTFLunchBox::ApplyBiteEffects", DHook_ApplyBiteEffectsPre, DHook_ApplyBiteEffectsPost);
 	DHook_CreateDetour(hGameData, "CTFGameStats::Event_PlayerFiredWeapon", DHook_PlayerFiredWeaponPre, _);
@@ -74,8 +77,10 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "HandleRageGain", DHook_HandleRageGainPre, _);
 	
 	g_hDHookEventKilled = DHook_CreateVirtual(hGameData, "CBaseEntity::Event_Killed");
+	g_hDHookTranslateViewmodelHandActivityInternal = DHook_CreateVirtual(hGameData, "CEconEntity::TranslateViewmodelHandActivityInternal");
 	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
 	g_hDHookGetEffectBarAmmo = DHook_CreateVirtual(hGameData, "CTFWeaponBase::GetEffectBarAmmo");
+	g_hDHookSmack = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Smack");
 	g_hDHookSwing = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Swing");
 	g_hDHookKilled = DHook_CreateVirtual(hGameData, "CBaseObject::Killed");
 	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
@@ -212,6 +217,8 @@ void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 	if (StrContains(sClassname, "tf_weapon_") == 0)
 	{
 		SDKHook(iEntity, SDKHook_SpawnPost, DHook_SpawnPost);
+		g_hDHookTranslateViewmodelHandActivityInternal.HookEntity(Hook_Pre, iEntity, DHook_TranslateViewmodelHandActivityInternalPre);
+		g_hDHookTranslateViewmodelHandActivityInternal.HookEntity(Hook_Post, iEntity, DHook_TranslateViewmodelHandActivityInternalPost);
 		g_hDHookSecondaryAttack.HookEntity(Hook_Post, iEntity, DHook_SecondaryWeaponPost);
 		g_hDHookGetEffectBarAmmo.HookEntity(Hook_Post, iEntity, DHook_GetEffectBarAmmoPost);
 	}
@@ -240,7 +247,12 @@ void DHook_UnhookGamerules()
 public void DHook_SpawnPost(int iWeapon)
 {
 	if (TF2_GetSlot(iWeapon) == WeaponSlot_Melee)
+	{
+		if (HasEntProp(iWeapon, Prop_Send, "m_bBroken"))
+			g_hDHookSmack.HookEntity(Hook_Post, iWeapon, DHook_SmackPost);
+		
 		g_hDHookSwing.HookEntity(Hook_Pre, iWeapon, DHook_SwingPre);
+	}
 }
 
 public MRESReturn DHook_GiveAmmoPre(int iClient, DHookReturn hReturn, DHookParam hParams)
@@ -578,6 +590,18 @@ public MRESReturn DHook_CanBuildObjectPre(Address pPlayerClassShared, DHookRetur
 	return MRES_Supercede;
 }
 
+public MRESReturn DHook_UpdateModelToClassPre(int iWeapon)
+{
+	//Custom viewmodel can weirdly bug out on weapons with "provide_on_active" attribute,
+	// Prevent UpdateModelToClass from being called again, which usually happens on weapon switch
+	
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	if (iClient != INVALID_ENT_REFERENCE)
+		return MRES_Supercede;
+	
+	return MRES_Ignored;
+}
+
 public MRESReturn DHook_DisguiseOnKillPre(int iWeapon)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
@@ -715,6 +739,40 @@ public MRESReturn DHook_HandleRageGainPre(DHookParam hParams)
 	return MRES_Supercede;
 }
 
+public MRESReturn DHook_SmackPost(int iWeapon)
+{
+	if (!GetEntProp(iWeapon, Prop_Send, "m_bBroken"))
+		return MRES_Ignored;
+	
+	//Bottle and Caber may've updated its model after smack, where only client(?) bothered to update it's model,
+	// so we'll have to update model index prop just so custom viewmodels can work
+	char sModel[PLATFORM_MAX_PATH];
+	int iModelIndex = INVALID_STRING_INDEX;
+	if (IsClassname(iWeapon, "tf_weapon_stickbomb"))
+	{
+		sModel = "models/workshop/weapons/c_models/c_caber/c_caber_exploded.mdl";
+		iModelIndex = GetModelIndex(sModel);
+	}
+	else
+	{
+		GetEntityModel(iWeapon, sModel, sizeof(sModel), "m_iWorldModelIndex");
+		if (StrContains(sModel, "_broken.mdl") != -1)
+			return MRES_Ignored;	//Model is already updated
+		
+		ReplaceString(sModel, sizeof(sModel), ".mdl", "_broken.mdl");
+		if (!FileExists(sModel, true))
+			ReplaceString(sModel, sizeof(sModel), "workshop/", "");	// Scottish Handshake hahaaaa
+		
+		iModelIndex = PrecacheModel(sModel);
+	}
+	
+	SetEntProp(iWeapon, Prop_Send, "m_iWorldModelIndex", iModelIndex);
+	
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	ViewModels_UpdateArms(iClient);
+	return MRES_Ignored;
+}
+
 public MRESReturn DHook_SwingPre(int iWeapon, DHookReturn hReturn)
 {
 	//Not all melee weapons call to end demo charge
@@ -722,6 +780,20 @@ public MRESReturn DHook_SwingPre(int iWeapon, DHookReturn hReturn)
 	if (0 < iClient <= MaxClients)
 		SDKCall_EndClassSpecialSkill(iClient);
 	
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_TranslateViewmodelHandActivityInternalPre(int iWeapon, DHookReturn hReturn, DHookParam hParams)
+{
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_TranslateViewmodelHandActivityInternalPost(int iWeapon, DHookReturn hReturn, DHookParam hParams)
+{
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	RevertClientClass(iClient);
 	return MRES_Ignored;
 }
 

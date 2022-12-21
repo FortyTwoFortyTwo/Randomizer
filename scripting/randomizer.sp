@@ -15,7 +15,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.9.1"
+#define PLUGIN_VERSION			"1.10.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define TF_MAXPLAYERS	34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
@@ -29,6 +29,9 @@
 
 #define MAX_WEAPONS		40			//Max 48 m_hMyWeapons, give 8 as a space for other weapons (PDA, action etc)
 #define MAX_GROUPS		64
+
+#define MODEL_ARMS_ROBOTARM "models/weapons/c_models/c_engineer_gunslinger.mdl"
+#define MODEL_ARMS_DISGUISE	"models/weapons/v_models/v_pda_spy.mdl"
 
 #define PARTICLE_BEAM_BLU	"medicgun_beam_blue"
 #define PARTICLE_BEAM_RED	"medicgun_beam_red"
@@ -320,6 +323,7 @@ bool g_bEnabled;
 bool g_bTF2Items;
 bool g_bAllowGiveNamedItem;
 int g_iRuneCount;
+int g_iOffsetItem;
 int g_iOffsetItemDefinitionIndex;
 int g_iOffsetMyWearables;
 int g_iOffsetPlayerShared;
@@ -392,7 +396,8 @@ public void OnPluginStart()
 	delete hGameData;
 	
 	//Any weapons using m_Item would work to get offset
-	g_iOffsetItemDefinitionIndex = FindSendPropInfo("CTFWearable", "m_iItemDefinitionIndex") - FindSendPropInfo("CTFWearable", "m_Item");
+	g_iOffsetItem = FindSendPropInfo("CTFWearable", "m_Item");
+	g_iOffsetItemDefinitionIndex = FindSendPropInfo("CTFWearable", "m_iItemDefinitionIndex") - g_iOffsetItem;
 	g_iOffsetMyWearables = FindSendPropInfo("CTFPlayer", "m_hMyWearables");
 	g_iOffsetPlayerShared = FindSendPropInfo("CTFPlayer", "m_Shared");
 	
@@ -426,7 +431,6 @@ public void OnPluginStart()
 	Group_Init();
 	Huds_Init();
 	Loadout_Init();
-	ViewModels_Init();
 	Weapons_Init();
 	
 	AddCommandListener(Console_EurekaTeleport, "eureka_teleport");
@@ -443,12 +447,12 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
+	PrecacheModel(MODEL_ARMS_ROBOTARM);
 	PrecacheParticleSystem(PARTICLE_BEAM_RED);
 	PrecacheParticleSystem(PARTICLE_BEAM_BLU);
 	
 	Controls_Refresh();
 	Huds_Refresh();
-	ViewModels_Refresh();
 	Weapons_Refresh();
 	
 	ConVar_Refresh();	//After Weapons_Refresh
@@ -738,6 +742,8 @@ void DisableRandomizer()
 	
 	Patch_Disable();
 	g_bEnabled = false;
+	
+	ViewModels_RemoveAll();
 	
 	int iBuilding = MaxClients+1;
 	while ((iBuilding = FindEntityByClassname(iBuilding, "obj_*")) > MaxClients)

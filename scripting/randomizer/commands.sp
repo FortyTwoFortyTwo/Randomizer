@@ -9,34 +9,12 @@ static char g_sSlotName[][] = {
 
 void Commands_Init()
 {
-	RegConsoleCmd("sm_cantsee", Command_CantSee);
-	
 	RegAdminCmd("sm_rndclass", Command_Class, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndsetweapon", Command_SetWeapon, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndsetslotweapon", Command_SetSlotWeapon, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndgiveweapon", Command_GiveWeapon, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndrune", Command_Rune, ADMFLAG_CHANGEMAP);
 	RegAdminCmd("sm_rndgenerate", Command_Generate, ADMFLAG_CHANGEMAP);
-}
-
-public Action Command_CantSee(int iClient, int iArgs)
-{
-	if (!g_bEnabled)
-		return Plugin_Continue;
-	
-	if (iClient == 0)
-		return Plugin_Handled;
-	
-	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iWeapon <= MaxClients)
-		return Plugin_Handled;
-	
-	if (ViewModels_ToggleInvisible(iWeapon))
-		ReplyToCommand(iClient, "Your active weapon is now transparent.");
-	else
-		ReplyToCommand(iClient, "Your active weapon is now fully visible.");
-	
-	return Plugin_Handled;
 }
 
 public Action Command_Class(int iClient, int iArgs)

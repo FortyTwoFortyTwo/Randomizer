@@ -119,11 +119,6 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 
 public void Client_PreThink(int iClient)
 {
-	//Non-team colored weapons can show incorrect viewmodel skin
-	int iViewModel = GetEntPropEnt(iClient, Prop_Send, "m_hViewModel");
-	if (iViewModel > MaxClients)
-		SetEntProp(iViewModel, Prop_Send, "m_nSkin", GetEntProp(iClient, Prop_Send, "m_nSkin"));
-	
 	//Make sure player cant use primary or secondary attack while cloaked
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
 	{
@@ -255,16 +250,26 @@ public void Client_PostThinkPost(int iClient)
 
 public Action Client_WeaponEquip(int iClient, int iWeapon)
 {
-	//Change class before equipping the weapon, otherwise reload times are odd
-	//This also somehow fixes sniper with a banner
+	ViewModels_UpdateArms(iClient, iWeapon);	// Set arms for the weapon were about to equip
+	
+	//Change class before equipping the weapon, otherwise anims and reload times are odd
 	SetEntProp(iWeapon, Prop_Send, "m_hOwnerEntity", iClient);	//So client's class can be attempted first for TF2_GetDefaultClassFromItem
 	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
+	
+	// Don't allow robotarm model screw up anims
+	if (SDKCall_AttribHookValueFloat(0.0, "wrench_builds_minisentry", iClient) == 1.0)
+		TF2Attrib_SetByName(iClient, "mod wrench builds minisentry", -1.0);	// 1.0 + -1.0 = 0.0
+	
 	return Plugin_Continue;
 }
 
 public void Client_WeaponEquipPost(int iClient, int iWeapon)
 {
+	TF2Attrib_RemoveByName(iClient, "mod wrench builds minisentry");
+	
 	RevertClientClass(iClient);
+	
+	ViewModels_UpdateArms(iClient);
 	
 	//Refresh controls and huds
 	Controls_RefreshClient(iClient);
@@ -273,6 +278,8 @@ public void Client_WeaponEquipPost(int iClient, int iWeapon)
 
 public Action Client_WeaponSwitch(int iClient, int iWeapon)
 {
+	ViewModels_UpdateArms(iClient);	// Incase if weapons were to be not properly set up yet for draw animation
+	
 	//Save current active weapon properties before potentally switched out
 	Properties_SaveActiveWeaponAmmo(iClient);
 	
@@ -288,6 +295,8 @@ public Action Client_WeaponSwitch(int iClient, int iWeapon)
 
 public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 {
+	ViewModels_UpdateArms(iClient);	// Update arms model with new active weapon
+	
 	//Update ammo for new active weapon
 	Properties_UpdateActiveWeaponAmmo(iClient);
 	
