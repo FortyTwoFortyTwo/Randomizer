@@ -348,6 +348,12 @@
 				"linux"		"@_Z14HandleRageGainP9CTFPlayerjff"
 				"windows"	"\x55\x8B\xEC\x56\x8B\x75\x08\x85\xF6\x0F\x84\x2A\x2A\x2A\x2A\x53"
 			}
+			"CEconItemView::operator="
+			{
+				"library"	"server"
+				"linux"		"@_ZN13CEconItemViewaSERKS_"
+				"windows"	"\x55\x8B\xEC\x51\x53\x8B\x5D\x08\x56\x8B\xF1\xB1\x20"
+			}
 		}
 		"Offsets"
 		{

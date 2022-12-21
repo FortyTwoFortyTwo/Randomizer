@@ -10,6 +10,7 @@ static Handle g_hSDKModifyRage;
 static Handle g_hSDKSetCarryingRuneType;
 static Handle g_hSDKAttribHookValueFloat;
 static Handle g_hSDKHandleRageGain;
+static Handle g_hSDKSetItem;
 static Handle g_hSDKGetBaseEntity;
 static Handle g_hSDKGetMaxHealth;
 static Handle g_hSDKWeaponCanSwitchTo;
@@ -116,6 +117,14 @@ public void SDKCall_Init(GameData hGameData)
 		LogError("Failed to create call: HandleRageGain");
 	
 	StartPrepSDKCall(SDKCall_Raw);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CEconItemView::operator=");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);	// CEconItemView&
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);	// CEconItemView&
+	g_hSDKSetItem = EndPrepSDKCall();
+	if (!g_hSDKSetItem)
+		LogError("Failed to create call: CEconItemView::operator=");
+	
+	StartPrepSDKCall(SDKCall_Raw);
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetBaseEntity");
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 	g_hSDKGetBaseEntity = EndPrepSDKCall();
@@ -214,6 +223,11 @@ float SDKCall_AttribHookValueFloat(float flInitial, const char[] sAttribClass, i
 void SDKCall_HandleRageGain(int iClient, int iRequiredBuffFlags, float flDamage, float fInverseRageGainScale)
 {
 	SDKCall(g_hSDKHandleRageGain, iClient, iRequiredBuffFlags, flDamage, fInverseRageGainScale);
+}
+
+void SDKCall_SetItem(Address pItem, Address pOther)
+{
+	SDKCall(g_hSDKSetItem, pItem, pOther);
 }
 
 int SDKCall_GetBaseEntity(Address pEntity)

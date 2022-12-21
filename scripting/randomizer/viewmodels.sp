@@ -21,7 +21,7 @@ enum ViewModels
 
 static int g_iViewModels[TF_MAXPLAYERS][ViewModels_MAX];
 
-int ViewModels_GetFromClient(int iClient, ViewModels nViewModels, int iModelIndex)
+int ViewModels_GetFromClient(int iClient, ViewModels nViewModels, int iModelIndex, int iWeapon = INVALID_ENT_REFERENCE)
 {
 	if (!g_iViewModels[iClient][nViewModels] || !IsValidEntity(g_iViewModels[iClient][nViewModels]))
 		g_iViewModels[iClient][nViewModels] = INVALID_ENT_REFERENCE;
@@ -33,7 +33,7 @@ int ViewModels_GetFromClient(int iClient, ViewModels nViewModels, int iModelInde
 	}
 	
 	if (g_iViewModels[iClient][nViewModels] == INVALID_ENT_REFERENCE)
-		g_iViewModels[iClient][nViewModels] = ViewModels_CreateWearable(iClient, iModelIndex);
+		g_iViewModels[iClient][nViewModels] = ViewModels_CreateWearable(iClient, iModelIndex, iWeapon);
 	
 	return g_iViewModels[iClient][nViewModels];
 }
@@ -94,7 +94,7 @@ void ViewModels_UpdateArms(int iClient, int iForceWeapon = INVALID_ENT_REFERENCE
 	else if (iActiveWeapon != INVALID_ENT_REFERENCE)
 	{
 		int iWeaponModelIndex = GetEntProp(iActiveWeapon, Prop_Send, "m_iWorldModelIndex");
-		int iWearable = ViewModels_GetFromClient(iClient, ViewModels_Weapon, iWeaponModelIndex);
+		int iWearable = ViewModels_GetFromClient(iClient, ViewModels_Weapon, iWeaponModelIndex, iActiveWeapon);
 		
 		SetEntPropEnt(iArms, Prop_Send, "m_hWeaponAssociatedWith", iActiveWeapon);
 		SetEntPropEnt(iWearable, Prop_Send, "m_hWeaponAssociatedWith", iActiveWeapon);
@@ -109,9 +109,19 @@ void ViewModels_UpdateArms(int iClient, int iForceWeapon = INVALID_ENT_REFERENCE
 	}
 }
 
-int ViewModels_CreateWearable(int iClient, int iModelIndex)
+int ViewModels_CreateWearable(int iClient, int iModelIndex, int iWeapon = INVALID_ENT_REFERENCE)
 {
 	int iWearable = CreateEntityByName("tf_wearable_vm");
+	
+	if (iWeapon != INVALID_ENT_REFERENCE)
+	{
+		//Copy m_Item from weapon, so reskin stuffs can show
+		
+		char sClass[256];
+		GetEntityNetClass(iWeapon, sClass, sizeof(sClass));
+		int iOffset = FindSendPropInfo(sClass, "m_Item");
+		SDKCall_SetItem(GetEntityAddress(iWearable) + view_as<Address>(iOffset), GetEntityAddress(iWeapon) + view_as<Address>(iOffset));
+	}
 	
 	float vecOrigin[3], vecAngles[3];
 	GetEntPropVector(iClient, Prop_Send, "m_vecOrigin", vecOrigin);
@@ -123,9 +133,9 @@ int ViewModels_CreateWearable(int iClient, int iModelIndex)
 	SetEntProp(iWearable, Prop_Send, "m_iTeamNum", GetClientTeam(iClient));
 	SetEntProp(iWearable, Prop_Send, "m_fEffects", EF_BONEMERGE|EF_BONEMERGE_FASTCULL);
 	
-	SetEntProp(iWearable, Prop_Send, "m_nModelIndex", iModelIndex);
-	
 	DispatchSpawn(iWearable);
+	
+	SetEntProp(iWearable, Prop_Send, "m_nModelIndex", iModelIndex);	// After DispatchSpawn, otherwise CEconItemView overrides it
 	
 	SetVariantString("!activator");
 	AcceptEntityInput(iWearable, "SetParent", GetEntPropEnt(iClient, Prop_Send, "m_hViewModel"));
