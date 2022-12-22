@@ -310,7 +310,7 @@ stock TFClassType TF2_GetDefaultClassFromItem(int iWeapon)
 	TF2Econ_GetItemClassName(iIndex, sIndexClassname, sizeof(sIndexClassname));
 	
 	//Try client class first
-	int iClient = GetEntProp(iWeapon, Prop_Send, "m_hOwnerEntity");
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients)
 	{
 		TFClassType nClass = TF2_GetPlayerClass(iClient);

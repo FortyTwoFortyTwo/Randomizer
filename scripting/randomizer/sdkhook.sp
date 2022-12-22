@@ -250,10 +250,11 @@ public void Client_PostThinkPost(int iClient)
 
 public Action Client_WeaponEquip(int iClient, int iWeapon)
 {
+	SetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity", iClient);	//So client's class can be attempted first for TF2_GetDefaultClassFromItem
+	
 	ViewModels_UpdateArms(iClient, iWeapon);	// Set arms for the weapon were about to equip
 	
 	//Change class before equipping the weapon, otherwise anims and reload times are odd
-	SetEntProp(iWeapon, Prop_Send, "m_hOwnerEntity", iClient);	//So client's class can be attempted first for TF2_GetDefaultClassFromItem
 	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
 	
 	// Don't allow robotarm model screw up anims
