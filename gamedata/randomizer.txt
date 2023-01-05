@@ -384,18 +384,18 @@
 			}
 			"CTFWeaponBase::GetEffectBarAmmo"
 			{
-				"linux"		"468"
-				"windows"	"461"
+				"linux"		"469"
+				"windows"	"462"
 			}
 			"CTFWeaponBaseMelee::Smack"
 			{
-				"linux"		"476"
-				"windows"	"469"
+				"linux"		"477"
+				"windows"	"470"
 			}
 			"CTFWeaponBaseMelee::Swing"
 			{
-				"linux"		"485"
-				"windows"	"478"
+				"linux"		"486"
+				"windows"	"479"
 			}
 			"CBaseObject::Killed"
 			{
