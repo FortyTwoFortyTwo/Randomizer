@@ -1230,8 +1230,10 @@ public MRESReturn DHook_CanPickupBuildingPost(int iClient, DHookReturn hReturn, 
 
 public MRESReturn DHook_DropRunePre(int iClient, DHookParam hParams)
 {
-	//TODO check if client is in randomize mode
-	return MRES_Supercede;
+	if (Group_IsClientRandomized(iClient, RandomizedType_Rune))
+		return MRES_Supercede;
+	
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_FrameUpdatePostEntityThinkPre()
