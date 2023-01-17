@@ -224,7 +224,7 @@ public void Client_PostThink(int iClient)
 	int iWeapon, iPos;
 	while (TF2_GetItemFromAttribute(iClient, "item_meter_charge_type", iWeapon, iPos))
 	{
-		float flRate = SDKCall_AttribHookValueFloat(0.0, "item_meter_charge_rate", iWeapon);
+		float flRate = TF2Attrib_HookValueFloat(0.0, "item_meter_charge_rate", iWeapon);
 		if (!flRate)
 			continue;
 		
@@ -258,7 +258,7 @@ public Action Client_WeaponEquip(int iClient, int iWeapon)
 	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
 	
 	// Don't allow robotarm model screw up anims
-	if (SDKCall_AttribHookValueFloat(0.0, "wrench_builds_minisentry", iClient) == 1.0)
+	if (TF2Attrib_HookValueFloat(0.0, "wrench_builds_minisentry", iClient) == 1.0)
 		TF2Attrib_SetByName(iClient, "mod wrench builds minisentry", -1.0);	// 1.0 + -1.0 = 0.0
 	
 	return Plugin_Continue;

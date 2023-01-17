@@ -336,7 +336,7 @@ void Properies_CallRageMeter(int iClient, Function fCall, any nParam1 = 0, any n
 	int[] iWeapons = new int[iMaxWeapons];
 	
 	//Get overall buff type from multiple weapons to subtract down for each ones
-	float flClientRageType = SDKCall_AttribHookValueFloat(0.0, "set_buff_type", iClient);
+	float flClientRageType = TF2Attrib_HookValueFloat(0.0, "set_buff_type", iClient);
 	
 	//Remove all weapons so they don't interfere with its rage stats
 	for (int i = 0; i < iMaxWeapons; i++)
@@ -357,7 +357,7 @@ void Properies_CallRageMeter(int iClient, Function fCall, any nParam1 = 0, any n
 		
 		//Prevent calling same class twice, but only if it not for rage meter
 		//Soldier, Pyro and Sniper(?) use rage meter, while Heavy, Engineer, Medic and Sniper use whatever else there
-		flVal = SDKCall_AttribHookValueFloat(0.0, "set_buff_type", iClient);
+		flVal = TF2Attrib_HookValueFloat(0.0, "set_buff_type", iClient);
 		if (!flVal && bCalledClass[nClass])
 			continue;
 		
