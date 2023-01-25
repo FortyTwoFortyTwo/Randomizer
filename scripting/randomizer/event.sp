@@ -60,7 +60,7 @@ public void Event_PlayerInventoryUpdate(Event event, const char[] sName, bool bD
 	int iWeapon, iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
-		if (!SDKCall_AttribHookValueFloat(0.0, "item_meter_resupply_denied", iWeapon))
+		if (!TF2Attrib_HookValueFloat(0.0, "item_meter_resupply_denied", iWeapon))
 			Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
 	}
 }
@@ -107,7 +107,7 @@ public void Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcas
 		int iWeapon, iPos;
 		while (TF2_GetItem(iAttacker, iWeapon, iPos))
 		{
-			float flRate = SDKCall_AttribHookValueFloat(0.0, "item_meter_damage_for_full_charge", iWeapon);
+			float flRate = TF2Attrib_HookValueFloat(0.0, "item_meter_damage_for_full_charge", iWeapon);
 			if (flRate)
 			{
 				//Increase meter for Gas Passer,
@@ -116,7 +116,7 @@ public void Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcas
 				Properties_AddWeaponChargeMeter(iAttacker, iWeapon, flRate);
 			}
 			
-			if (SDKCall_AttribHookValueFloat(0.0, "hype_on_damage", iWeapon) && !TF2_IsPlayerInCondition(iAttacker, TFCond_CritHype))
+			if (TF2Attrib_HookValueFloat(0.0, "hype_on_damage", iWeapon) && !TF2_IsPlayerInCondition(iAttacker, TFCond_CritHype))
 			{
 				//Soda popper
 				float flHype = RemapValClamped(flDamage, 1.0, 200.0, 1.0, 50.0);	//This really is valve's method for hype meter, weird
@@ -124,7 +124,7 @@ public void Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcas
 				Properties_SetWeaponPropFloat(iWeapon, "m_flHypeMeter", flHype);
 			}
 			
-			if (SDKCall_AttribHookValueFloat(0.0, "boost_on_damage", iWeapon))
+			if (TF2Attrib_HookValueFloat(0.0, "boost_on_damage", iWeapon))
 			{
 				//Baby Face Blaster
 				float flHype = Properties_GetWeaponPropFloat(iWeapon, "m_flHypeMeter");
@@ -137,7 +137,7 @@ public void Event_PlayerHurt(Event event, const char[] sName, bool bDontBroadcas
 	int iWeapon, iPos;
 	while (TF2_GetItem(iClient, iWeapon, iPos))
 	{
-		float flVal = SDKCall_AttribHookValueFloat(0.0, "lose_hype_on_take_damage", iWeapon);
+		float flVal = TF2Attrib_HookValueFloat(0.0, "lose_hype_on_take_damage", iWeapon);
 		if (flVal)
 		{
 			float flHype = Properties_GetWeaponPropFloat(iWeapon, "m_flHypeMeter");

@@ -243,7 +243,7 @@ stock bool TF2_GetItemFromLoadoutSlot(int iClient, int iSlot, int &iWeapon, int 
 stock bool TF2_GetItemFromAttribute(int iClient, const char[] sAttrib, int &iWeapon, int &iPos)
 {
 	while (TF2_GetItem(iClient, iWeapon, iPos, true))
-		if (SDKCall_AttribHookValueFloat(0.0, sAttrib, iWeapon))
+		if (TF2Attrib_HookValueFloat(0.0, sAttrib, iWeapon))
 			return true;
 	
 	return false;
@@ -397,24 +397,24 @@ stock int TF2_GiveAmmo(int iClient, int iWeapon, int iCurrent, int iAdd, int iAm
 		{
 			case TF_AMMO_GRENADES1:
 			{
-				if (SDKCall_AttribHookValueFloat(0.0, "grenades1_resupply_denied", iWeapon))
+				if (TF2Attrib_HookValueFloat(0.0, "grenades1_resupply_denied", iWeapon))
 					return 0;
 			}
 			case TF_AMMO_GRENADES2:
 			{
-				if (SDKCall_AttribHookValueFloat(0.0, "grenades2_resupply_denied", iWeapon))
+				if (TF2Attrib_HookValueFloat(0.0, "grenades2_resupply_denied", iWeapon))
 					return 0;
 			}
 			case TF_AMMO_GRENADES3:
 			{
-				if (SDKCall_AttribHookValueFloat(0.0, "grenades3_resupply_denied", iWeapon))
+				if (TF2Attrib_HookValueFloat(0.0, "grenades3_resupply_denied", iWeapon))
 					return 0;
 			}
 		}
 	}
 	else if (iAmmoType == TF_AMMO_METAL)	//Must not be from kAmmoSource_Resupply
 	{
-		float flVal = SDKCall_AttribHookValueFloat(1.0, "mult_metal_pickup", iClient);
+		float flVal = TF2Attrib_HookValueFloat(1.0, "mult_metal_pickup", iClient);
 		iAdd = RoundToFloor(flVal * float(iAdd));
 	}
 	
@@ -460,10 +460,10 @@ stock float TF2_GetMultiMaxAmmo(float flInitial, int iAmmoType, int iEntity)
 {
 	switch (iAmmoType)
 	{
-		case TF_AMMO_PRIMARY: return SDKCall_AttribHookValueFloat(flInitial, "mult_maxammo_primary", iEntity);
-		case TF_AMMO_SECONDARY: return SDKCall_AttribHookValueFloat(flInitial, "mult_maxammo_secondary", iEntity);
-		case TF_AMMO_METAL: return SDKCall_AttribHookValueFloat(flInitial, "mult_maxammo_metal", iEntity);
-		case TF_AMMO_GRENADES1: return SDKCall_AttribHookValueFloat(flInitial, "mult_maxammo_grenades1", iEntity);
+		case TF_AMMO_PRIMARY: return TF2Attrib_HookValueFloat(flInitial, "mult_maxammo_primary", iEntity);
+		case TF_AMMO_SECONDARY: return TF2Attrib_HookValueFloat(flInitial, "mult_maxammo_secondary", iEntity);
+		case TF_AMMO_METAL: return TF2Attrib_HookValueFloat(flInitial, "mult_maxammo_metal", iEntity);
+		case TF_AMMO_GRENADES1: return TF2Attrib_HookValueFloat(flInitial, "mult_maxammo_grenades1", iEntity);
 		default: return flInitial;
 	}
 }

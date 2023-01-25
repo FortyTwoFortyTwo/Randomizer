@@ -69,7 +69,7 @@ void ViewModels_UpdateArms(int iClient, int iForceWeapon = INVALID_ENT_REFERENCE
 		
 		char sModel[PLATFORM_MAX_PATH];
 		int iTarget = iActiveWeapon == INVALID_ENT_REFERENCE ? iClient : iActiveWeapon;
-		if (SDKCall_AttribHookValueFloat(0.0, "wrench_builds_minisentry", iTarget))
+		if (TF2Attrib_HookValueFloat(0.0, "wrench_builds_minisentry", iTarget))
 			sModel = MODEL_ARMS_ROBOTARM;
 		else if (IsClassname(iTarget, "tf_weapon_pda_spy"))	//Disguise kit have it's own viewmodel, ok valve?
 			sModel = MODEL_ARMS_DISGUISE;

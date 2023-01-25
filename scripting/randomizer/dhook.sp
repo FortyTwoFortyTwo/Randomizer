@@ -396,7 +396,7 @@ public MRESReturn DHook_CanAirDashPre(int iClient, DHookReturn hReturn)
 	if (iWeapon == INVALID_ENT_REFERENCE)
 		return MRES_Ignored;
 	
-	if (iAirDash < RoundToNearest(SDKCall_AttribHookValueFloat(0.0, "air_dash_count", iWeapon)))
+	if (iAirDash < RoundToNearest(TF2Attrib_HookValueFloat(0.0, "air_dash_count", iWeapon)))
 	{
 		SetEntProp(iClient, Prop_Send, "m_iAirDash", iAirDash + 1);
 		hReturn.Value = true;
@@ -415,7 +415,7 @@ public MRESReturn DHook_CanAirDashPost(int iClient, DHookReturn hReturn)
 		int iWeapon, iPos;
 		while (TF2_GetItem(iClient, iWeapon, iPos))
 		{
-			float flVal = SDKCall_AttribHookValueFloat(0.0, "hype_resets_on_jump", iWeapon);	//Despite what name says, it doesn't fully reset
+			float flVal = TF2Attrib_HookValueFloat(0.0, "hype_resets_on_jump", iWeapon);	//Despite what name says, it doesn't fully reset
 			if (flVal)
 			{
 				float flHypeMeter = Properties_GetWeaponPropFloat(iWeapon, "m_flHypeMeter");
@@ -620,7 +620,7 @@ public MRESReturn DHook_ApplyBiteEffectsPre(int iWeapon, DHookParam hParams)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");	
 	
-	if (SDKCall_AttribHookValueFloat(0.0, "set_weapon_mode", iWeapon))
+	if (TF2Attrib_HookValueFloat(0.0, "set_weapon_mode", iWeapon))
 		g_bApplyBiteEffectsChocolate[iClient] = true;
 	
 	return MRES_Ignored;
@@ -653,7 +653,7 @@ public MRESReturn DHook_UpdateRageBuffsAndRagePre(Address pPlayerShared)
 	if (g_iGainingRageWeapon != INVALID_ENT_REFERENCE || iClient <= 0 || iClient > MaxClients)
 		return MRES_Ignored;
 	
-	if (!SDKCall_AttribHookValueFloat(0.0, "set_buff_type", iClient))
+	if (!TF2Attrib_HookValueFloat(0.0, "set_buff_type", iClient))
 		return MRES_Ignored;	//We don't have any rage items, don't need to do anything
 	
 	RequestFrame(Properties_UpdateRageBuffsAndRage, iClient);
@@ -689,7 +689,7 @@ public MRESReturn DHook_ActivateRageBuffPre(Address pPlayerShared, DHookParam hP
 		return MRES_Ignored;
 	
 	int iBuffType = hParams.Get(2);
-	float flClientRageType = SDKCall_AttribHookValueFloat(0.0, "set_buff_type", iClient);
+	float flClientRageType = TF2Attrib_HookValueFloat(0.0, "set_buff_type", iClient);
 	TF2Attrib_SetByName(iClient, "mod soldier buff type", float(iBuffType) - flClientRageType);
 	
 	Properties_LoadRageProps(iClient, iWeapon);
