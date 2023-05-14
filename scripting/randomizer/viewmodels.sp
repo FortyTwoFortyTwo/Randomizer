@@ -19,31 +19,55 @@ enum ViewModels
 	ViewModels_MAX,
 }
 
-static int g_iViewModels[TF_MAXPLAYERS][ViewModels_MAX];
+bool ViewModels_Matches(int iClient, ViewModels nViewModels, int iViewmodel)
+{
+	if (GetEntPropEnt(iViewmodel, Prop_Data, "m_hOwnerEntity") != iClient)
+		return false;
+	
+	int iDefIndex = GetEntProp(iViewmodel, Prop_Send, "m_iItemDefinitionIndex", 2);
+	
+	switch (nViewModels)
+	{
+		case ViewModels_Arm: return iDefIndex == 0xFFFF;
+		case ViewModels_Weapon: return iDefIndex != 0xFFFF;
+	}
+	
+	ThrowError("Invalid ViewModels value '%d'", nViewModels);
+	return false;
+}
 
 int ViewModels_GetFromClient(int iClient, ViewModels nViewModels, int iModelIndex, int iWeapon = INVALID_ENT_REFERENCE)
 {
-	if (!g_iViewModels[iClient][nViewModels] || !IsValidEntity(g_iViewModels[iClient][nViewModels]))
-		g_iViewModels[iClient][nViewModels] = INVALID_ENT_REFERENCE;
+	int iFound = INVALID_ENT_REFERENCE;
 	
-	if (g_iViewModels[iClient][nViewModels] != INVALID_ENT_REFERENCE && GetEntProp(g_iViewModels[iClient][nViewModels], Prop_Send, "m_nModelIndex") != iModelIndex)
+	int iViewmodel = INVALID_ENT_REFERENCE;
+	while ((iViewmodel=FindEntityByClassname(iViewmodel, "tf_wearable_vm")) != INVALID_ENT_REFERENCE)
 	{
-		RemoveEntity(g_iViewModels[iClient][nViewModels]);
-		g_iViewModels[iClient][nViewModels] = INVALID_ENT_REFERENCE;
+		if (!ViewModels_Matches(iClient, nViewModels, iViewmodel))
+			continue;
+		
+		if (iFound != INVALID_ENT_REFERENCE || GetEntProp(iViewmodel, Prop_Send, "m_nModelIndex") != iModelIndex)
+			RemoveEntity(iViewmodel);	// Delete any dupe to invalid model index
+		else
+			iFound = iViewmodel;
 	}
 	
-	if (g_iViewModels[iClient][nViewModels] == INVALID_ENT_REFERENCE)
-		g_iViewModels[iClient][nViewModels] = ViewModels_CreateWearable(iClient, iModelIndex, iWeapon);
-	
-	return g_iViewModels[iClient][nViewModels];
+	if (iFound != INVALID_ENT_REFERENCE)
+		return iFound;
+	else
+		return ViewModels_CreateWearable(iClient, iModelIndex, iWeapon);
 }
 
 void ViewModels_DeleteFromClient(int iClient, ViewModels nViewModels)
 {
-	if (g_iViewModels[iClient][nViewModels] && IsValidEntity(g_iViewModels[iClient][nViewModels]))
-		RemoveEntity(g_iViewModels[iClient][nViewModels]);
-	
-	g_iViewModels[iClient][nViewModels] = INVALID_ENT_REFERENCE;
+	int iViewmodel = INVALID_ENT_REFERENCE;
+	while ((iViewmodel=FindEntityByClassname(iViewmodel, "tf_wearable_vm")) != INVALID_ENT_REFERENCE)
+	{
+		if (!ViewModels_Matches(iClient, nViewModels, iViewmodel))
+			continue;
+		
+		RemoveEntity(iViewmodel);
+	}
 }
 
 void ViewModels_UpdateArms(int iClient, int iForceWeapon = INVALID_ENT_REFERENCE)
