@@ -495,6 +495,8 @@ stock void TF2_RemoveItem(int iClient, int iWeapon, bool bForce = false)
 	iExtraWearable = GetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearableViewModel");
 	if (iExtraWearable != -1)
 		TF2_RemoveWearable(iClient, iExtraWearable);
+	
+	RemoveEntity(iWeapon);
 }
 
 stock void TF2_AddConditionFake(int iClient, TFCond nCond)
