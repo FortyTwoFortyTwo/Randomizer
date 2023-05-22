@@ -468,7 +468,7 @@ stock float TF2_GetMultiMaxAmmo(float flInitial, int iAmmoType, int iEntity)
 	}
 }
 
-stock void TF2_RemoveItem(int iClient, int iWeapon)
+stock void TF2_RemoveItem(int iClient, int iWeapon, bool bForce = false)
 {
 	if (TF2_IsWearable(iWeapon))
 	{
@@ -479,6 +479,15 @@ stock void TF2_RemoveItem(int iClient, int iWeapon)
 	
 	//Below similar to TF2_RemoveWeaponSlot, but only removes 1 weapon instead of all weapons in 1 slot
 	
+	RemovePlayerItem(iClient, iWeapon);
+	
+	if (!bForce)
+	{
+		//Add to list to remove later instead of removing all weapons at once
+		g_aEntityToRemove.Push(EntIndexToEntRef(iWeapon));
+		return;
+	}
+	
 	int iExtraWearable = GetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearable");
 	if (iExtraWearable != -1)
 		TF2_RemoveWearable(iClient, iExtraWearable);
@@ -486,11 +495,6 @@ stock void TF2_RemoveItem(int iClient, int iWeapon)
 	iExtraWearable = GetEntPropEnt(iWeapon, Prop_Send, "m_hExtraWearableViewModel");
 	if (iExtraWearable != -1)
 		TF2_RemoveWearable(iClient, iExtraWearable);
-	
-	RemovePlayerItem(iClient, iWeapon);
-	
-	//Add to list to remove later instead of removing all weapons at once
-	g_aEntityToRemove.Push(EntIndexToEntRef(iWeapon));
 }
 
 stock void TF2_AddConditionFake(int iClient, TFCond nCond)

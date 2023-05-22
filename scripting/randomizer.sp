@@ -560,7 +560,7 @@ public void OnGameFrame()
 			
 			if (IsValidEntity(iEntity))
 			{
-				RemoveEntity(iEntity);
+				TF2_RemoveItem(GetEntPropEnt(iEntity, Prop_Send, "m_hOwnerEntity"), iEntity, true);
 				break;
 			}
 		}
