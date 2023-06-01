@@ -21,8 +21,7 @@ enum struct RandomizedLoadout
 	{
 		this.nClass = TFClass_Unknown;
 		
-		for (int i = 0; i < sizeof(RandomizedLoadout::aWeapons); i++)
-			delete this.aWeapons[i];
+		Loadout_RemoveWeapons(this);
 		
 		this.iNextCosmeticId = -1;
 		this.iCurrentCosmeticId = -1;
@@ -34,12 +33,6 @@ enum struct RandomizedLoadout
 		this.iSpellIndex = -1;
 	}
 	
-	void ResetWeapon()
-	{
-		for (int i = 0; i < sizeof(RandomizedLoadout::aWeapons); i++)
-			delete this.aWeapons[i];
-	}
-	
 	void AddWeapon(RandomizedWeapon eWeapon, int iClass)
 	{
 		if (eWeapon.iIndex == -1)
@@ -49,19 +42,6 @@ enum struct RandomizedLoadout
 			this.aWeapons[iClass] = new ArrayList(sizeof(RandomizedWeapon));
 		
 		this.aWeapons[iClass].PushArray(eWeapon);
-	}
-	
-	void RemoveWeaponsBySlot(int iSlot)
-	{
-		for (int i = 0; i < sizeof(RandomizedLoadout::aWeapons); i++)
-		{
-			if (!this.aWeapons[i])
-				continue;
-			
-			int iPos;
-			while ((iPos = this.aWeapons[i].FindValue(iSlot, RandomizedWeapon::iSlot)) != -1)
-				this.aWeapons[i].Erase(iPos);
-		}
 	}
 	
 	void CopyWeapons(ArrayList aCopy[CLASS_MAX+1])
@@ -198,7 +178,7 @@ void Loadout_ResetClientInfo(int iClient, RandomizedType nType)
 	switch (nType)
 	{
 		case RandomizedType_Class: g_eLoadoutClient[iClient].nClass = TFClass_Unknown;
-		case RandomizedType_Weapons: g_eLoadoutClient[iClient].ResetWeapon();
+		case RandomizedType_Weapons: Loadout_RemoveWeapons(g_eLoadoutClient[iClient]);
 		case RandomizedType_Cosmetics: g_eLoadoutClient[iClient].iNextCosmeticId = -1;
 		case RandomizedType_Rune: g_eLoadoutClient[iClient].iNextRuneType = -1;
 		case RandomizedType_Spells: g_eLoadoutClient[iClient].SetSpellIndex(-1, false);
@@ -378,7 +358,7 @@ void Loadout_ApplyClientClass(int iClient)
 
 void Loadout_RandomizeWeapon(RandomizedLoadout eLoadout)
 {
-	eLoadout.ResetWeapon();
+	Loadout_RemoveWeapons(eLoadout);
 	
 	RandomizedInfo eInfo;
 	eLoadout.GetInfo(RandomizedType_Weapons, eInfo);
@@ -609,9 +589,30 @@ void Loadout_AddWeapon(RandomizedLoadout eLoadout, RandomizedWeapon eList[MAX_WE
 	}
 }
 
-void Loadout_RemoveWeaponBySlot(RandomizedLoadout eLoadout, int iSlot)
+void Loadout_RemoveWeapons(RandomizedLoadout eLoadout, int iSlot = -1)
 {
-	eLoadout.RemoveWeaponsBySlot(iSlot);
+	for (int i = 0; i < sizeof(RandomizedLoadout::aWeapons); i++)
+	{
+		if (!eLoadout.aWeapons[i])
+			continue;
+		
+		int iLength = eLoadout.aWeapons[i].Length;
+		for (int iPos = iLength - 1; iPos >= 0; iPos--)
+		{
+			RandomizedWeapon eWeapon;
+			eLoadout.aWeapons[i].GetArray(iPos, eWeapon);
+			if (iSlot != -1 && iSlot != eWeapon.iSlot)
+				continue;
+			
+			if (eWeapon.iRef != INVALID_ENT_REFERENCE && IsValidEntity(eWeapon.iRef))
+				TF2_RemoveItem(eLoadout.iClient, EntRefToEntIndex(eWeapon.iRef));
+			
+			eLoadout.aWeapons[i].Erase(iPos);
+		}
+		
+		if (iSlot == -1)
+			delete eLoadout.aWeapons[i];
+	}
 }
 
 void Loadout_SetWeapon(int[] iClients, int iCount, RandomizedWeapon eList[MAX_WEAPONS], int iListCount)
@@ -620,14 +621,14 @@ void Loadout_SetWeapon(int[] iClients, int iCount, RandomizedWeapon eList[MAX_WE
 	{
 		if (Group_CanRandomizePosForClients(i, RandomizedType_Weapons, iClients, iCount))
 		{
-			g_eLoadoutGroup[i].ResetWeapon();
+			Loadout_RemoveWeapons(g_eLoadoutGroup[i]);
 			Loadout_AddWeapon(g_eLoadoutGroup[i], eList, iListCount);
 		}
 	}
 	
 	for (int i = 0; i < iCount; i++)
 	{
-		g_eLoadoutClient[iClients[i]].ResetWeapon();
+		Loadout_RemoveWeapons(g_eLoadoutClient[iClients[i]]);
 		Loadout_AddWeapon(g_eLoadoutClient[iClients[i]], eList, iListCount);
 		Loadout_RefreshClient(iClients[i]);
 	}
@@ -645,7 +646,7 @@ void Loadout_SetSlotWeapon(int[] iClients, int iCount, RandomizedWeapon eList[MA
 			{
 				if (!bSlot[eList[j].iSlot])
 				{
-					Loadout_RemoveWeaponBySlot(g_eLoadoutGroup[i], eList[j].iSlot);
+					Loadout_RemoveWeapons(g_eLoadoutGroup[i], eList[j].iSlot);
 					bSlot[eList[j].iSlot] = true;
 				}
 			}
@@ -662,7 +663,7 @@ void Loadout_SetSlotWeapon(int[] iClients, int iCount, RandomizedWeapon eList[MA
 		{
 			if (!bSlot[eList[j].iSlot])
 			{
-				Loadout_RemoveWeaponBySlot(g_eLoadoutClient[iClients[i]], eList[j].iSlot);
+				Loadout_RemoveWeapons(g_eLoadoutClient[iClients[i]], eList[j].iSlot);
 				bSlot[eList[j].iSlot] = true;
 			}
 		}
