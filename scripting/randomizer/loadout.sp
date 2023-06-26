@@ -530,21 +530,24 @@ void Loadout_ApplyClientWeapons(int iClient)
 			//Fill charge meter
 			if (!TF2Attrib_HookValueFloat(0.0, "item_meter_resupply_denied", iWeapon))
 				Properties_AddWeaponChargeMeter(iClient, iWeapon, 100.0);
-			
-			//Fill ammo
-			if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
-			{
-				int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
-				if (iAmmoType != -1)
-				{
-					int iMaxAmmo = TF2_GetMaxAmmo(iClient, iWeapon, iAmmoType);
-					int iAmmo = TF2_GiveAmmo(iClient, iWeapon, 0, iMaxAmmo, iAmmoType, true, kAmmoSource_Resupply);
-					Properties_SetWeaponPropInt(iWeapon, "m_iAmmo", iAmmo);
-					if (iWeapon == GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon"))
-						Properties_UpdateActiveWeaponAmmo(iClient);
-				}
-			}
 		}
+	}
+	
+	//After all weapons has been given, fill ammo
+	while (TF2_GetItem(iClient, iWeapon, iPos))
+	{
+		if (!HasEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType"))
+			continue;
+		
+		int iAmmoType = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType");
+		if (iAmmoType == -1)
+			continue;
+		
+		int iMaxAmmo = TF2_GetMaxAmmo(iClient, iWeapon, iAmmoType);
+		int iAmmo = TF2_GiveAmmo(iClient, iWeapon, 0, iMaxAmmo, iAmmoType, true, kAmmoSource_Resupply);
+		Properties_SetWeaponPropInt(iWeapon, "m_iAmmo", iAmmo);
+		if (iWeapon == GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon"))
+			Properties_UpdateActiveWeaponAmmo(iClient);
 	}
 	
 	//Set active weapon if dont have one
