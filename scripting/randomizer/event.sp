@@ -76,6 +76,9 @@ public void Event_PlayerSpawn(Event event, const char[] sName, bool bDontBroadca
 	
 	Loadout_RefreshClient(iClient);
 	
+	//Set max health after giving weapons
+	SetEntProp(iClient, Prop_Send, "m_iHealth", SDKCall_GetMaxHealth(iClient));
+	
 	//Because client caught sourcemod changes faster than its own prediction (somehow),
 	// remove rune and add a delay to give it back so icon above head appears properly
 	SDKCall_SetCarryingRuneType(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), -1);
