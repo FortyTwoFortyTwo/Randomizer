@@ -15,10 +15,9 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.10.2"
+#define PLUGIN_VERSION			"1.10.3"
 #define PLUGIN_VERSION_REVISION	"manual"
 
-#define TF_MAXPLAYERS	34	//32 clients + 1 for 0/world/console + 1 for replay/SourceTV
 #define CONFIG_MAXCHAR	64
 
 #define CLASS_MIN	1	//First valid TFClassType, TFClass_Scout
@@ -335,13 +334,13 @@ ConVar g_cvDroppedWeapons;
 ConVar g_cvHuds;
 ConVar g_cvRandomize[view_as<int>(RandomizedType_MAX)];
 
-bool g_bClientRefresh[TF_MAXPLAYERS];
+bool g_bClientRefresh[MAXPLAYERS];
 
-TFClassType g_iClientCurrentClass[TF_MAXPLAYERS];
-bool g_bFeignDeath[TF_MAXPLAYERS];
-int g_iHypeMeterLoaded[TF_MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
-bool g_bWeaponDecap[TF_MAXPLAYERS];
-Handle g_hTimerClientHud[TF_MAXPLAYERS];
+TFClassType g_iClientCurrentClass[MAXPLAYERS];
+bool g_bFeignDeath[MAXPLAYERS];
+int g_iHypeMeterLoaded[MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
+bool g_bWeaponDecap[MAXPLAYERS];
+Handle g_hTimerClientHud[MAXPLAYERS];
 
 bool g_bOnTakeDamage;
 int g_iGainingRageWeapon = INVALID_ENT_REFERENCE;

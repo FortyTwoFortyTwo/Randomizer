@@ -1,4 +1,4 @@
-static int g_iMedigunBeamRef[TF_MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
+static int g_iMedigunBeamRef[MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
 static int g_iTouchLunchbox = INVALID_ENT_REFERENCE;
 
 void SDKHook_HookClient(int iClient)
