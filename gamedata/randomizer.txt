@@ -78,14 +78,14 @@
 			"PatchSig_03"
 			{
 				"signature" "PatchSig_03"
+				"linux"
+				{
+					"offset"	"3"	//Start is pushed back by 3 to make good unique sig
+				}
 			}
 			"PatchSig_04"
 			{
 				"signature" "PatchSig_04"
-				"linux"
-				{
-					"offset"	"9"	//Start is pushed back by 9 to make good unique sig
-				}
 			}
 			"PatchSig_05"
 			{
@@ -134,12 +134,12 @@
 			}
 			"PatchSig_03"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
 			{
-				"linux"		"\x0F\x85\x2A\x2A\x2A\x2A\x8B\x45\x98\x85\xC0\x0F\x84\x2A\x2A\x2A\x2A"
+				"linux"		"\x83\xFF\x05\x0F\x85\x2A\x2A\x2A\x2A"
 				"windows"	"\x0F\x85\x2A\x2A\x2A\x2A\x85\xDB\x0F\x84\x2A\x2A\x2A\x2A\x6A\x00"
 			}
 			"PatchSig_04"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
 			{
-				"linux"		"\xF3\x0F\x11\x4D\x90\x80\x7D\x2A\x00"
+				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x8B\x45\xB8\xC7\x44\x24\x2A\x2A\x2A\x2A\x00\xC7\x44\x24\x2A\x2A\x2A\x2A\x00"
 				"windows"	"\x75\x2A\x6A\x00\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x6A\x00\x6A\x32"
 			}
 			"PatchSig_05"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
