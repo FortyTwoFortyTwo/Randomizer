@@ -546,6 +546,9 @@ public int Huds_MenuAction(Menu hMenu, MenuAction action, int iClient, int iChoi
 		}
 		case MenuAction_Select:
 		{
+			if (g_cvHuds.IntValue != HudMode_Menu)
+				return 0;	// Convar just changed, dont need it anymore
+			
 			char sValue[16];
 			hMenu.GetItem(iChoice, sValue, sizeof(sValue));
 			
