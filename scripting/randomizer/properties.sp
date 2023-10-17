@@ -399,13 +399,14 @@ void Properies_CallRageMeter(int iClient, Function fCall, any nParam1 = 0, any n
 		
 		if (fCall == SDKCall_UpdateRageBuffsAndRage)
 			TF2Attrib_RemoveByName(iClient, "mod soldier buff type");
+		
+		RevertClientClass(iClient);
 	}
 	
 	//Set it back
 	for (int i = 0; i < iMaxWeapons; i++)
 		SetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", iWeapons[i], i);
 	
-	RevertClientClass(iClient);
 	g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 }
 
