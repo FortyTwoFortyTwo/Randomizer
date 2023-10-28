@@ -45,6 +45,7 @@ static int g_iDHookGamerulesPre;
 static int g_iDHookGamerulesPost;
 
 static bool g_bDoClassSpecialSkill[MAXPLAYERS];
+static bool g_bDoClassSpecialSkillClass[MAXPLAYERS];
 static bool g_bApplyBiteEffectsChocolate[MAXPLAYERS];
 
 public void DHook_Init(GameData hGameData)
@@ -461,7 +462,7 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, DHookReturn hReturn)
 	//If Engineer, pickup buildings
 	//If Spy, cloak or uncloak
 	
-	g_bDoClassSpecialSkill[iClient] = false;
+	g_bDoClassSpecialSkill[iClient] = true;	// To stop DHook_SecondaryWeaponPost from calling this again
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon == INVALID_ENT_REFERENCE)
 		return MRES_Ignored;
@@ -477,7 +478,7 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, DHookReturn hReturn)
 		int iButton = Controls_GetPassiveButtonBit(iClient, iWeapon);
 		if (iButton > 0 && iButtons & iButton)
 		{
-			g_bDoClassSpecialSkill[iClient] = true;
+			g_bDoClassSpecialSkillClass[iClient] = true;
 			Controls_OnPassiveUse(iClient, iWeapon);
 			SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
 			return MRES_Ignored;
@@ -491,10 +492,12 @@ public MRESReturn DHook_DoClassSpecialSkillPre(int iClient, DHookReturn hReturn)
 
 public MRESReturn DHook_DoClassSpecialSkillPost(int iClient, DHookReturn hReturn)
 {
-	if (g_bDoClassSpecialSkill[iClient])
+	if (g_bDoClassSpecialSkillClass[iClient])
+	{
 		RevertClientClass(iClient);
+		g_bDoClassSpecialSkillClass[iClient] = false;
+	}
 	
-	g_bDoClassSpecialSkill[iClient] = true;	// To stop DHook_SecondaryWeaponPost from calling this again
 	return MRES_Ignored;
 }
 

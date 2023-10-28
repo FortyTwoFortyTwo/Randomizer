@@ -343,6 +343,7 @@ bool g_bWeaponDecap[MAXPLAYERS];
 Handle g_hTimerClientHud[MAXPLAYERS];
 
 bool g_bOnTakeDamage;
+bool g_bOnTakeDamageClass;
 int g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 int g_iTouchItem = INVALID_ENT_REFERENCE;
 int g_iTouchToucher = INVALID_ENT_REFERENCE;

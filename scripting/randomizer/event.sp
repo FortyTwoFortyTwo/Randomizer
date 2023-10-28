@@ -195,5 +195,8 @@ public void Event_WeaponJump(Event event, const char[] sName, bool bDontBroadcas
 {
 	//Class check should be done by this point, revert class so pain sound can be played as actual class
 	if (g_bOnTakeDamage)
+	{
 		RevertClientClass(GetClientOfUserId(event.GetInt("userid")));
+		g_bOnTakeDamageClass = false;
+	}
 }
