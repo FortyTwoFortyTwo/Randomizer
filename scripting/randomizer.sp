@@ -504,7 +504,7 @@ public void OnGameFrame()
 		if (IsClientInGame(iClient))
 		{
 			//Create a weapon every frame instead of all at once in 1 frame
-			if (!bWeaponCreated)
+			if (!bWeaponCreated && TF2_GetPlayerClass(iClient) != TFClass_Unknown)
 			{
 				TFClassType nClass = Loadout_GetClientClass(iClient);
 				ArrayList aWeapons = Loadout_GetClientWeapons(iClient, nClass);
@@ -875,6 +875,9 @@ void SetClientClass(int iClient, TFClassType nClass)
 			continue;
 		
 		g_iClientCurrentClass[iClient][i] = TF2_GetPlayerClass(iClient);
+		if (g_iClientCurrentClass[iClient][i] == TFClass_Unknown)
+			ThrowError("Client %d is TFClass_Unknown in SetClientClass", iClient);
+		
 		TF2_SetPlayerClass(iClient, nClass);
 		return;
 	}
