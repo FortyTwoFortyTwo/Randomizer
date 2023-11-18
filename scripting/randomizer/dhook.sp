@@ -559,7 +559,8 @@ public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, DHookReturn hReturn, D
 		return MRES_Ignored;
 	
 	// Eyelander kill causing client to be at same speed as Demoman
-	SetClientClassOriginal(iClient);
+	if (TF2_GetPlayerClass(iClient) != TFClass_Unknown)
+		SetClientClassOriginal(iClient);
 	
 	int iWeapon, iPos;
 	
@@ -589,7 +590,8 @@ public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, DHookReturn hReturn, 
 	if (!g_bWeaponDecap[iClient])
 		Properties_LoadActiveWeaponPropInt(iClient, "m_iDecapitations");
 	
-	RevertClientClass(iClient);
+	if (TF2_GetPlayerClass(iClient) != TFClass_Unknown)
+		RevertClientClass(iClient);
 	
 	return MRES_Ignored;
 }
