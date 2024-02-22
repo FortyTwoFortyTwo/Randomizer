@@ -143,9 +143,9 @@ enum struct HudWeapon
 }
 
 static ArrayList g_aHuds;	//Arrays of HudInfo
-static ArrayList g_aHudWeapon[MAXPLAYERS];	//Arrays of HudWeapon
-static Menu g_iHudClientMenu[MAXPLAYERS];
-static int g_iHudClientPage[MAXPLAYERS];	//Current page client is at
+static ArrayList g_aHudWeapon[MAXPLAYERS + 1];	//Arrays of HudWeapon
+static Menu g_iHudClientMenu[MAXPLAYERS + 1];
+static int g_iHudClientPage[MAXPLAYERS + 1];	//Current page client is at
 
 void Huds_Init()
 {

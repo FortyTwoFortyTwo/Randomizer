@@ -110,7 +110,7 @@ enum struct RandomizedLoadout
 	}
 }
 
-static RandomizedLoadout g_eLoadoutClient[MAXPLAYERS];
+static RandomizedLoadout g_eLoadoutClient[MAXPLAYERS + 1];
 static RandomizedLoadout g_eLoadoutGroup[MAX_GROUPS];
 
 static int g_iRandomizeCosmeticId;

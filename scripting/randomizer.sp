@@ -336,11 +336,11 @@ ConVar g_cvRandomize[view_as<int>(RandomizedType_MAX)];
 
 bool g_bClientRefresh[MAXPLAYERS];
 
-TFClassType g_iClientCurrentClass[MAXPLAYERS][4];
-bool g_bFeignDeath[MAXPLAYERS];
-int g_iHypeMeterLoaded[MAXPLAYERS] = {INVALID_ENT_REFERENCE, ...};
-bool g_bWeaponDecap[MAXPLAYERS];
-Handle g_hTimerClientHud[MAXPLAYERS];
+TFClassType g_iClientCurrentClass[MAXPLAYERS + 1][4];
+bool g_bFeignDeath[MAXPLAYERS + 1];
+int g_iHypeMeterLoaded[MAXPLAYERS + 1] = {INVALID_ENT_REFERENCE, ...};
+bool g_bWeaponDecap[MAXPLAYERS + 1];
+Handle g_hTimerClientHud[MAXPLAYERS + 1];
 
 bool g_bOnTakeDamage;
 bool g_bOnTakeDamageClass;

@@ -31,22 +31,22 @@ static int g_iInitClassActiveWeapon = INVALID_ENT_REFERENCE;
 static int g_iInitClassWeapons[48] = {INVALID_ENT_REFERENCE, ...};
 static int g_iBuildingKilledSapper = INVALID_ENT_REFERENCE;
 
-static int g_iHookIdEventKilledPre[MAXPLAYERS];
-static int g_iHookIdForceRespawnPre[MAXPLAYERS];
-static int g_iHookIdForceRespawnPost[MAXPLAYERS];
-static int g_iHookIdEquipWearable[MAXPLAYERS];
-static int g_iHookIdGetAmmoCount[MAXPLAYERS];
-static int g_iHookIdClientCommand[MAXPLAYERS];
-static int g_iHookIdGiveNamedItem[MAXPLAYERS];
-static int g_iHookIdInitClassPre[MAXPLAYERS];
-static int g_iHookIdInitClassPost[MAXPLAYERS];
+static int g_iHookIdEventKilledPre[MAXPLAYERS + 1];
+static int g_iHookIdForceRespawnPre[MAXPLAYERS + 1];
+static int g_iHookIdForceRespawnPost[MAXPLAYERS + 1];
+static int g_iHookIdEquipWearable[MAXPLAYERS + 1];
+static int g_iHookIdGetAmmoCount[MAXPLAYERS + 1];
+static int g_iHookIdClientCommand[MAXPLAYERS + 1];
+static int g_iHookIdGiveNamedItem[MAXPLAYERS + 1];
+static int g_iHookIdInitClassPre[MAXPLAYERS + 1];
+static int g_iHookIdInitClassPost[MAXPLAYERS + 1];
 
 static int g_iDHookGamerulesPre;
 static int g_iDHookGamerulesPost;
 
-static bool g_bDoClassSpecialSkill[MAXPLAYERS];
-static bool g_bDoClassSpecialSkillClass[MAXPLAYERS];
-static bool g_bApplyBiteEffectsChocolate[MAXPLAYERS];
+static bool g_bDoClassSpecialSkill[MAXPLAYERS + 1];
+static bool g_bDoClassSpecialSkillClass[MAXPLAYERS + 1];
+static bool g_bApplyBiteEffectsChocolate[MAXPLAYERS + 1];
 
 public void DHook_Init(GameData hGameData)
 {

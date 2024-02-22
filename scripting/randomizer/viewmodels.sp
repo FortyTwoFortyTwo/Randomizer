@@ -19,7 +19,7 @@ enum ViewModels
 	ViewModels_MAX,
 }
 
-static int g_iViewModels[MAXPLAYERS][ViewModels_MAX];
+static int g_iViewModels[MAXPLAYERS + 1][ViewModels_MAX];
 
 int ViewModels_GetFromClient(int iClient, ViewModels nViewModels, int iModelIndex, int iWeapon = INVALID_ENT_REFERENCE)
 {
