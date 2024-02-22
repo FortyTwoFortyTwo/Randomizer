@@ -15,6 +15,7 @@ To download latest build version, select latest package then "Artifacts" section
 ## ConVars
 - `randomizer_version`: Plugin version number, don't touch.
 - `randomizer_enabled`: Enable/Disable entire randomizer plugin, another option for load/unload plugins.
+- `randomizer_debug`: Enable/Disable debugging infos, not recommended to enable it.
 - `randomizer_class`: How should class be randomized.
 - `randomizer_weapons`: How should weapons be randomized.
 - `randomizer_cosmetics`: How should cosmetics be randomized.

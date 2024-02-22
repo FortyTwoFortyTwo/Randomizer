@@ -15,7 +15,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.10.3"
+#define PLUGIN_VERSION			"1.10.4"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define CONFIG_MAXCHAR	64
@@ -329,6 +329,7 @@ int g_iOffsetPlayerShared;
 int g_iOffsetAlwaysAllow;
 
 ConVar g_cvEnabled;
+ConVar g_cvDebug;
 ConVar g_cvFixTaunt;
 ConVar g_cvDroppedWeapons;
 ConVar g_cvHuds;
@@ -337,6 +338,7 @@ ConVar g_cvRandomize[view_as<int>(RandomizedType_MAX)];
 bool g_bClientRefresh[MAXPLAYERS];
 
 TFClassType g_iClientCurrentClass[MAXPLAYERS + 1][4];
+FrameIterator g_hClientCurrentClass[MAXPLAYERS + 1][4];
 bool g_bFeignDeath[MAXPLAYERS + 1];
 int g_iHypeMeterLoaded[MAXPLAYERS + 1] = {INVALID_ENT_REFERENCE, ...};
 bool g_bWeaponDecap[MAXPLAYERS + 1];
@@ -879,10 +881,47 @@ void SetClientClass(int iClient, TFClassType nClass)
 			ThrowError("Client %d is TFClass_Unknown in SetClientClass", iClient);
 		
 		TF2_SetPlayerClass(iClient, nClass);
+		
+		if (g_cvDebug.BoolValue)
+			g_hClientCurrentClass[iClient][i] = new FrameIterator();
+		
 		return;
 	}
 	
-	ThrowError("Exceeded array limit on storing class");
+	if (g_cvDebug.BoolValue)
+	{
+		LogError("Exceeded array limit on storing class");
+		
+		for (int i = 0; i < sizeof(g_iClientCurrentClass[]); i++)
+		{
+			FrameIterator hIterator = g_hClientCurrentClass[iClient][i];
+			if (!hIterator)
+				continue;
+			
+			hIterator.Reset();
+			if (!hIterator.Next())	// skip SetClientClass
+				continue;
+			
+			LogError("Index %d stack trace: ", i);
+			
+			int iCounter;
+			
+			while (hIterator.Next() && hIterator.LineNumber)
+			{
+				char sFile[256], sFunction[256];
+				hIterator.GetFilePath(sFile, sizeof(sFile));
+				hIterator.GetFunctionName(sFunction, sizeof(sFunction));
+				LogError("  [%d] Line %d, %s::%s", iCounter, hIterator.LineNumber, sFile, sFunction);
+				
+				iCounter++;
+			}
+		}
+		
+	}
+	else
+	{
+		ThrowError("Exceeded array limit on storing class, enable randomizer_debug and try again for more infos");
+	}
 }
 
 void SetClientClassOriginal(int iClient)
@@ -903,6 +942,8 @@ void RevertClientClass(int iClient)
 		
 		TF2_SetPlayerClass(iClient, g_iClientCurrentClass[iClient][i]);
 		g_iClientCurrentClass[iClient][i] = TFClass_Unknown;
+		
+		delete g_hClientCurrentClass[iClient][i];
 		return;
 	}
 	

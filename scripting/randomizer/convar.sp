@@ -26,6 +26,7 @@ void ConVar_Init()
 	g_cvEnabled = CreateConVar("randomizer_enabled", "1", "Enable Randomizer?", _, true, 0.0, true, 1.0);
 	g_cvEnabled.AddChangeHook(ConVar_EnableChanged);
 	
+	g_cvDebug = CreateConVar("randomizer_debug", "0", "Enable debugging info, enabling may cause preformance issues.", _, true, 0.0, true, 1.0);
 	g_cvFixTaunt = CreateConVar("randomizer_fix_taunt", "1", "Fix Taunting?", _, true, 0.0, true, 1.0);
 	g_cvDroppedWeapons = CreateConVar("randomizer_droppedweapons", "0", "Allow dropped weapons?", _, true, 0.0, true, 1.0);
 	g_cvHuds = CreateConVar("randomizer_huds", "1", "Hud to use to display weapons. 0 = none, 1 = hud text, 2 = menu.", _, true, 0.0, true, float(HudMode_MAX - 1));
