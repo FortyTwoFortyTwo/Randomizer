@@ -15,7 +15,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.10.4"
+#define PLUGIN_VERSION			"1.11.0"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define CONFIG_MAXCHAR	64
@@ -34,6 +34,12 @@
 
 #define PARTICLE_BEAM_BLU	"medicgun_beam_blue"
 #define PARTICLE_BEAM_RED	"medicgun_beam_red"
+
+// from mp_shareddefs.h
+const int MP_CONCEPT_KILLED_PLAYER = 7;
+
+// from tf_shareddef.h
+#define DMG_MELEE								(DMG_BLAST_SURFACE)
 
 // entity effects
 enum
@@ -322,6 +328,9 @@ bool g_bEnabled;
 bool g_bTF2Items;
 bool g_bAllowGiveNamedItem;
 int g_iRuneCount;
+
+int g_iOffsetDamageType;
+int g_iOffsetDamageCustom;
 int g_iOffsetItem;
 int g_iOffsetItemDefinitionIndex;
 int g_iOffsetMyWearables;
@@ -394,6 +403,9 @@ public void OnPluginStart()
 	Patch_Init(hGameData);
 	DHook_Init(hGameData);
 	SDKCall_Init(hGameData);
+	
+	g_iOffsetDamageType = hGameData.GetOffset("CTakeDamageInfo::m_bitsDamageType");
+	g_iOffsetDamageCustom = hGameData.GetOffset("CTakeDamageInfo::m_iDamageCustom");
 	
 	delete hGameData;
 	
@@ -713,7 +725,6 @@ public void OnEntityDestroyed(int iEntity)
 void EnableRandomizer()
 {
 	g_bEnabled = true;
-	Patch_Enable();
 	
 	DHook_EnableDetour();
 	DHook_HookGamerules();
@@ -742,7 +753,7 @@ void DisableRandomizer()
 	DHook_DisableDetour();
 	DHook_UnhookGamerules();
 	
-	Patch_Disable();
+	Patch_RevertSpeed();
 	g_bEnabled = false;
 	
 	ViewModels_RemoveAll();

@@ -6,23 +6,69 @@ enum struct Detour
 	DHookCallback callbackPost;
 }
 
-static ArrayList g_aDHookDetours;
+enum struct Hook
+{
+	DynamicHook hHook;
+	DHookCallback callbackPre;
+	DHookCallback callbackPost;
+	DHookRemovalCB callbackRemoval;
+	int iHookIdPre[MAXPLAYERS + 1];
+	int iHookIdPost[MAXPLAYERS + 1];
+	
+	void HookClient(int iClient)
+	{
+		if (this.callbackPre != INVALID_FUNCTION)
+			this.iHookIdPre[iClient] = this.hHook.HookEntity(Hook_Pre, iClient, this.callbackPre, this.callbackRemoval);
+		
+		if (this.callbackPost != INVALID_FUNCTION)
+			this.iHookIdPost[iClient] = this.hHook.HookEntity(Hook_Post, iClient, this.callbackPost, this.callbackRemoval);
+	}
+	
+	void UnhookClient(int iClient)
+	{
+		DHook_UnhookId(this.iHookIdPre[iClient]);
+		DHook_UnhookId(this.iHookIdPost[iClient]);
+	}
+	
+	void HookEntity(int iEntity)
+	{
+		if (this.callbackPre != INVALID_FUNCTION)
+			this.hHook.HookEntity(Hook_Pre, iEntity, this.callbackPre, this.callbackRemoval);
+		
+		if (this.callbackPost != INVALID_FUNCTION)
+			this.hHook.HookEntity(Hook_Post, iEntity, this.callbackPost, this.callbackRemoval);
+	}
+	
+	void HookGamerules()
+	{
+		if (this.callbackPre != INVALID_FUNCTION)
+			this.iHookIdPre[0] = this.hHook.HookGamerules(Hook_Pre, this.callbackPre, this.callbackRemoval);
+		
+		if (this.callbackPost != INVALID_FUNCTION)
+			this.iHookIdPost[0] = this.hHook.HookGamerules(Hook_Post, this.callbackPost, this.callbackRemoval);
+	}
+	
+	void UnhookGamerules()
+	{
+		DHook_UnhookId(this.iHookIdPre[0]);
+		DHook_UnhookId(this.iHookIdPost[0]);
+	}
+}
 
-static DynamicHook g_hDHookEventKilled;
-static DynamicHook g_hDHookTranslateViewmodelHandActivityInternal;
-static DynamicHook g_hDHookSecondaryAttack;
-static DynamicHook g_hDHookGetEffectBarAmmo;
-static DynamicHook g_hDHookSmack;
-static DynamicHook g_hDHookSwing;
-static DynamicHook g_hDHookKilled;
-static DynamicHook g_hDHookCanBeUpgraded;
-static DynamicHook g_hDHookForceRespawn;
-static DynamicHook g_hDHookEquipWearable;
-static DynamicHook g_hDHookGetAmmoCount;
-static DynamicHook g_hDHookClientCommand;
-static DynamicHook g_hDHookGiveNamedItem;
-static DynamicHook g_hDHookInitClass;
-static DynamicHook g_hDHookFrameUpdatePostEntityThink;
+static ArrayList g_aDHookDetours;
+static ArrayList g_aDHookClientHooks;
+
+static Hook g_DHookGiveNamedItem;
+static Hook g_DHookTranslateViewmodelHandActivityInternal;
+static Hook g_DHookSecondaryAttack;
+static Hook g_DHookGetEffectBarAmmo;
+static Hook g_DHookSmack;
+static Hook g_DHookSwing;
+static Hook g_DHookGetSwordSpeedMod;
+static Hook g_DHookGetSwordHealthMod;
+static Hook g_DHookKilled;
+static Hook g_DHookCanBeUpgraded;
+static Hook g_DHookFrameUpdatePostEntityThink;
 
 static bool g_bSkipGetMaxAmmo;
 static ArrayList g_aAllowWearables;
@@ -31,26 +77,15 @@ static int g_iInitClassActiveWeapon = INVALID_ENT_REFERENCE;
 static int g_iInitClassWeapons[48] = {INVALID_ENT_REFERENCE, ...};
 static int g_iBuildingKilledSapper = INVALID_ENT_REFERENCE;
 
-static int g_iHookIdEventKilledPre[MAXPLAYERS + 1];
-static int g_iHookIdForceRespawnPre[MAXPLAYERS + 1];
-static int g_iHookIdForceRespawnPost[MAXPLAYERS + 1];
-static int g_iHookIdEquipWearable[MAXPLAYERS + 1];
-static int g_iHookIdGetAmmoCount[MAXPLAYERS + 1];
-static int g_iHookIdClientCommand[MAXPLAYERS + 1];
-static int g_iHookIdGiveNamedItem[MAXPLAYERS + 1];
-static int g_iHookIdInitClassPre[MAXPLAYERS + 1];
-static int g_iHookIdInitClassPost[MAXPLAYERS + 1];
-
-static int g_iDHookGamerulesPre;
-static int g_iDHookGamerulesPost;
-
 static bool g_bDoClassSpecialSkill[MAXPLAYERS + 1];
 static bool g_bDoClassSpecialSkillClass[MAXPLAYERS + 1];
 static bool g_bApplyBiteEffectsChocolate[MAXPLAYERS + 1];
+static bool g_bHalloweenGiant[MAXPLAYERS + 1];
 
 public void DHook_Init(GameData hGameData)
 {
 	g_aDHookDetours = new ArrayList(sizeof(Detour));
+	g_aDHookClientHooks = new ArrayList(sizeof(Hook));
 	
 	DHook_CreateDetour(hGameData, "CTFPlayer::GiveAmmo", DHook_GiveAmmoPre, _);
 	DHook_CreateDetour(hGameData, "CTFPlayer::GetMaxAmmo", DHook_GetMaxAmmoPre, _);
@@ -77,21 +112,26 @@ public void DHook_Init(GameData hGameData)
 	DHook_CreateDetour(hGameData, "CTFGameRules::ApplyOnDamageModifyRules", DHook_ApplyOnDamageModifyRulesPre, _);
 	DHook_CreateDetour(hGameData, "HandleRageGain", DHook_HandleRageGainPre, _);
 	
-	g_hDHookEventKilled = DHook_CreateVirtual(hGameData, "CBaseEntity::Event_Killed");
-	g_hDHookTranslateViewmodelHandActivityInternal = DHook_CreateVirtual(hGameData, "CEconEntity::TranslateViewmodelHandActivityInternal");
-	g_hDHookSecondaryAttack = DHook_CreateVirtual(hGameData, "CBaseCombatWeapon::SecondaryAttack");
-	g_hDHookGetEffectBarAmmo = DHook_CreateVirtual(hGameData, "CTFWeaponBase::GetEffectBarAmmo");
-	g_hDHookSmack = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Smack");
-	g_hDHookSwing = DHook_CreateVirtual(hGameData, "CTFWeaponBaseMelee::Swing");
-	g_hDHookKilled = DHook_CreateVirtual(hGameData, "CBaseObject::Killed");
-	g_hDHookCanBeUpgraded = DHook_CreateVirtual(hGameData, "CBaseObject::CanBeUpgraded");
-	g_hDHookForceRespawn = DHook_CreateVirtual(hGameData, "CBasePlayer::ForceRespawn");
-	g_hDHookEquipWearable = DHook_CreateVirtual(hGameData, "CBasePlayer::EquipWearable");
-	g_hDHookGetAmmoCount = DHook_CreateVirtual(hGameData, "CBaseCombatCharacter::GetAmmoCount");
-	g_hDHookClientCommand = DHook_CreateVirtual(hGameData, "CTFPlayer::ClientCommand");
-	g_hDHookGiveNamedItem = DHook_CreateVirtual(hGameData, "CTFPlayer::GiveNamedItem");
-	g_hDHookInitClass = DHook_CreateVirtual(hGameData, "CTFPlayer::InitClass");
-	g_hDHookFrameUpdatePostEntityThink = DHook_CreateVirtual(hGameData, "CGameRules::FrameUpdatePostEntityThink");
+	DHook_CreateClientHook(hGameData, "CBaseEntity::Event_Killed", DHook_EventKilledPre);
+	DHook_CreateClientHook(hGameData, "CBaseEntity::Event_KilledOther", DHook_EventKilledOtherPre);
+	DHook_CreateClientHook(hGameData, "CBasePlayer::ForceRespawn", DHook_ForceRespawnPre, DHook_ForceRespawnPost);
+	DHook_CreateClientHook(hGameData, "CBasePlayer::ClientCommand", _, DHook_ClientCommandPost);
+	DHook_CreateClientHook(hGameData, "CBasePlayer::EquipWearable", _, DHook_EquipWearablePost);
+	DHook_CreateClientHook(hGameData, "CBaseCombatCharacter::GetAmmoCount", DHook_GetAmmoCountPre);
+	DHook_CreateClientHook(hGameData, "CBaseMultiplayerPlayer::SpeakConceptIfAllowed", DHook_SpeakConceptIfAllowedPre);
+	DHook_CreateClientHook(hGameData, "CTFPlayer::InitClass", DHook_InitClassPre, DHook_InitClassPost);
+	
+	g_DHookGiveNamedItem = DHook_CreateHook(hGameData, "CTFPlayer::GiveNamedItem", DHook_GiveNamedItemPre, _, DHook_GiveNamedItemRemoved);
+	g_DHookTranslateViewmodelHandActivityInternal = DHook_CreateHook(hGameData, "CEconEntity::TranslateViewmodelHandActivityInternal", DHook_TranslateViewmodelHandActivityInternalPre, DHook_TranslateViewmodelHandActivityInternalPost);
+	g_DHookSecondaryAttack = DHook_CreateHook(hGameData, "CBaseCombatWeapon::SecondaryAttack", _, DHook_SecondaryWeaponPost);
+	g_DHookGetEffectBarAmmo = DHook_CreateHook(hGameData, "CTFWeaponBase::GetEffectBarAmmo", _, DHook_GetEffectBarAmmoPost);
+	g_DHookSmack = DHook_CreateHook(hGameData, "CTFWeaponBaseMelee::Smack", _, DHook_SmackPost);
+	g_DHookSwing = DHook_CreateHook(hGameData, "CTFWeaponBaseMelee::Swing", DHook_SwingPre);
+	g_DHookGetSwordSpeedMod = DHook_CreateHook(hGameData, "CTFSword::GetSwordSpeedMod", DHook_GetSwordModPre, DHook_GetSwordModPost);
+	g_DHookGetSwordHealthMod = DHook_CreateHook(hGameData, "CTFSword::GetSwordHealthMod", DHook_GetSwordModPre, DHook_GetSwordModPost);
+	g_DHookKilled = DHook_CreateHook(hGameData, "CBaseObject::Killed", DHook_KilledPre, DHook_KilledPost);
+	g_DHookCanBeUpgraded = DHook_CreateHook(hGameData, "CBaseObject::CanBeUpgraded", DHook_CanBeUpgradedPre, DHook_CanBeUpgradedPost);
+	g_DHookFrameUpdatePostEntityThink = DHook_CreateHook(hGameData, "CGameRules::FrameUpdatePostEntityThink", DHook_FrameUpdatePostEntityThinkPre, DHook_FrameUpdatePostEntityThinkPost);
 }
 
 static void DHook_CreateDetour(GameData hGameData, const char[] sName, DHookCallback callbackPre = INVALID_FUNCTION, DHookCallback callbackPost = INVALID_FUNCTION)
@@ -111,13 +151,30 @@ static void DHook_CreateDetour(GameData hGameData, const char[] sName, DHookCall
 	}
 }
 
-static DynamicHook DHook_CreateVirtual(GameData hGameData, const char[] sName)
+static Hook DHook_CreateHook(GameData hGameData, const char[] sName, DHookCallback callbackPre = INVALID_FUNCTION, DHookCallback callbackPost = INVALID_FUNCTION, DHookRemovalCB callbackRemoval = INVALID_FUNCTION)
 {
-	DynamicHook hHook = DynamicHook.FromConf(hGameData, sName);
-	if (!hHook)
+	Hook hook;
+	hook.hHook = DynamicHook.FromConf(hGameData, sName);
+	if (!hook.hHook)
+	{
 		LogError("Failed to create hook: %s", sName);
+	}
+	else
+	{
+		hook.callbackPre = callbackPre;
+		hook.callbackPost = callbackPost;
+		hook.callbackRemoval = callbackRemoval;
+	}
 	
-	return hHook;
+	return hook;
+}
+
+static void DHook_CreateClientHook(GameData hGameData, const char[] sName, DHookCallback callbackPre = INVALID_FUNCTION, DHookCallback callbackPost = INVALID_FUNCTION)
+{
+	Hook hook;
+	hook = DHook_CreateHook(hGameData, sName, callbackPre, callbackPost);
+	if (hook.hHook)
+		g_aDHookClientHooks.PushArray(hook);
 }
 
 void DHook_EnableDetour()
@@ -158,23 +215,19 @@ void DHook_DisableDetour()
 
 void DHook_HookGiveNamedItem(int iClient)
 {
-	if (g_hDHookGiveNamedItem && !g_bTF2Items)
-		g_iHookIdGiveNamedItem[iClient] = g_hDHookGiveNamedItem.HookEntity(Hook_Pre, iClient, DHook_GiveNamedItemPre, DHook_GiveNamedItemRemoved);
+	if (g_DHookGiveNamedItem.hHook && !g_bTF2Items)
+		g_DHookGiveNamedItem.HookClient(iClient);
 }
 
 void DHook_UnhookGiveNamedItem(int iClient)
 {
-	if (g_iHookIdGiveNamedItem[iClient])
-	{
-		DHookRemoveHookID(g_iHookIdGiveNamedItem[iClient]);
-		g_iHookIdGiveNamedItem[iClient] = 0;	
-	}
+	g_DHookGiveNamedItem.UnhookClient(iClient);
 }
 
 bool DHook_IsGiveNamedItemActive()
 {
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
-		if (g_iHookIdGiveNamedItem[iClient])
+		if (g_DHookGiveNamedItem.iHookIdPre[iClient])
 			return true;
 	
 	return false;
@@ -182,26 +235,26 @@ bool DHook_IsGiveNamedItemActive()
 
 void DHook_HookClient(int iClient)
 {
-	g_iHookIdEventKilledPre[iClient] = g_hDHookEventKilled.HookEntity(Hook_Pre, iClient, DHook_EventKilledPre);
-	g_iHookIdForceRespawnPre[iClient] = g_hDHookForceRespawn.HookEntity(Hook_Pre, iClient, DHook_ForceRespawnPre);
-	g_iHookIdForceRespawnPost[iClient] = g_hDHookForceRespawn.HookEntity(Hook_Post, iClient, DHook_ForceRespawnPost);
-	g_iHookIdEquipWearable[iClient] = g_hDHookEquipWearable.HookEntity(Hook_Post, iClient, DHook_EquipWearablePost);
-	g_iHookIdGetAmmoCount[iClient] = g_hDHookGetAmmoCount.HookEntity(Hook_Pre, iClient, DHook_GetAmmoCountPre);
-	g_iHookIdClientCommand[iClient] = g_hDHookClientCommand.HookEntity(Hook_Post, iClient, DHook_ClientCommandPost);
-	g_iHookIdInitClassPre[iClient] = g_hDHookInitClass.HookEntity(Hook_Pre, iClient, DHook_InitClassPre);
-	g_iHookIdInitClassPost[iClient] = g_hDHookInitClass.HookEntity(Hook_Post, iClient, DHook_InitClassPost);
+	int iLength = g_aDHookClientHooks.Length;
+	for (int i = 0; i < iLength; i++)
+	{
+		Hook hook;
+		g_aDHookClientHooks.GetArray(i, hook);
+		hook.HookClient(iClient);
+		g_aDHookClientHooks.SetArray(i, hook);
+	}
 }
 
 void DHook_UnhookClient(int iClient)
 {
-	DHook_UnhookId(g_iHookIdEventKilledPre[iClient]);
-	DHook_UnhookId(g_iHookIdForceRespawnPre[iClient]);
-	DHook_UnhookId(g_iHookIdForceRespawnPost[iClient]);
-	DHook_UnhookId(g_iHookIdEquipWearable[iClient]);
-	DHook_UnhookId(g_iHookIdGetAmmoCount[iClient]);
-	DHook_UnhookId(g_iHookIdClientCommand[iClient]);
-	DHook_UnhookId(g_iHookIdInitClassPre[iClient]);
-	DHook_UnhookId(g_iHookIdInitClassPost[iClient]);
+	int iLength = g_aDHookClientHooks.Length;
+	for (int i = 0; i < iLength; i++)
+	{
+		Hook hook;
+		g_aDHookClientHooks.GetArray(i, hook);
+		hook.UnhookClient(iClient);
+		g_aDHookClientHooks.SetArray(i, hook);
+	}
 }
 
 static void DHook_UnhookId(int &iId)
@@ -218,31 +271,26 @@ void DHook_OnEntityCreated(int iEntity, const char[] sClassname)
 	if (StrContains(sClassname, "tf_weapon_") == 0)
 	{
 		SDKHook(iEntity, SDKHook_SpawnPost, DHook_SpawnPost);
-		g_hDHookTranslateViewmodelHandActivityInternal.HookEntity(Hook_Pre, iEntity, DHook_TranslateViewmodelHandActivityInternalPre);
-		g_hDHookTranslateViewmodelHandActivityInternal.HookEntity(Hook_Post, iEntity, DHook_TranslateViewmodelHandActivityInternalPost);
-		g_hDHookSecondaryAttack.HookEntity(Hook_Post, iEntity, DHook_SecondaryWeaponPost);
-		g_hDHookGetEffectBarAmmo.HookEntity(Hook_Post, iEntity, DHook_GetEffectBarAmmoPost);
+		g_DHookTranslateViewmodelHandActivityInternal.HookEntity(iEntity);
+		g_DHookSecondaryAttack.HookEntity(iEntity);
+		g_DHookGetEffectBarAmmo.HookEntity(iEntity);
 	}
 	
 	if (StrContains(sClassname, "obj_") == 0 && !StrEqual(sClassname, "obj_attachment_sapper"))
 	{
-		g_hDHookKilled.HookEntity(Hook_Pre, iEntity, DHook_KilledPre);
-		g_hDHookKilled.HookEntity(Hook_Post, iEntity, DHook_KilledPost);
-		g_hDHookCanBeUpgraded.HookEntity(Hook_Pre, iEntity, DHook_CanBeUpgradedPre);
-		g_hDHookCanBeUpgraded.HookEntity(Hook_Post, iEntity, DHook_CanBeUpgradedPost);
+		g_DHookKilled.HookEntity(iEntity);
+		g_DHookCanBeUpgraded.HookEntity(iEntity);
 	}
 }
 
 void DHook_HookGamerules()
 {
-	g_iDHookGamerulesPre = g_hDHookFrameUpdatePostEntityThink.HookGamerules(Hook_Pre, DHook_FrameUpdatePostEntityThinkPre);
-	g_iDHookGamerulesPost = g_hDHookFrameUpdatePostEntityThink.HookGamerules(Hook_Post, DHook_FrameUpdatePostEntityThinkPost);
+	g_DHookFrameUpdatePostEntityThink.HookGamerules();
 }
 
 void DHook_UnhookGamerules()
 {
-	DHookRemoveHookID(g_iDHookGamerulesPre);
-	DHookRemoveHookID(g_iDHookGamerulesPost);
+	g_DHookFrameUpdatePostEntityThink.UnhookGamerules();
 }
 
 public void DHook_SpawnPost(int iWeapon)
@@ -250,9 +298,15 @@ public void DHook_SpawnPost(int iWeapon)
 	if (TF2_GetSlot(iWeapon) == WeaponSlot_Melee)
 	{
 		if (HasEntProp(iWeapon, Prop_Send, "m_bBroken"))
-			g_hDHookSmack.HookEntity(Hook_Post, iWeapon, DHook_SmackPost);
+			g_DHookSmack.HookEntity(iWeapon);
 		
-		g_hDHookSwing.HookEntity(Hook_Pre, iWeapon, DHook_SwingPre);
+		g_DHookSwing.HookEntity(iWeapon);
+	}
+	
+	if (IsClassname(iWeapon, "tf_weapon_sword"))
+	{
+		g_DHookGetSwordSpeedMod.HookEntity(iWeapon);
+		g_DHookGetSwordHealthMod.HookEntity(iWeapon);
 	}
 }
 
@@ -532,24 +586,50 @@ public MRESReturn DHook_GetChargeEffectBeingProvidedPost(int iClient, DHookRetur
 
 public MRESReturn DHook_GetMaxHealthForBuffingPre(int iClient, DHookReturn hReturn)
 {
-	if (g_bWeaponDecap[iClient])
-		return MRES_Ignored;
-	
-	//Set decap to any eyelanders, all should have same value
-	int iWeapon, iPos;
-	if (TF2_GetItemFromClassname(iClient, "tf_weapon_sword", iWeapon, iPos))
-		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iDecapitations");
+	if (TF2_IsPlayerInCondition(iClient, TFCond_HalloweenGiant))
+	{
+		// Don't modify HP by giant yet, may need to update value from eyelander
+		g_bHalloweenGiant[iClient] = true;
+		TF2_RemoveConditionFake(iClient, TFCond_HalloweenGiant);
+	}
 	
 	return MRES_Ignored;
 }
 
 public MRESReturn DHook_GetMaxHealthForBuffingPost(int iClient, DHookReturn hReturn)
 {
-	if (g_bWeaponDecap[iClient])
-		return MRES_Ignored;
+	int iMax = hReturn.Value;
+	int iNewMax = iMax;
 	
-	//Set back to active weapon
-	Properties_LoadActiveWeaponPropInt(iClient, "m_iDecapitations");
+	if (TF2_GetPlayerClass(iClient) != TFClass_DemoMan)
+	{
+		// Need to manually call virtual
+		
+		// Only need to call once, all swords should have same value
+		int iWeapon, iPos;
+		if (TF2_GetItemFromClassname(iClient, "tf_weapon_sword", iWeapon, iPos))
+			iNewMax += SDKCall_GetSwordHealthMod(iWeapon);
+	}
+	
+	if (g_bHalloweenGiant[iClient])
+	{
+		g_bHalloweenGiant[iClient] = false;
+		TF2_AddConditionFake(iClient, TFCond_HalloweenGiant);
+		
+		static ConVar cvHealthScale;
+		if (!cvHealthScale)
+			cvHealthScale = FindConVar("tf_halloween_giant_health_scale");
+		
+		// Is it floor by default when float becomes int?
+		iNewMax = RoundToFloor(float(iNewMax) * cvHealthScale.FloatValue);
+	}
+	
+	if (iNewMax != iMax)
+	{
+		hReturn.Value = iNewMax;
+		return MRES_Supercede;
+	}
+	
 	return MRES_Ignored;
 }
 
@@ -562,15 +642,13 @@ public MRESReturn DHook_CalculateMaxSpeedPre(int iClient, DHookReturn hReturn, D
 	if (TF2_GetPlayerClass(iClient) != TFClass_Unknown)
 		SetClientClassOriginal(iClient);
 	
+	Patch_SetSpeed(TF2_GetPlayerClass(iClient));
+	
 	int iWeapon, iPos;
 	
 	//Set hype to any baby face blaster, all should have same value
 	if (TF2_GetItemFromClassname(iClient, "tf_weapon_pep_brawler_blaster", iWeapon, iPos))
 		Properties_LoadWeaponPropFloat(iClient, iWeapon, "m_flHypeMeter");
-	
-	//Set decap to any eyelanders, all should have same value
-	if (!g_bWeaponDecap[iClient] && TF2_GetItemFromClassname(iClient, "tf_weapon_sword", iWeapon, iPos))
-		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iDecapitations");
 	
 	return MRES_Ignored;
 }
@@ -585,10 +663,6 @@ public MRESReturn DHook_CalculateMaxSpeedPost(int iClient, DHookReturn hReturn, 
 		Properties_LoadActiveWeaponPropFloat(iClient, "m_flHypeMeter");
 	else
 		Properties_LoadWeaponPropFloat(iClient, g_iHypeMeterLoaded[iClient], "m_flHypeMeter");
-	
-	//Set back to active weapon
-	if (!g_bWeaponDecap[iClient])
-		Properties_LoadActiveWeaponPropInt(iClient, "m_iDecapitations");
 	
 	if (TF2_GetPlayerClass(iClient) != TFClass_Unknown)
 		RevertClientClass(iClient);
@@ -798,6 +872,32 @@ public MRESReturn DHook_SwingPre(int iWeapon, DHookReturn hReturn)
 	return MRES_Ignored;
 }
 
+public MRESReturn DHook_GetSwordModPre(int iWeapon, DHookReturn hReturn)
+{
+	// For both speed and health hooks
+	
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	if (g_bWeaponDecap[iClient])
+		return MRES_Ignored;
+	
+	if (0 < iClient <= MaxClients)
+		Properties_LoadWeaponPropInt(iClient, iWeapon, "m_iDecapitations");
+	
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_GetSwordModPost(int iWeapon, DHookReturn hReturn)
+{
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	if (g_bWeaponDecap[iClient])
+		return MRES_Ignored;
+	
+	if (0 < iClient <= MaxClients)
+		Properties_LoadActiveWeaponPropInt(iClient, "m_iDecapitations");
+	
+	return MRES_Ignored;
+}
+
 public MRESReturn DHook_TranslateViewmodelHandActivityInternalPre(int iWeapon, DHookReturn hReturn, DHookParam hParams)
 {
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
@@ -933,6 +1033,44 @@ public MRESReturn DHook_EventKilledPre(int iClient, DHookParam hParams)
 	return MRES_Ignored;
 }
 
+public MRESReturn DHook_EventKilledOtherPre(int iClient, DHookParam hParams)
+{
+	int iVictim = hParams.Get(1);
+	if (iVictim <= 0 || iVictim > MaxClients)
+		return MRES_Ignored;
+	
+	if (TF2_GetPlayerClass(iClient) != TFClass_DemoMan && TF2_GetClientTeam(iClient) != TF2_GetClientTeam(iVictim))
+	{
+		// Manually award charge meters
+		// There whole achivements were missing, but meh, too much effort to make it work
+		float flRefill = 0.0;
+		TF2Attrib_HookValueFloat(flRefill, "kill_refills_meter", iClient);
+		
+		if (TF2_IsPlayerInCondition(iClient, TFCond_RuneKnockout))	// really should be GetCarryingRuneType, but good enough
+			flRefill *= 0.2;
+		
+		int iDamageType = hParams.GetObjectVar(2, g_iOffsetDamageType, ObjectValueType_Int);
+		int iDamageCustom = hParams.GetObjectVar(2, g_iOffsetDamageCustom, ObjectValueType_Int);
+		
+		if (flRefill > 0 && ((iDamageType & DMG_MELEE) || (iDamageCustom == TF_CUSTOM_CHARGE_IMPACT)))
+		{
+			float flMeter = GetEntProp(iClient, Prop_Send, "m_flChargeMeter") + (flRefill * 100.0);
+			SetEntProp(iClient, Prop_Send, "m_flChargeMeter", clamp(flMeter, 0.0, 100.0));
+		}
+	}
+	
+	if (TF2_GetPlayerClass(iClient) != TFClass_Sniper)
+	{
+		// Manually give rages
+		float flRageGain = 0.0;
+		TF2Attrib_HookValueFloat(flRageGain, "rage_on_kill", iClient);
+		if (flRageGain != 0.0)
+			SDKCall_ModifyRage(GetEntityAddress(iClient) + view_as<Address>(g_iOffsetPlayerShared), flRageGain);
+	}
+	
+	return MRES_Ignored;
+}
+
 public MRESReturn DHook_ForceRespawnPre(int iClient)
 {
 	//Update incase of changing group
@@ -970,6 +1108,17 @@ public MRESReturn DHook_ForceRespawnPost(int iClient)
 	return MRES_Ignored;
 }
 
+public MRESReturn DHook_ClientCommandPost(int iClient, DHookReturn hReturn, DHookParam hParams)
+{
+	if (g_iClientEurekaTeleporting)
+	{
+		RevertClientClass(iClient);
+		g_iClientEurekaTeleporting = 0;
+	}
+	
+	return MRES_Ignored;
+}
+
 public MRESReturn DHook_EquipWearablePost(int iClient, DHookParam hParams)
 {
 	//New wearable is given from somewhere, refresh controls and huds
@@ -986,6 +1135,26 @@ public MRESReturn DHook_GetAmmoCountPre(int iClient, DHookReturn hReturn, DHookP
 		Properties_ResetForceWeaponAmmo();
 		hReturn.Value = Properties_GetWeaponPropInt(iWeapon, "m_iAmmo");
 		return MRES_Supercede;
+	}
+	
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_SpeakConceptIfAllowedPre(int iClient, DHookReturn hReturn, DHookParam hParams)
+{
+	// There a spy check for silent YER kill
+	int iConcept = hParams.Get(1);
+	if (iConcept == MP_CONCEPT_KILLED_PLAYER)
+	{
+		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+		
+		int iMode;
+		TF2Attrib_HookValueInt(iMode, "set_weapon_mode", iActiveWeapon);
+		if (iMode == 1)	// KNIFE_DISGUISE_ONKILL
+		{
+			hReturn.Value = false;
+			return MRES_Supercede;
+		}
 	}
 	
 	return MRES_Ignored;
@@ -1014,23 +1183,12 @@ public void DHook_GiveNamedItemRemoved(int iHookId)
 {
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
-		if (g_iHookIdGiveNamedItem[iClient] == iHookId)
+		if (g_DHookGiveNamedItem.iHookIdPre[iClient] == iHookId)
 		{
-			g_iHookIdGiveNamedItem[iClient] = 0;
+			g_DHookGiveNamedItem.iHookIdPre[iClient] = 0;
 			return;
 		}
 	}
-}
-
-public MRESReturn DHook_ClientCommandPost(int iClient, DHookReturn hReturn, DHookParam hParams)
-{
-	if (g_iClientEurekaTeleporting)
-	{
-		RevertClientClass(iClient);
-		g_iClientEurekaTeleporting = 0;
-	}
-	
-	return MRES_Ignored;
 }
 
 public MRESReturn DHook_InitClassPre(int iClient)

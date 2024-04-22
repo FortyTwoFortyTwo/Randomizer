@@ -4,51 +4,6 @@
 	{
 		"Keys"
 		{
-			"PatchReplace_01"	//Demoman class check for eyelander health
-			{
-				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
-				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
-			}
-			"PatchReplace_02"	//Demoman class check for eyelander speed and charging
-			{
-				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
-				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
-			}
-			"PatchReplace_03"	//Medic class check for healing charging
-			{
-				"linux"		"\x90\x90\x90\x90\x90\x90"	// Replace 'jnz' to NOP (skip)
-				"windows"	"\x90\x90\x90\x90\x90\x90"	// Replace 'jz' (if '==' jump) to NOP (skip)
-			}
-			"PatchReplace_04"	//Medic class check for Overdose speed
-			{
-				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
-				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
-			}
-			"PatchReplace_05"	//Heavy class check for steak speed
-			{
-				"linux"		"\x90\x90\x90\x90\x90\x90"	// Replace 'jz' (if '==' jump) to to NOP (skip)
-				"windows"	"\xEB"	// Replace 'jnz short' to 'jmp short' (always jump)
-			}
-			"PatchReplace_06"	//Scout class check for Baby Face Blaster and Crit-A-Cola speed
-			{
-				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
-				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
-			}
-			"PatchReplace_07"	//Spy class check for Your Eternal Reward silent kill
-			{
-				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
-				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
-			}
-			"PatchReplace_08"	//Demoman class check for kill refilling meter
-			{
-				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
-				"windows"	"\x90\x90\x90\x90\x90\x90"	// Replace 'jnz' to NOP (skip)
-			}
-			"PatchReplace_09"	//Sniper class check for Hitman's Heatmaker rage on kill
-			{
-				"linux"		"\x90\xE9"	// Replace 'jz' (if '==' jump) to 'jmp' (always jump)
-				"windows"	"\x90\x90"	// Replace 'jnz short' to NOP (skip)
-			}
 			"PatchReplace_IsPlayerClass"	//Given class check, this patch makes it always return true
 			{
 				// \xB8\x01\x00\x00\x00                            mov     eax, 1
@@ -59,77 +14,24 @@
 				// \x90                                            nop
 				"windows"	"\xB8\x01\x00\x00\x00\x90"
 			}
+			
+			"PatchSearch_Speed01"
+			{
+				"linux"		"\x83\xFF\x2A\x0F"
+				"windows"	"\x83\x7D\xEC\x2A"
+			}
+			
+			"PatchSearch_Speed02"
+			{
+				"windows"	"\x83\xF8\x2A"
+			}
+			
+			"PatchCount_Speed"	"6"		// How many patches we should expect from searches, errors out if found different amount of it
+			"PatchBits_Speed"	"1800"	// How many bits to read from start to function to collect address
+			"PatchWildcard_Speed"	"\x01\x04\x05\x06"	// List of possible values from \x2A wildcard to consider it valid and replace it
 		}
 		"Addresses"
 		{
-			"PatchSig_01"
-			{
-				"signature" "PatchSig_01"
-				"linux"
-				{
-					"offset"	"95"
-				}
-				"windows"
-				{
-					"offset"	"7"	//Start is pushed back by 7 to make good unique sig
-				}
-			}
-			"PatchSig_02"
-			{
-				"signature" "PatchSig_02"
-			}
-			"PatchSig_03"
-			{
-				"signature" "PatchSig_03"
-				"linux"
-				{
-					"offset"	"3"	//Start is pushed back by 3 to make good unique sig
-				}
-			}
-			"PatchSig_04"
-			{
-				"signature" "PatchSig_04"
-			}
-			"PatchSig_05"
-			{
-				"signature" "PatchSig_05"
-			}
-			"PatchSig_06"
-			{
-				"signature" "PatchSig_06"
-				"linux"
-				{
-					"offset"	"3"	//Start is pushed back by 3 to make good unique sig
-				}
-			}
-			"PatchSig_07"
-			{
-				"signature" "PatchSig_07"
-				"linux"
-				{
-					"offset"	"649"
-				}
-				"windows"
-				{
-					"offset"	"4"	//Start is pushed back by 4 to make good unique sig
-				}
-			}
-			"PatchSig_08"
-			{
-				"signature" "PatchSig_08"
-				"windows"
-				{
-					"offset"	"4"	//Start is pushed back by 4 to make good unique sig
-				}
-			}
-			"PatchSig_09"
-			{
-				"signature" "PatchSig_09"
-				"linux"
-				{
-					"offset"	"1890"
-				}
-			}
 			"PatchSig_IsPlayerClass"
 			{
 				"signature" "PatchSig_IsPlayerClass"
@@ -145,51 +47,6 @@
 		}
 		"Signatures"
 		{
-			"PatchSig_01"	//CTFPlayer::GetMaxHealthForBuffing
-			{
-				"linux"		"@_ZN9CTFPlayer22GetMaxHealthForBuffingEv"
-				"windows"	"\x83\xBF\x2A\x2A\x2A\x2A\x04\x75\x2A\x6A\x00"
-			}
-			"PatchSig_02"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
-			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x80\xB8\x2A\x0C\x00\x00\x00\x75\x2A\x80\xBB\x2A\x1E\x00\x00\x00"
-				"windows"	"\x75\x2A\x6A\x00\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x6A\x00\x6A\x40\x8B\xCE"
-			}
-			"PatchSig_03"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
-			{
-				"linux"		"\x83\xFF\x05\x0F\x85\x2A\x2A\x2A\x2A"
-				"windows"	"\x0F\x85\x2A\x2A\x2A\x2A\x85\xDB\x0F\x84\x2A\x2A\x2A\x2A\x6A\x00"
-			}
-			"PatchSig_04"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
-			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x83\xEC\x0C\x6A\x01\x6A\x00\xFF\x75\xD8"
-				"windows"	"\x75\x2A\x6A\x00\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x6A\x00\x6A\x32"
-			}
-			"PatchSig_05"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
-			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x83\xFF\x01\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x85\xC0"
-				"windows"	"\x75\x2A\xF3\x0F\x10\x45\xE8\x8B\xCF"
-			}
-			"PatchSig_06"	//CTFPlayer::TeamFortress_CalculateMaxSpeed
-			{
-				"linux"		"\x83\xFF\x01\x0F\x84\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x85\xC0"
-				"windows"	"\x75\x2A\x6A\x55\x8B\xCE\xE8\x2A\x2A\x2A\x2A\x85\xC0"
-			}
-			"PatchSig_07"	//CTFPlayer::Event_KilledOther
-			{
-				"linux"		"@_ZN9CTFPlayer17Event_KilledOtherEP11CBaseEntityRK15CTakeDamageInfo"
-				"windows"	"\x83\x78\x04\x08\x75\x2A\x56"
-			}
-			"PatchSig_08"	//CTFPlayer::Event_KilledOther
-			{
-				"linux"		"\x0F\x84\x2A\x2A\x2A\x2A\x83\xF8\x02\x0F\x84\x2A\x2A\x2A\x2A\x8B\x83\x2A\x2A\x2A\x2A"
-				"windows"	"\x83\x78\x04\x04\x0F\x85\x2A\x2A\x2A\x2A"
-			}
-			"PatchSig_09"	//CTFPlayer::Event_KilledOther
-			{
-				"linux"		"@_ZN9CTFPlayer17Event_KilledOtherEP11CBaseEntityRK15CTakeDamageInfo"
-				"windows"	"\x75\x2A\xD9\xEE\x6A\x01\x6A\x00\x53"
-			}
 			"PatchSig_IsPlayerClass"	//CTFPlayer::IsPlayerClass
 			{
 				"linux"		"@_ZNK9CTFPlayer13IsPlayerClassEi"
@@ -388,6 +245,11 @@
 				"linux"		"69"
 				"windows"	"68"
 			}
+			"CBaseEntity::Event_KilledOther"
+			{
+				"linux"		"70"
+				"windows"	"69"
+			}
 			"CBaseEntity::GetMaxHealth"
 			{
 				"linux"		"123"
@@ -418,6 +280,16 @@
 				"linux"		"486"
 				"windows"	"479"
 			}
+			"CTFSword::GetSwordSpeedMod"
+			{
+				"linux"		"492"
+				"windows"	"484"
+			}
+			"CTFSword::GetSwordHealthMod"
+			{
+				"linux"		"493"
+				"windows"	"485"
+			}
 			"CBaseObject::Killed"
 			{
 				"linux"		"356"
@@ -432,6 +304,11 @@
 			{
 				"linux"		"337"
 				"windows"	"336"
+			}
+			"CBasePlayer::ClientCommand"
+			{
+				"linux"		"380"
+				"windows"	"379"
 			}
 			"CBasePlayer::EquipWearable"
 			{
@@ -448,10 +325,10 @@
 				"linux"		"277"
 				"windows"	"276"
 			}
-			"CTFPlayer::ClientCommand"
+			"CBaseMultiplayerPlayer::SpeakConceptIfAllowed"
 			{
-				"linux"		"380"
-				"windows"	"379"
+				"linux"		"473"
+				"windows"	"472"
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
@@ -467,6 +344,16 @@
 			{
 				"linux"		"16"
 				"windows"	"15"
+			}
+			"CTakeDamageInfo::m_bitsDamageType"
+			{
+				"linux"		"60"
+				"windows"	"60"
+			}
+			"CTakeDamageInfo::m_iDamageCustom"
+			{
+				"linux"		"64"
+				"windows"	"64"
 			}
 		}
 		"Functions"
@@ -821,6 +708,24 @@
 					}
 				}
 			}
+			"CBaseEntity::Event_KilledOther"
+			{
+				"offset"	"CBaseEntity::Event_KilledOther"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"pVictim"
+					{
+						"type"	"cbaseentity"
+					}
+					"info"
+					{
+						"type"    "objectptr"
+					}
+				}
+			}
 			"CEconEntity::TranslateViewmodelHandActivityInternal"
 			{
 				"offset"	"CEconEntity::TranslateViewmodelHandActivityInternal"
@@ -870,6 +775,20 @@
 					}
 				}
 			}
+			"CTFSword::GetSwordSpeedMod"
+			{
+				"offset"	"CTFSword::GetSwordSpeedMod"
+				"hooktype"	"entity"
+				"return"	"float"
+				"this"		"entity"
+			}
+			"CTFSword::GetSwordHealthMod"
+			{
+				"offset"	"CTFSword::GetSwordHealthMod"
+				"hooktype"	"entity"
+				"return"	"int"
+				"this"		"entity"
+			}
 			"CBaseObject::Killed"
 			{
 				"offset"	"CBaseObject::Killed"
@@ -908,6 +827,20 @@
 				"return"	"void"
 				"this"		"entity"
 			}
+			"CBasePlayer::ClientCommand"
+			{
+				"offset"	"CBasePlayer::ClientCommand"
+				"hooktype"	"entity"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"pArgs"
+					{
+						"type"	"objectptr"
+					}
+				}
+			}
 			"CBasePlayer::EquipWearable"
 			{
 				"offset"	"CBasePlayer::EquipWearable"
@@ -936,17 +869,33 @@
 					}
 				}
 			}
-			"CTFPlayer::ClientCommand"
+			"CBaseMultiplayerPlayer::SpeakConceptIfAllowed"
 			{
-				"offset"	"CTFPlayer::ClientCommand"
+				"offset"	"CBaseMultiplayerPlayer::SpeakConceptIfAllowed"
 				"hooktype"	"entity"
 				"return"	"bool"
 				"this"		"entity"
 				"arguments"
 				{
-					"pArgs"
+					"iConcept"
 					{
-						"type"	"objectptr"
+						"type"	"int"
+					}
+					"modifiers"
+					{
+						"type"	"charptr"
+					}
+					"pszOutResponseChosen"
+					{
+						"type"	"charptr"
+					}
+					"bufsize"
+					{
+						"type"	"int"
+					}
+					"filter"
+					{
+						"type"	"int"
 					}
 				}
 			}

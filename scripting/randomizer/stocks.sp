@@ -167,6 +167,15 @@ stock bool TF2_IndexFindAttribute(int iIndex, const char[] sAttrib, float &flVal
 	return false;
 }
 
+stock float TF2_GetAttributeValue(int iEntity, const char[] sAttrib, float flDefault)
+{
+	Address pAttrib = TF2Attrib_GetByName(iEntity, sAttrib);
+	if (pAttrib)
+		return TF2Attrib_GetValue(pAttrib);
+	else
+		return flDefault;
+}
+
 stock bool TF2_GetItem(int iClient, int &iWeapon, int &iPos, bool bCosmetic = false)
 {
 	//Could be looped through client slots, but would cause issues with >1 weapons in same slot
