@@ -4,8 +4,7 @@ Team Fortress 2 plugin that randomizes player loadout in any imaginable combinat
 Supports all TF2 stock gamemodes excluding Mann Vs Machine, allow servers using ConVars to randomize specific players by whatever loadouts from whatever events.
 
 ## Builds
-All builds can be found [here](https://github.com/FortyTwoFortyTwo/Randomizer/actions?query=workflow%3APackage+branch%3Amaster).
-To download latest build version, select latest package then "Artifacts" section underneath.
+All builds can be found in [releases](https://github.com/FortyTwoFortyTwo/Randomizer/releases) page, auto-built on every commits done in master branch.
 
 ## Requirements
 - SourceMod 1.11
