@@ -12,3 +12,7 @@ cp -r ../configs/randomizer package/addons/sourcemod/configs
 cp -r ../gamedata/randomizer.txt package/addons/sourcemod/gamedata
 cp -r ../translations package/addons/sourcemod
 cp -r ../LICENSE package
+
+# Create ZIP file
+cd package
+zip -r ../Randomizer-$PLUGIN_VERSION.$PLUGIN_VERSION_REVISION.zip *
