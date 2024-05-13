@@ -1147,6 +1147,8 @@ public MRESReturn DHook_SpeakConceptIfAllowedPre(int iClient, DHookReturn hRetur
 	if (iConcept == MP_CONCEPT_KILLED_PLAYER)
 	{
 		int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+		if (iActiveWeapon == INVALID_ENT_REFERENCE)
+			return MRES_Ignored;
 		
 		int iMode;
 		TF2Attrib_HookValueInt(iMode, "set_weapon_mode", iActiveWeapon);
