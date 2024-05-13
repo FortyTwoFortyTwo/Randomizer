@@ -84,52 +84,127 @@ enum struct Patch
 	}
 }
 
-static ArrayList g_aPatches;	//Arrays of Patch
+enum struct PatchSpeed
+{
+	Address pAddress;
+	int iValueOriginal;
+	int bFirstPatch;
+}
+
+static ArrayList g_aSpeedPatches;	//Arrays of PatchSpeed
 static Patch g_pIsPlayerClass;
 int g_iAllowPlayerClass;
 
 void Patch_Init(GameData hGameData)
 {
-	g_aPatches = new ArrayList(sizeof(Patch));
+	int iWildcardMemory[PATCH_MAX];
+	int iWhitelistCount = Patch_GetGamedataMemory(hGameData, "PatchWildcard_Speed", iWildcardMemory);
+	
+	int iMaxBits = Patch_GetGamedataValueInt(hGameData, "PatchBits_Speed");
+	
+	Address pAddress = hGameData.GetMemSig("CTFPlayer::TeamFortress_CalculateMaxSpeed");
+	
+	g_aSpeedPatches = new ArrayList(sizeof(PatchSpeed));
 	int iCount = 0;
 	
 	do
 	{
 		iCount++;
-		char sNumber[16];
-		Format(sNumber, sizeof(sNumber), "%02d", iCount);
+		char sKey[64];
+		Format(sKey, sizeof(sKey), "PatchSearch_Speed%02d", iCount);
 		
-		Patch patch;
-		if (!patch.Load(hGameData, sNumber, true))
+		int iMemory[PATCH_MAX];
+		int iMemoryCount = Patch_GetGamedataMemory(hGameData, sKey, iMemory);
+		if (iMemoryCount == 0)
 			break;
 		
-		g_aPatches.PushArray(patch);
+		int iPosition;
+		PatchSpeed patch;
+		for (Address pOffset; pOffset < view_as<Address>(iMaxBits); pOffset++)
+		{
+			if (Patch_CheckValue(pAddress + pOffset, iMemory[iPosition], patch, iWildcardMemory, iWhitelistCount))
+			{
+				iPosition++;
+			}
+			else if (iPosition > 0)
+			{
+				iPosition = 0;
+				if (Patch_CheckValue(pAddress + pOffset, iMemory[iPosition], patch, iWildcardMemory, iWhitelistCount))
+					iPosition++;
+			}
+			
+			if (iPosition >= iMemoryCount)
+			{
+				g_aSpeedPatches.PushArray(patch);
+				iPosition = 0;
+			}
+		}
 	}
 	while (iCount);	//Infinite loop until break
+	
+	int iLength = g_aSpeedPatches.Length;
+	int iMaxCount = Patch_GetGamedataValueInt(hGameData, "PatchCount_Speed");
+	if (iLength != iMaxCount)
+	{
+		LogError("Found unexpected amount of speed patches to apply (expected %d, found %d), listing offsets found:", iMaxCount, iLength);
+		for (int i = 0; i < iLength; i++)
+		{
+			PatchSpeed patch;
+			g_aSpeedPatches.GetArray(i, patch);
+			LogError("#%02d: %d", i + 1, patch.pAddress - pAddress);
+		}
+		
+		g_aSpeedPatches.Clear();
+	}
 	
 	g_pIsPlayerClass.Load(hGameData, "IsPlayerClass");
 }
 
-void Patch_Enable()
+bool Patch_CheckValue(Address pAddress, int iExpected, PatchSpeed patch, int iWildcardMemory[PATCH_MAX], int iWhitelistCount)
 {
-	int iLength = g_aPatches.Length;
+	int iValue = LoadFromAddress(pAddress, NumberType_Int8);
+	
+	if (iValue == iExpected)
+	{
+		return true;
+	}
+	else if (iExpected == 0x2A)
+	{
+		patch.pAddress = pAddress;
+		patch.iValueOriginal = iValue;
+		
+		for (int i = 0; i < iWhitelistCount; i++)
+			if (iValue == iWildcardMemory[i])
+				return true;
+	}
+	
+	return false;
+}
+
+void Patch_SetSpeed(TFClassType nClass)
+{
+	int iLength = g_aSpeedPatches.Length;
 	for (int i = 0; i < iLength; i++)
 	{
-		Patch patch;
-		g_aPatches.GetArray(i, patch);
-		if (patch.Enable())
-			g_aPatches.SetArray(i, patch);
+		PatchSpeed patch;
+		g_aSpeedPatches.GetArray(i, patch);
+		StoreToAddress(patch.pAddress, nClass, NumberType_Int8, !patch.bFirstPatch);
+		if (!patch.bFirstPatch)
+		{
+			patch.bFirstPatch = true;
+			g_aSpeedPatches.SetArray(i, patch);
+		}
 	}
 }
 
-void Patch_Disable()
+void Patch_RevertSpeed()
 {
-	int iLength = g_aPatches.Length;
+	int iLength = g_aSpeedPatches.Length;
 	for (int i = 0; i < iLength; i++)
 	{
-		Patch patch;
-		g_aPatches.GetArray(i, patch);
-		patch.Disable();
+		PatchSpeed patch;
+		g_aSpeedPatches.GetArray(i, patch);
+		StoreToAddress(patch.pAddress, patch.iValueOriginal, NumberType_Int8);
 	}
 }
 
@@ -160,4 +235,18 @@ int Patch_StringToMemory(const char[] sValue, int iMemory[PATCH_MAX])
 	}
 	
 	return iCount;
+}
+
+int Patch_GetGamedataMemory(GameData hGameData, const char[] sKey, int iMemory[PATCH_MAX])
+{
+	char sBuffer[PATCH_MAX * 4];
+	hGameData.GetKeyValue(sKey, sBuffer, sizeof(sBuffer));
+	return Patch_StringToMemory(sBuffer, iMemory);
+}
+
+int Patch_GetGamedataValueInt(GameData hGameData, const char[] sKey)
+{
+	char sValue[12];
+	hGameData.GetKeyValue(sKey, sValue, sizeof(sValue));
+	return StringToInt(sValue);
 }

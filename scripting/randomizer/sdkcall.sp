@@ -1,3 +1,5 @@
+const SDKType SDKType_Unknown = view_as<SDKType>(-1);
+
 static Handle g_hSDKGetMaxAmmo;
 static Handle g_hSDKAddObject;
 static Handle g_hSDKRemoveObject;
@@ -12,144 +14,67 @@ static Handle g_hSDKHandleRageGain;
 static Handle g_hSDKSetItem;
 static Handle g_hSDKGetBaseEntity;
 static Handle g_hSDKGetMaxHealth;
+static Handle g_hSDKGetSwordHealthMod;
 static Handle g_hSDKWeaponCanSwitchTo;
 static Handle g_hSDKEquipWearable;
 static Handle g_hSDKGiveNamedItem;
 
 public void SDKCall_Init(GameData hGameData)
 {
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-	g_hSDKGetMaxAmmo = EndPrepSDKCall();
-	if (!g_hSDKGetMaxAmmo)
-		LogMessage("Failed to create call: CTFPlayer::GetMaxAmmo");
+	g_hSDKGetMaxAmmo = SDKCall_Create(hGameData, SDKCall_Player, SDKConf_Signature, "CTFPlayer::GetMaxAmmo", SDKType_PlainOldData, SDKType_PlainOldData, SDKType_PlainOldData);
+	g_hSDKAddObject = SDKCall_Create(hGameData, SDKCall_Player, SDKConf_Signature, "CTFPlayer::AddObject", _, SDKType_CBaseEntity);
+	g_hSDKRemoveObject = SDKCall_Create(hGameData, SDKCall_Player, SDKConf_Signature, "CTFPlayer::RemoveObject", _, SDKType_CBaseEntity);
+	g_hSDKDoClassSpecialSkill = SDKCall_Create(hGameData, SDKCall_Player, SDKConf_Signature, "CTFPlayer::DoClassSpecialSkill", SDKType_Bool);
+	g_hSDKEndClassSpecialSkill = SDKCall_Create(hGameData, SDKCall_Player, SDKConf_Signature, "CTFPlayer::EndClassSpecialSkill", SDKType_Bool);
+	g_hSDKGetLoadoutItem = SDKCall_Create(hGameData, SDKCall_Player, SDKConf_Signature, "CTFPlayer::GetLoadoutItem", SDKType_PlainOldData, SDKType_PlainOldData, SDKType_PlainOldData, SDKType_PlainOldData);
+	g_hSDKRollNewSpell = SDKCall_Create(hGameData, SDKCall_Entity, SDKConf_Signature, "CTFSpellBook::RollNewSpell", _, SDKType_PlainOldData, SDKType_Bool);
+	g_hSDKUpdateRageBuffsAndRage = SDKCall_Create(hGameData, SDKCall_Raw, SDKConf_Signature, "CTFPlayerShared::UpdateRageBuffsAndRage");
+	g_hSDKModifyRage = SDKCall_Create(hGameData, SDKCall_Raw, SDKConf_Signature, "CTFPlayerShared::ModifyRage", _, SDKType_Float);
+	g_hSDKSetCarryingRuneType = SDKCall_Create(hGameData, SDKCall_Raw, SDKConf_Signature, "CTFPlayerShared::SetCarryingRuneType", _, SDKType_PlainOldData);
+	g_hSDKHandleRageGain = SDKCall_Create(hGameData, SDKCall_Static, SDKConf_Signature, "HandleRageGain", _, SDKType_CBaseEntity, SDKType_PlainOldData, SDKType_Float, SDKType_Float);
+	g_hSDKSetItem = SDKCall_Create(hGameData, SDKCall_Raw, SDKConf_Signature, "CEconItemView::operator=", SDKType_PlainOldData, SDKType_PlainOldData);
+	g_hSDKGetBaseEntity = SDKCall_Create(hGameData, SDKCall_Raw, SDKConf_Virtual, "CBaseEntity::GetBaseEntity", SDKType_CBaseEntity);
+	g_hSDKGetMaxHealth = SDKCall_Create(hGameData, SDKCall_Player, SDKConf_Virtual, "CBaseEntity::GetMaxHealth", SDKType_PlainOldData);
+	g_hSDKGetSwordHealthMod = SDKCall_Create(hGameData, SDKCall_Entity, SDKConf_Virtual, "CTFSword::GetSwordHealthMod", SDKType_PlainOldData);
+	g_hSDKWeaponCanSwitchTo = SDKCall_Create(hGameData, SDKCall_Player, SDKConf_Virtual, "CBaseCombatCharacter::Weapon_CanSwitchTo", SDKType_Bool, SDKType_CBaseEntity);
+	g_hSDKEquipWearable = SDKCall_Create(hGameData, SDKCall_Player, SDKConf_Virtual, "CBasePlayer::EquipWearable", _, SDKType_CBaseEntity);
+	g_hSDKGiveNamedItem = SDKCall_Create(hGameData, SDKCall_Player, SDKConf_Virtual, "CTFPlayer::GiveNamedItem", SDKType_CBaseEntity, SDKType_String, SDKType_PlainOldData, SDKType_PlainOldData, SDKType_PlainOldData);
+}
+
+static Handle SDKCall_Create(GameData hGameData, SDKCallType nType, SDKFuncConfSource nSource, const char[] sName, SDKType nReturn = SDKType_Unknown, SDKType nParam1 = SDKType_Unknown, SDKType nParam2 = SDKType_Unknown, SDKType nParam3 = SDKType_Unknown, SDKType nParam4 = SDKType_Unknown)
+{
+	StartPrepSDKCall(nType);
+	PrepSDKCall_SetFromConf(hGameData, nSource, sName);
 	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::AddObject");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKAddObject = EndPrepSDKCall();
-	if (!g_hSDKAddObject)
-		LogError("Failed to create call: CTFPlayer::AddObject");
+	SDKCall_AddParameter(nParam1);
+	SDKCall_AddParameter(nParam2);
+	SDKCall_AddParameter(nParam3);
+	SDKCall_AddParameter(nParam4);
 	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::RemoveObject");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKRemoveObject = EndPrepSDKCall();
-	if (!g_hSDKRemoveObject)
-		LogError("Failed to create call: CTFPlayer::RemoveObject");
+	if (nReturn != SDKType_Unknown)
+	{
+		if (nReturn == SDKType_String || nReturn == SDKType_CBaseEntity)
+			PrepSDKCall_SetReturnInfo(nReturn, SDKPass_Pointer);
+		else
+			PrepSDKCall_SetReturnInfo(nReturn, SDKPass_ByValue);
+	}
 	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::DoClassSpecialSkill");
-	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
-	g_hSDKDoClassSpecialSkill = EndPrepSDKCall();
-	if (!g_hSDKDoClassSpecialSkill)
-		LogError("Failed to create call: CTFPlayer::DoClassSpecialSkill");
+	Handle hSDKCall = EndPrepSDKCall();
+	if (!hSDKCall)
+		LogError("Failed to create call: %s", sName);
 	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::EndClassSpecialSkill");
-	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
-	g_hSDKEndClassSpecialSkill = EndPrepSDKCall();
-	if (!g_hSDKEndClassSpecialSkill)
-		LogError("Failed to create call: CTFPlayer::EndClassSpecialSkill");
+	return hSDKCall;
+}
+
+static void SDKCall_AddParameter(SDKType nParam)
+{
+	if (nParam == SDKType_Unknown)
+		return;
 	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayer::GetLoadoutItem");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
-	g_hSDKGetLoadoutItem = EndPrepSDKCall();
-	if (!g_hSDKGetLoadoutItem)
-		LogError("Failed to create call: CTFPlayer::GetLoadoutItem");
-	
-	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFSpellBook::RollNewSpell");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_ByValue);
-	g_hSDKRollNewSpell = EndPrepSDKCall();
-	if (!g_hSDKRollNewSpell)
-		LogError("Failed to create call: CTFSpellBook::RollNewSpell");
-	
-	StartPrepSDKCall(SDKCall_Raw);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayerShared::UpdateRageBuffsAndRage");
-	g_hSDKUpdateRageBuffsAndRage = EndPrepSDKCall();
-	if (!g_hSDKUpdateRageBuffsAndRage)
-		LogError("Failed to create call: CTFPlayerShared::UpdateRageBuffsAndRage");
-	
-	StartPrepSDKCall(SDKCall_Raw);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayerShared::ModifyRage");
-	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
-	g_hSDKModifyRage = EndPrepSDKCall();
-	if (!g_hSDKModifyRage)
-		LogError("Failed to create call: CTFPlayerShared::ModifyRage");
-	
-	StartPrepSDKCall(SDKCall_Raw);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTFPlayerShared::SetCarryingRuneType");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	g_hSDKSetCarryingRuneType = EndPrepSDKCall();
-	if (!g_hSDKSetCarryingRuneType)
-		LogError("Failed to create call: CTFPlayerShared::SetCarryingRuneType");
-	
-	StartPrepSDKCall(SDKCall_Static);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "HandleRageGain");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);	// unsigned int
-	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
-	g_hSDKHandleRageGain = EndPrepSDKCall();
-	if (!g_hSDKHandleRageGain)
-		LogError("Failed to create call: HandleRageGain");
-	
-	StartPrepSDKCall(SDKCall_Raw);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CEconItemView::operator=");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);	// CEconItemView&
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);	// CEconItemView&
-	g_hSDKSetItem = EndPrepSDKCall();
-	if (!g_hSDKSetItem)
-		LogError("Failed to create call: CEconItemView::operator=");
-	
-	StartPrepSDKCall(SDKCall_Raw);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetBaseEntity");
-	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKGetBaseEntity = EndPrepSDKCall();
-	if (!g_hSDKGetBaseEntity)
-		LogError("Failed to create call: CBaseEntity::GetBaseEntity");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseEntity::GetMaxHealth");
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
-	g_hSDKGetMaxHealth = EndPrepSDKCall();
-	if (!g_hSDKGetMaxHealth)
-		LogError("Failed to create call: CBaseEntity::GetMaxHealth");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseCombatCharacter::Weapon_CanSwitchTo");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_ByValue);
-	g_hSDKWeaponCanSwitchTo = EndPrepSDKCall();
-	if (!g_hSDKWeaponCanSwitchTo)
-		LogError("Failed to create call: CBaseCombatCharacter::Weapon_CanSwitchTo");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKEquipWearable = EndPrepSDKCall();
-	if (!g_hSDKEquipWearable)
-		LogError("Failed to create call: CBasePlayer::EquipWearable");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CTFPlayer::GiveNamedItem");
-	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	g_hSDKGiveNamedItem = EndPrepSDKCall();
-	if (!g_hSDKGiveNamedItem)
-		LogError("Failed to create call: CTFPlayer::GiveNamedItem");
+	if (nParam == SDKType_String || nParam == SDKType_CBaseEntity)
+		PrepSDKCall_AddParameter(nParam, SDKPass_Pointer);
+	else
+		PrepSDKCall_AddParameter(nParam, SDKPass_ByValue);
 }
 
 int SDKCall_GetMaxAmmo(int iClient, int iAmmoType, TFClassType nClass = view_as<TFClassType>(-1))
@@ -217,9 +142,14 @@ int SDKCall_GetBaseEntity(Address pEntity)
 	return SDKCall(g_hSDKGetBaseEntity, pEntity);
 }
 
-bool SDKCall_GetMaxHealth(int iEntity)
+int SDKCall_GetMaxHealth(int iEntity)
 {
 	return SDKCall(g_hSDKGetMaxHealth, iEntity);
+}
+
+int SDKCall_GetSwordHealthMod(int iSword)
+{
+	return SDKCall(g_hSDKGetSwordHealthMod, iSword);
 }
 
 bool SDKCall_WeaponCanSwitchTo(int iClient, int iWeapon)
