@@ -511,6 +511,9 @@ public void OnLibraryRemoved(const char[] sName)
 
 public void OnGameFrame()
 {
+	if (!g_bEnabled)
+		return;
+	
 	bool bWeaponCreated;
 	
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
@@ -829,6 +832,9 @@ bool CanEquipIndex(int iClient, int iIndex)
 
 public Action Console_EurekaTeleport(int iClient, const char[] sCommand, int iArgs)
 {
+	if (!g_bEnabled)
+		return Plugin_Continue;
+
 	g_iClientEurekaTeleporting = iClient;
 	SetClientClass(iClient, TFClass_Engineer);
 	return Plugin_Continue;
@@ -836,6 +842,9 @@ public Action Console_EurekaTeleport(int iClient, const char[] sCommand, int iAr
 
 public Action Console_DropItem(int iClient, const char[] sCommand, int iArgs)
 {
+	if (!g_bEnabled)
+		return Plugin_Continue;
+	
 	static bool bSkip;
 	if (bSkip)
 		return Plugin_Continue;
