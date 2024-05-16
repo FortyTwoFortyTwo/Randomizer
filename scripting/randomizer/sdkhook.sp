@@ -35,9 +35,6 @@ void SDKHook_UnhookClient(int iClient)
 
 void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 {
-	if (!g_bEnabled)
-		return;
-	
 	if (StrContains(sClassname, "tf_weapon_") == 0)
 		SDKHook(iEntity, SDKHook_Reload, Weapon_Reload);
 	else if (StrEqual(sClassname, "item_healthkit_small"))
@@ -52,9 +49,6 @@ void SDKHook_OnEntityCreated(int iEntity, const char[] sClassname)
 
 public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &flDamage, int &iDamageType, int &iWeapon, float vecDamageForce[3], float vecDamagePosition[3], int iDamageCustom)
 {
-	if (!g_bEnabled)
-		return Plugin_Continue;
-	
 	//Enable IsPlayerClass patch at ApplyOnDamageModifyRules detour,
 	// so proper soldier/demoman class check can be done for rocket jumping,
 	// before ApplyOnDamageModifyRules detour is called
@@ -84,9 +78,6 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 
 public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, float flDamage, int iDamageType, int iWeapon, const float vecDamageForce[3], const float vecDamagePosition[3], int iDamageCustom)
 {
-	if (!g_bEnabled)
-		return;
-	
 	if (!g_bOnTakeDamage)
 		Patch_DisableIsPlayerClass();
 	
@@ -133,9 +124,6 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 
 public void Client_PreThink(int iClient)
 {
-	if (!g_bEnabled)
-		return;
-	
 	//Make sure player cant use primary or secondary attack while cloaked
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
 	{
@@ -209,9 +197,6 @@ public void Client_PreThink(int iClient)
 
 public void Client_PreThinkPost(int iClient)
 {
-	if (!g_bEnabled)
-		return;
-	
 	Patch_DisableIsPlayerClass();
 	
 	//m_flEnergyDrinkMeter meant to be used for scout drinks, but TFCond_CritCola shared Buffalo Steak and Cleaner's Carbine
@@ -238,9 +223,6 @@ public void Client_PreThinkPost(int iClient)
 
 public void Client_PostThink(int iClient)
 {
-	if (!g_bEnabled)
-		return;
-	
 	//CTFPlayerShared::UpdateItemChargeMeters is called inside CTFPlayer::ItemPostFrame/PostThink
 	// Update charge meters ourself and forget changes TF2 did after PostThink
 	
@@ -258,9 +240,6 @@ public void Client_PostThink(int iClient)
 
 public void Client_PostThinkPost(int iClient)
 {
-	if (!g_bEnabled)
-		return;
-	
 	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iActiveWeapon != INVALID_ENT_REFERENCE)
 	{
@@ -276,9 +255,6 @@ public void Client_PostThinkPost(int iClient)
 
 public Action Client_WeaponEquip(int iClient, int iWeapon)
 {
-	if (!g_bEnabled)
-		return Plugin_Continue;
-	
 	SetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity", iClient);	//So client's class can be attempted first for TF2_GetDefaultClassFromItem
 	
 	ViewModels_UpdateArms(iClient, iWeapon);	// Set arms for the weapon were about to equip
@@ -295,9 +271,6 @@ public Action Client_WeaponEquip(int iClient, int iWeapon)
 
 public void Client_WeaponEquipPost(int iClient, int iWeapon)
 {
-	if (!g_bEnabled)
-		return;
-	
 	TF2Attrib_RemoveByName(iClient, "mod wrench builds minisentry");
 	
 	RevertClientClass(iClient);
@@ -311,9 +284,6 @@ public void Client_WeaponEquipPost(int iClient, int iWeapon)
 
 public Action Client_WeaponSwitch(int iClient, int iWeapon)
 {
-	if (!g_bEnabled)
-		return Plugin_Continue;
-	
 	ViewModels_UpdateArms(iClient);	// Incase if weapons were to be not properly set up yet for draw animation
 	
 	//Save current active weapon properties before potentally switched out
@@ -331,9 +301,6 @@ public Action Client_WeaponSwitch(int iClient, int iWeapon)
 
 public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 {
-	if (!g_bEnabled)
-		return;
-	
 	ViewModels_UpdateArms(iClient);	// Update arms model with new active weapon
 	
 	//Update ammo for new active weapon
@@ -358,9 +325,6 @@ public void Client_WeaponSwitchPost(int iClient, int iWeapon)
 
 public Action Client_WeaponCanSwitchTo(int iClient, int iWeapon)
 {
-	if (!g_bEnabled)
-		return Plugin_Continue;
-	
 	if (iWeapon == INVALID_ENT_REFERENCE)
 		return Plugin_Continue;
 	
@@ -376,9 +340,6 @@ public Action Client_WeaponCanSwitchTo(int iClient, int iWeapon)
 
 public void Client_WeaponCanSwitchToPost(int iClient, int iWeapon)
 {
-	if (!g_bEnabled)
-		return;
-	
 	if (iWeapon == INVALID_ENT_REFERENCE)
 		return;
 	
@@ -388,9 +349,6 @@ public void Client_WeaponCanSwitchToPost(int iClient, int iWeapon)
 
 public Action Weapon_Reload(int iWeapon)
 {
-	if (!g_bEnabled)
-		return Plugin_Continue;
-	
 	//Weapon unable to be reloaded from cloak, but coded in revolver only, and only for Spy class
 	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
 	if (TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
@@ -401,9 +359,6 @@ public Action Weapon_Reload(int iWeapon)
 
 public void HealthKit_SpawnPost(int iHealthKit)
 {
-	if (!g_bEnabled)
-		return;
-	
 	//Feigh death drops health pack if have Candy Cane active. Why? No idea
 	int iClient = GetEntPropEnt(iHealthKit, Prop_Send, "m_hOwnerEntity");
 	if (0 < iClient <= MaxClients && g_bFeignDeath[iClient])
@@ -412,9 +367,6 @@ public void HealthKit_SpawnPost(int iHealthKit)
 
 public Action Item_Touch(int iItem, int iToucher)
 {
-	if (!g_bEnabled)
-		return Plugin_Continue;
-	
 	if (iToucher <= 0 || iToucher > MaxClients)
 		return Plugin_Continue;
 	
@@ -479,9 +431,6 @@ public Action Item_Touch(int iItem, int iToucher)
 
 public void Item_TouchPost(int iItem, int iToucher)
 {
-	if (!g_bEnabled)
-		return;
-	
 	if (iToucher <= 0 || iToucher > MaxClients)
 		return;
 	
