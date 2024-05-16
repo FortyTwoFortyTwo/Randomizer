@@ -26,6 +26,9 @@ public void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcas
 
 public void Event_PointCaptured(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
+	if (!g_bEnabled)
+		return;
+	
 	char[] sCappers = new char[MaxClients];
 	
 	hEvent.GetString("cappers", sCappers, MaxClients+1);
@@ -37,6 +40,9 @@ public void Event_PointCaptured(Event hEvent, const char[] sName, bool bDontBroa
 
 public void Event_FlagCaptured(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
+	if (!g_bEnabled)
+		return;
+	
 	if (hEvent.GetInt("eventtype") != 2)	//Check if it actually capture and not other events
 		return;
 	
@@ -193,6 +199,9 @@ public void Event_PassScore(Event event, const char[] sName, bool bDontBroadcast
 
 public void Event_WeaponJump(Event event, const char[] sName, bool bDontBroadcast)
 {
+	if (!g_bEnabled)
+		return;
+	
 	//Class check should be done by this point, revert class so pain sound can be played as actual class
 	if (g_bOnTakeDamage)
 	{
