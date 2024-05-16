@@ -15,7 +15,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.11.0"
+#define PLUGIN_VERSION			"1.11.1"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define CONFIG_MAXCHAR	64
