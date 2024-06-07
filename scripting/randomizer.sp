@@ -324,6 +324,12 @@ enum struct WeaponWhitelist	//Whitelist of allowed weapon indexs
 	}
 }
 
+enum struct ClientClassDebug
+{
+	FrameIterator hStack;
+	float flTime;
+}
+
 bool g_bEnabled;
 bool g_bTF2Items;
 bool g_bAllowGiveNamedItem;
@@ -347,7 +353,7 @@ ConVar g_cvRandomize[view_as<int>(RandomizedType_MAX)];
 bool g_bClientRefresh[MAXPLAYERS];
 
 TFClassType g_iClientCurrentClass[MAXPLAYERS + 1][4];
-FrameIterator g_hClientCurrentClass[MAXPLAYERS + 1][4];
+ClientClassDebug g_ClientClassDebug[MAXPLAYERS + 1][10];
 bool g_bFeignDeath[MAXPLAYERS + 1];
 int g_iHypeMeterLoaded[MAXPLAYERS + 1] = {INVALID_ENT_REFERENCE, ...};
 bool g_bWeaponDecap[MAXPLAYERS + 1];
@@ -891,6 +897,9 @@ void SetClientClass(int iClient, TFClassType nClass)
 	if (nClass == TFClass_Unknown)
 		ThrowError("Got TFClass_Unknown in SetClientClass");
 	
+	if (g_cvDebug.BoolValue)
+		CreateDebugStack(iClient);
+	
 	for (int i = 0; i < sizeof(g_iClientCurrentClass[]); i++)
 	{
 		if (g_iClientCurrentClass[iClient][i] != TFClass_Unknown)
@@ -902,46 +911,10 @@ void SetClientClass(int iClient, TFClassType nClass)
 		
 		TF2_SetPlayerClass(iClient, nClass);
 		
-		if (g_cvDebug.BoolValue)
-			g_hClientCurrentClass[iClient][i] = new FrameIterator();
-		
 		return;
 	}
 	
-	if (g_cvDebug.BoolValue)
-	{
-		LogError("Exceeded array limit on storing class");
-		
-		for (int i = 0; i < sizeof(g_iClientCurrentClass[]); i++)
-		{
-			FrameIterator hIterator = g_hClientCurrentClass[iClient][i];
-			if (!hIterator)
-				continue;
-			
-			hIterator.Reset();
-			if (!hIterator.Next())	// skip SetClientClass
-				continue;
-			
-			LogError("Index %d stack trace: ", i);
-			
-			int iCounter;
-			
-			while (hIterator.Next() && hIterator.LineNumber)
-			{
-				char sFile[256], sFunction[256];
-				hIterator.GetFilePath(sFile, sizeof(sFile));
-				hIterator.GetFunctionName(sFunction, sizeof(sFunction));
-				LogError("  [%d] Line %d, %s::%s", iCounter, hIterator.LineNumber, sFile, sFunction);
-				
-				iCounter++;
-			}
-		}
-		
-	}
-	else
-	{
-		ThrowError("Exceeded array limit on storing class, enable randomizer_debug and try again for more infos");
-	}
+	ReportDebugStack(iClient, "Exceeded array limit on storing class");
 }
 
 void SetClientClassOriginal(int iClient)
@@ -955,6 +928,9 @@ void SetClientClassOriginal(int iClient)
 
 void RevertClientClass(int iClient)
 {
+	if (g_cvDebug.BoolValue)
+		CreateDebugStack(iClient);
+	
 	for (int i = sizeof(g_iClientCurrentClass[]) - 1; i >= 0; i--)
 	{
 		if (g_iClientCurrentClass[iClient][i] == TFClass_Unknown)
@@ -963,11 +939,61 @@ void RevertClientClass(int iClient)
 		TF2_SetPlayerClass(iClient, g_iClientCurrentClass[iClient][i]);
 		g_iClientCurrentClass[iClient][i] = TFClass_Unknown;
 		
-		delete g_hClientCurrentClass[iClient][i];
 		return;
 	}
 	
-	ThrowError("Could not find class to revert back to");
+	ReportDebugStack(iClient, "Could not find class to revert back to");
+}
+
+void CreateDebugStack(int iClient)
+{
+	if (!g_cvDebug.BoolValue)
+		return;
+	
+	// Shift array down to free up first index
+	delete g_ClientClassDebug[iClient][sizeof(g_ClientClassDebug[]) - 1].hStack;
+	for (int i = sizeof(g_ClientClassDebug[]) - 2; i >= 0; i--)
+		g_ClientClassDebug[iClient][i + 1] = g_ClientClassDebug[iClient][i];
+	
+	// Add new one here
+	g_ClientClassDebug[iClient][0].hStack = new FrameIterator();
+	g_ClientClassDebug[iClient][0].flTime = GetGameTime();
+}
+
+void ReportDebugStack(int iClient, const char[] sError)
+{
+	if (!g_cvDebug.BoolValue)
+	{
+		ThrowError("%s, enable randomizer_debug and try again for more infos", sError);
+		return;
+	}
+	
+	LogError("%s, reporting last %d stack traces:", sError, sizeof(g_ClientClassDebug[]));
+	
+	for (int i = 0; i < sizeof(g_ClientClassDebug[]); i++)
+	{
+		FrameIterator hIterator = g_ClientClassDebug[iClient][i].hStack;
+		if (!hIterator)
+			continue;
+		
+		hIterator.Reset();
+		if (!hIterator.Next() || !hIterator.Next())	// skip SetClientClass/RevertClientClass and CreateDebugStack
+			continue;
+		
+		LogError("Index %d stack trace at frame time %.6f: ", i, g_ClientClassDebug[iClient][i].flTime);
+		
+		int iCounter;
+		
+		while (hIterator.Next() && hIterator.LineNumber)
+		{
+			char sFile[256], sFunction[256];
+			hIterator.GetFilePath(sFile, sizeof(sFile));
+			hIterator.GetFunctionName(sFunction, sizeof(sFunction));
+			LogError("  [%d] Line %d, %s::%s", iCounter, hIterator.LineNumber, sFile, sFunction);
+			
+			iCounter++;
+		}
+	}
 }
 
 public Action TF2Items_OnGiveNamedItem(int iClient, char[] sClassname, int iIndex, Handle &hItem)
