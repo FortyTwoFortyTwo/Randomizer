@@ -424,6 +424,9 @@ public MRESReturn DHook_TauntPost(int iClient, DHookParam hParams)
 	if (!g_cvFixTaunt.BoolValue)
 		return MRES_Ignored;
 
+	if (TF2_IsPlayerInCondition(iClient, TFCond_Disguising) || TF2_IsPlayerInCondition(iClient, TFCond_Disguised) || TF2_IsPlayerInCondition(iClient, TFCond_Cloaked))
+		return MRES_Supercede;
+	
 	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 	if (iWeapon == INVALID_ENT_REFERENCE)
 		return MRES_Ignored;
