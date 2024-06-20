@@ -15,7 +15,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.11.1"
+#define PLUGIN_VERSION			"1.11.2"
 #define PLUGIN_VERSION_REVISION	"manual"
 
 #define CONFIG_MAXCHAR	64
@@ -354,13 +354,13 @@ bool g_bClientRefresh[MAXPLAYERS];
 
 TFClassType g_iClientCurrentClass[MAXPLAYERS + 1][4];
 ClientClassDebug g_ClientClassDebug[MAXPLAYERS + 1][10];
+bool g_bOnTakeDamageClass[MAXPLAYERS + 1];
 bool g_bFeignDeath[MAXPLAYERS + 1];
 int g_iHypeMeterLoaded[MAXPLAYERS + 1] = {INVALID_ENT_REFERENCE, ...};
 bool g_bWeaponDecap[MAXPLAYERS + 1];
 Handle g_hTimerClientHud[MAXPLAYERS + 1];
 
 bool g_bOnTakeDamage;
-bool g_bOnTakeDamageClass;
 int g_iGainingRageWeapon = INVALID_ENT_REFERENCE;
 int g_iTouchItem = INVALID_ENT_REFERENCE;
 int g_iTouchToucher = INVALID_ENT_REFERENCE;

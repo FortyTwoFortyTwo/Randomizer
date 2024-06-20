@@ -62,7 +62,7 @@ public Action Client_OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, 
 			// IsPlayerClass not always called on linux,
 			// and some class checks don't even use IsPlayerClass.
 			SetClientClass(iAttacker, TF2_GetDefaultClassFromItem(iWeapon));
-			g_bOnTakeDamageClass = true;
+			g_bOnTakeDamageClass[iAttacker] = true;
 			
 			Properties_LoadWeaponPropInt(iAttacker, iWeapon, "m_iDecapitations");
 			g_bWeaponDecap[iAttacker] = true;
@@ -84,10 +84,10 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 	g_bOnTakeDamage = false;
 	g_bFeignDeath[iVictim] = false;
 	
-	if (g_bOnTakeDamageClass)
+	if (g_bOnTakeDamageClass[iAttacker])
 	{
 		RevertClientClass(iAttacker);
-		g_bOnTakeDamageClass = false;
+		g_bOnTakeDamageClass[iAttacker] = false;
 	}
 	
 	if (0 < iAttacker <= MaxClients)
