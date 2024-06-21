@@ -84,14 +84,14 @@ public void Client_OnTakeDamagePost(int iVictim, int iAttacker, int iInflictor, 
 	g_bOnTakeDamage = false;
 	g_bFeignDeath[iVictim] = false;
 	
-	if (g_bOnTakeDamageClass[iAttacker])
-	{
-		RevertClientClass(iAttacker);
-		g_bOnTakeDamageClass[iAttacker] = false;
-	}
-	
 	if (0 < iAttacker <= MaxClients)
 	{
+		if (g_bOnTakeDamageClass[iAttacker])
+		{
+			RevertClientClass(iAttacker);
+			g_bOnTakeDamageClass[iAttacker] = false;
+		}
+		
 		if (iWeapon != INVALID_ENT_REFERENCE && HasEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"))
 		{
 			Properties_SaveWeaponPropInt(iAttacker, iWeapon, "m_iDecapitations");
