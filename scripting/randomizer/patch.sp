@@ -79,8 +79,10 @@ enum struct Patch
 	
 	void Disable()
 	{
+		// Assuming that Enable() is called before Disable(), not needing to update mem access
+		
 		for (int i = 0; i < this.iPatchCount; i++)
-			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueOriginal[i], NumberType_Int8);
+			StoreToAddress(this.pAddress + view_as<Address>(i), this.iValueOriginal[i], NumberType_Int8, false);
 	}
 }
 
