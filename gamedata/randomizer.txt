@@ -68,7 +68,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer5TauntE8taunts_ti"
-				"windows"	"\x55\x8B\xEC\x81\xEC\xD4\x00\x00\x00\x53\x56\x57\x8B\xF9\xE8"
+				"windows"	"\x55\x8B\xEC\x81\xEC\xD0\x00\x00\x00\x53\x56\x57\x8B\xF9\xE8"
 			}
 			"CTFPlayer::CanAirDash"
 			{
@@ -122,7 +122,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer22GetMaxHealthForBuffingEv"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x53\x56\x57\x8B\xF9\xFF\xB7\xC8\x22\x00\x00"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x20\x53\x56\x57\x8B\xF9\xFF\xB7\xC8\x22\x00\x00"
 			}
 			"CTFPlayer::TeamFortress_CalculateMaxSpeed"
 			{
@@ -134,7 +134,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer10TakeHealthEfi"
-				"windows"	"\x55\x8B\xEC\x51\x56\x8B\xF1\x6A\x1F"
+				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x6A\x1F"
 			}
 			"CTFPlayer::CheckBlockBackstab"
 			{
@@ -194,7 +194,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN15CTFPlayerShared22UpdateRageBuffsAndRageEv"
-				"windows"	"\x55\x8B\xEC\x51\xF3\x0F\x10\x05\x2A\x2A\x2A\x2A\x56\x8B\xF1\x57"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x10\x53\x8B\xD9\x8B\x8B\x8C\x01\x00\x00"
 			}
 			"CTFPlayerShared::ModifyRage"
 			{
@@ -206,13 +206,13 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN15CTFPlayerShared16ActivateRageBuffEP11CBaseEntityi"
-				"windows"	"\x55\x8B\xEC\x51\xF3\x0F\x10\x05\x2A\x2A\x2A\x2A\x56\x8B\xF1\x57"
+				"windows"	"\x55\x8B\xEC\xF3\x0F\x10\x05\x2A\x2A\x2A\x2A\x56"
 			}
 			"CTFPlayerShared::SetCarryingRuneType"
 			{
 				"library"	"server"
 				"linux"		"@_ZN15CTFPlayerShared19SetCarryingRuneTypeE11RuneTypes_t"
-				"windows"	"\x55\x8B\xEC\x51\x53\x8B\x5D\x08\x56\x57\x8B\xF9\x83\xFB\xFF"
+				"windows"	"\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x57\x8B\xF9\x83\xFB\xFF"
 			}
 			"CTFGameRules::ApplyOnDamageModifyRules"
 			{
@@ -230,7 +230,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN13CEconItemViewaSERKS_"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x53\x56\x8B\xF1\x57\x8B\x7D\x08\x8D\x5E\x18"
+				"windows"	"\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x8B\xF1\x57\x66\x8B\x43\x04"
 			}
 		}
 		"Offsets"
