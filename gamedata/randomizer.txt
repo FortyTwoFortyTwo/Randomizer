@@ -252,93 +252,93 @@
 			}
 			"CBaseEntity::GetMaxHealth"
 			{
-				"linux"		"123"
-				"windows"	"122"
+				"linux"		"124"
+				"windows"	"123"
 			}
 			"CEconEntity::TranslateViewmodelHandActivityInternal"
 			{
-				"linux"		"235"
-				"windows"	"229"
+				"linux"		"236"
+				"windows"	"230"
 			}
 			"CBaseCombatWeapon::SecondaryAttack"
 			{
-				"linux"		"293"
-				"windows"	"287"
+				"linux"		"294"
+				"windows"	"288"
 			}
 			"CTFWeaponBase::GetEffectBarAmmo"
 			{
-				"linux"		"469"
-				"windows"	"462"
+				"linux"		"471"
+				"windows"	"464"
 			}
 			"CTFWeaponBaseMelee::Smack"
 			{
-				"linux"		"477"
-				"windows"	"470"
+				"linux"		"479"
+				"windows"	"472"
 			}
 			"CTFWeaponBaseMelee::Swing"
 			{
-				"linux"		"486"
-				"windows"	"479"
+				"linux"		"488"
+				"windows"	"481"
 			}
 			"CTFSword::GetSwordSpeedMod"
 			{
-				"linux"		"492"
-				"windows"	"484"
+				"linux"		"494"
+				"windows"	"486"
 			}
 			"CTFSword::GetSwordHealthMod"
 			{
-				"linux"		"493"
-				"windows"	"485"
+				"linux"		"495"
+				"windows"	"487"
 			}
 			"CBaseObject::Killed"
 			{
-				"linux"		"356"
-				"windows"	"355"
+				"linux"		"357"
+				"windows"	"356"
 			}
 			"CBaseObject::CanBeUpgraded"
 			{
-				"linux"		"383"
-				"windows"	"382"
+				"linux"		"384"
+				"windows"	"383"
 			}
 			"CBasePlayer::ForceRespawn"
 			{
-				"linux"		"337"
-				"windows"	"336"
+				"linux"		"338"
+				"windows"	"337"
 			}
 			"CBasePlayer::ClientCommand"
 			{
-				"linux"		"380"
-				"windows"	"379"
+				"linux"		"381"
+				"windows"	"380"
 			}
 			"CBasePlayer::EquipWearable"
 			{
-				"linux"		"439"
-				"windows"	"438"
+				"linux"		"440"
+				"windows"	"439"
 			}
 			"CBaseCombatCharacter::GetAmmoCount"
 			{
-				"linux"		"266"
-				"windows"	"265"
+				"linux"		"267"
+				"windows"	"266"
 			}
 			"CBaseCombatCharacter::Weapon_CanSwitchTo"
 			{
-				"linux"		"277"
-				"windows"	"276"
+				"linux"		"278"
+				"windows"	"277"
 			}
 			"CBaseMultiplayerPlayer::SpeakConceptIfAllowed"
 			{
-				"linux"		"473"
-				"windows"	"472"
+				"linux"		"474"
+				"windows"	"473"
 			}
 			"CTFPlayer::GiveNamedItem"
 			{
-				"linux"		"493"
-				"windows"	"486"
+				"linux"		"494"
+				"windows"	"487"
 			}
 			"CTFPlayer::InitClass"
 			{
-				"linux"		"495"
-				"windows"	"488"
+				"linux"		"496"
+				"windows"	"489"
 			}
 			"CGameRules::FrameUpdatePostEntityThink"
 			{
