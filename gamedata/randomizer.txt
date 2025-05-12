@@ -267,28 +267,28 @@
 			}
 			"CTFWeaponBase::GetEffectBarAmmo"
 			{
-				"linux"		"471"
-				"windows"	"464"
+				"linux"		"472"
+				"windows"	"465"
 			}
 			"CTFWeaponBaseMelee::Smack"
 			{
-				"linux"		"479"
-				"windows"	"472"
+				"linux"		"480"
+				"windows"	"473"
 			}
 			"CTFWeaponBaseMelee::Swing"
 			{
-				"linux"		"488"
-				"windows"	"481"
+				"linux"		"489"
+				"windows"	"482"
 			}
 			"CTFSword::GetSwordSpeedMod"
 			{
-				"linux"		"494"
-				"windows"	"486"
+				"linux"		"495"
+				"windows"	"487"
 			}
 			"CTFSword::GetSwordHealthMod"
 			{
-				"linux"		"495"
-				"windows"	"487"
+				"linux"		"496"
+				"windows"	"488"
 			}
 			"CBaseObject::Killed"
 			{
