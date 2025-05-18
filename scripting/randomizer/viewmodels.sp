@@ -76,9 +76,16 @@ void ViewModels_UpdateArms(int iClient, int iForceWeapon = INVALID_ENT_REFERENCE
 		else
 			sModel = g_sViewModelsArms[nClass];
 		
-		int iModelIndex = GetModelIndex(sModel);
-		if (GetEntProp(iViewModel, Prop_Send, "m_nModelIndex") != iModelIndex)
-			SetEntProp(iViewModel, Prop_Send, "m_nModelIndex", iModelIndex);
+		if(iActiveWeapon != INVALID_ENT_REFERENCE)
+		{
+			SetEntityModel(iActiveWeapon, sModel);
+			SetEntProp(iActiveWeapon, Prop_Send, "m_nCustomViewmodelModelIndex", GetEntProp(iActiveWeapon, Prop_Send, "m_nModelIndex"));
+			SetEntProp(iActiveWeapon, Prop_Send, "m_iViewModelIndex", GetEntProp(iActiveWeapon, Prop_Send, "m_nModelIndex"));
+		}
+		
+		//int iModelIndex = GetModelIndex(sModel);
+		//if (GetEntProp(iViewModel, Prop_Send, "m_nModelIndex") != iModelIndex)
+		//	SetEntProp(iViewModel, Prop_Send, "m_nModelIndex", iModelIndex);
 	}
 	
 	int iArmsModelIndex = GetModelIndex(g_sViewModelsArms[TF2_GetPlayerClass(iClient)]);
@@ -100,14 +107,6 @@ void ViewModels_UpdateArms(int iClient, int iForceWeapon = INVALID_ENT_REFERENCE
 		
 		SetEntPropEnt(iArms, Prop_Send, "m_hWeaponAssociatedWith", iActiveWeapon);
 		SetEntPropEnt(iWearable, Prop_Send, "m_hWeaponAssociatedWith", iActiveWeapon);
-	}
-	
-	int iMaxWeapons = GetMaxWeapons();
-	for (int i = 0; i < iMaxWeapons; i++)
-	{
-		int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hMyWeapons", i);
-		if (iWeapon != INVALID_ENT_REFERENCE)
-			SetEntProp(iWeapon, Prop_Send, "m_nCustomViewmodelModelIndex", GetEntProp(iWeapon, Prop_Send, "m_nModelIndex"));
 	}
 }
 
