@@ -257,11 +257,6 @@ public Action Client_WeaponEquip(int iClient, int iWeapon)
 {
 	SetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity", iClient);	//So client's class can be attempted first for TF2_GetDefaultClassFromItem
 	
-	ViewModels_UpdateArms(iClient, iWeapon);	// Set arms for the weapon were about to equip
-	
-	//Change class before equipping the weapon, otherwise anims and reload times are odd
-	SetClientClass(iClient, TF2_GetDefaultClassFromItem(iWeapon));
-	
 	// Don't allow robotarm model screw up anims
 	if (TF2Attrib_HookValueFloat(0.0, "wrench_builds_minisentry", iClient) == 1.0)
 		TF2Attrib_SetByName(iClient, "mod wrench builds minisentry", -1.0);	// 1.0 + -1.0 = 0.0
@@ -273,8 +268,6 @@ public void Client_WeaponEquipPost(int iClient, int iWeapon)
 {
 	TF2Attrib_RemoveByName(iClient, "mod wrench builds minisentry");
 	
-	RevertClientClass(iClient);
-	
 	ViewModels_UpdateArms(iClient);
 	
 	//Refresh controls and huds
@@ -284,8 +277,6 @@ public void Client_WeaponEquipPost(int iClient, int iWeapon)
 
 public Action Client_WeaponSwitch(int iClient, int iWeapon)
 {
-	ViewModels_UpdateArms(iClient);	// Incase if weapons were to be not properly set up yet for draw animation
-	
 	//Save current active weapon properties before potentally switched out
 	Properties_SaveActiveWeaponAmmo(iClient);
 	
